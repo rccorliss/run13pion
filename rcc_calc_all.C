@@ -107,7 +107,7 @@ void rcc_calc_all(const int runnumber = 398149,
       average_ypol[i][j]=weighted_ypol_sum[i][j]/zdc_narrow_sum[i][j];
       bpol_sum+=weighted_bpol_sum[i][j];
       ypol_sum+=weighted_ypol_sum[i][j];
-      zdc_sum+=zdc_narrow_sum;
+      zdc_sum+=zdc_narrow_sum[i][j];
     }
   }
   //averaged over all spin states:
@@ -123,11 +123,15 @@ void rcc_calc_all(const int runnumber = 398149,
   TH1F* hNumer=new TH1F("hNumer","Numerator of ALL",nptbins,pt_limits);
 
   //sum the numerator and denominator for the ALL:
-  TH1F *hLikeSum= TH1F::Copy(hYieldByPtAndSpin[0][0]);
+  TH1F *hLikeSum=new TH1F("hLikeSum","Sum of ++ and -- bins of pion yield",nptbins,pt_limits);
+  hLikeSum->Add(hYieldByPtAndSpin[0][0]);
   hLikeSum->Add(hYieldByPtAndSpin[1][1]);
 
-  TH1F *hUnlikeSum= TH1F::Copy(hYieldByPtAndSpin[0][1]);
+  TH1F *hUnlikeSum=new TH1F("hUnlikeSum","Sum of +- and -+ bins of pion yield",nptbins,pt_limits);
   hUnlikeSum->Add(hYieldByPtAndSpin[1][0]);
+  hUnlikeSum->Add(hYieldByPtAndSpin[0][1]);
+
+ 
 	       
   hNumer->Add(hLikeSum);
   hNumer->Add(hUnlikeSum,-rellumi);
