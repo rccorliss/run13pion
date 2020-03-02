@@ -1,7 +1,9 @@
-#include "TString.h"
-#include "TFile.h"
-#include "TH2F.h"
-#include "TH1F.h"
+#include <TString.h>
+#include <TFile.h>
+#include <TH2F.h>
+#include <TH1F.h>
+#include <SpinDBContent.hh>
+#include <SpinDBOutput.hh>
 
 void rcc_calc_all(const int runnumber = 398149,
 			 const char * inputdir="/",
@@ -29,11 +31,11 @@ void rcc_calc_all(const int runnumber = 398149,
   SpinDBOutput spin_out("phnxrc");
   spin_out.StoreDBContent(runnumber, runnumber);
   spin_out.GetDBContentStore(spin_cont, runnumber);
-  error = spin_cont.GetErrorValue();
-  qa_level = spin_cont.GetQALevel();
-  fill = spin_cont.GetFillNumber();
-  badrun = spin_cont.GetBadRunFlag();
-  cross_shift = spin_cont.GetCrossingShift(); //spindb stores data in the C-AD convention, which doesn't match the PHENIX numbering.  This is the relative offset.
+  int error = spin_cont.GetErrorValue();
+  int qa_level = spin_cont.GetQALevel();
+  int fill = spin_cont.GetFillNumber();
+  int badrun = spin_cont.GetBadRunFlag();
+  int cross_shift = spin_cont.GetCrossingShift(); //spindb stores data in the C-AD convention, which doesn't match the PHENIX numbering.  This is the relative offset.
 
  
   // for each bunch, accumulate yields and bunch info into the appropriate spinpattern grouping:
