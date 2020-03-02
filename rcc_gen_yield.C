@@ -95,7 +95,7 @@ double ptYields[2][10];
 bool isBunchBad[NBUNCHES];
 void InitWarn(int runnum);
 void InitInTree();
-void InitOutput(int runnum, int minbias);
+void InitOutput(int runnum, const char *outputdir);
 void InitDB(int n_runnum);
 void get_entry(int ientry);
 bool PassesClusterCuts(int iclus);
@@ -104,14 +104,14 @@ void End();
 SpinDBContent spin_cont;
 MpcMap *mpcmap;
 recoConsts *rc;
-void rcc_gen_yield(int runnum, int minbias = 0) {
-  // minbias = 1;
-  TString fullfile;
-  if (minbias)
-    fullfile =
-        "/phenix/spin/phnxsp01/pmontu/taxi/Run13pp510MinBias/10699/data/";
+void rcc_gen_yield(int runnum,
+		   const char * inputdir="/",
+		   const char * outputdir="/phenix/spin/spin1/phnxsp01/rosscorliss/trees/") {
+) {
+  //MB is at:
+  //        "/phenix/spin/phnxsp01/pmontu/taxi/Run13pp510MinBias/10699/data/";
   else
-    fullfile = "/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/";
+    fullfile = inputdir;//"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/";
   fullfile += runnum;
   fullfile += ".root";
 
@@ -122,7 +122,7 @@ void rcc_gen_yield(int runnum, int minbias = 0) {
   ttree = (TTree *)rootin->Get("T");
 
   InitInTree();
-  InitOutput(runnum, minbias);
+  InitOutput(runnum, outputdir);
   InitDB(runnum);
   InitWarn(runnum);
 
@@ -241,8 +241,8 @@ void InitInTree() {
   return;
 }
 
-void InitOutput(int runnum, int minbias) {
-  TString yieldfname = "/direct/phenix+u/rosscorliss/pion_ana/output/"
+void InitOutput(int runnum, const char* outputdir){
+  TString yieldfname = outputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
   yieldfname += runnum;
   yieldfname += ".MPC.yields.rcc.hist.root";
   histfile = new TFile(yieldfname, "RECREATE");

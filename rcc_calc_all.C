@@ -26,7 +26,7 @@ void rcc_calc_all(const int runnumber = 398149,
 
   //get run cluster yield
   //revise this yield filename for the next pass.  It was a way to emulate pedro's directories.
-  TString yieldfname = "/direct/phenix+u/rosscorliss/pion_ana/output/"
+  TString yieldfname = inputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
   yieldfname += runnum;
   yieldfname += ".MPC.yields.rcc.hist.root";
   TFile *yieldfile = TFile::Open(yieldfname);
@@ -146,7 +146,7 @@ void rcc_calc_all(const int runnumber = 398149,
   hAllByPt->Divide(hDenom);
   hAllByPt->Scale(1/(bpol_ALL*ypol_ALL));
 
-  TString allfname = "/direct/phenix+u/rosscorliss/pion_ana/output/"
+  TString allfname = outputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
   allfname += runnum;
   allfname += ".MPC.ALL.rcc.hist.root";
   TFile *allfile = TFile::Open(allfname,"RECREATE");
