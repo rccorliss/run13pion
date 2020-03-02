@@ -254,13 +254,6 @@ void InitOutput(int runnum, const char* outputdir){
   hYieldByBunchAndPt=new TH2F("hYieldByBunchAndPt","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
 
-
-
-  
-  // TString sparsename = "clus_yields";
-  // outsparse = new THnSparseD(sparsename, sparsename, 4, sparsebins,
-  //                            sparsebinsmin, sparsebinsmax);
-  // outsparse->GetAxis(3)->Set(9, pt_limits);
   vtx[0][0] = new TH1D("evenvtxS", "evenvtxS", 600, -300, 300);
   vtx[0][1] = new TH1D("oddvtxS", "oddvtxS", 600, -300, 300);
   vtx[1][0] = new TH1D("evenvtxN", "evenvtxN", 600, -300, 300);
@@ -366,16 +359,7 @@ void InitOutput(int runnum, const char* outputdir){
   r_ch_066_post = new TH1F("r_ch_066_post", "r distribution for channel 066", 200, 10, 20);
   r_ch_468_post = new TH1F("r_ch_468_post", "r distribution for channel 468", 200, 10, 20);
 
-  TString ttreefname = "/direct/phenix+u/rosscorliss/pion_ana/output/"
-    "relative_luminosity.SpinDB.clusters.";
-  if (minbias)
-    ttreefname += "MinBias.trees.";
-  else
-    ttreefname += "MPC.trees.";
-  ttreefname += runnum;
-  ttreefname += ".root";
-  treefile = new TFile(ttreefname, "RECREATE");
-  
+ 
   t = new TTree("t", "t");
 
   t->Branch("ptbin0arm0", &ptYields[0][0], "ptbin0arm0/D");
@@ -609,8 +593,7 @@ void End() {
   r_ch_066_post->Write();
   r_ch_468_post->Write();
 
-  histfile->Close();
-  delete histfile;
+ 
 
   for (std::size_t ibunch = 0; ibunch < 120; ibunch++) {
     for (int ipt = 0; ipt < NPTBINS; ipt++) {
@@ -620,11 +603,10 @@ void End() {
     }
     t->Fill();
   }
-  treefile->cd();
   t->Write();
   t->ResetBranchAddresses();
-  treefile->Close();
-  delete treefile;
-  
+
+   histfile->Close();
+  delete histfile;
   return;
 }
