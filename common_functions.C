@@ -257,6 +257,8 @@ struct rl_db {
   }
 
   int get_spin_pattern(const int runnumber) {
+    //extract the spin pattern for the current run from the master ttree.
+    
     int result = 0;
     int index = m[runnumber];
     int entry = index * 120;
@@ -265,56 +267,57 @@ struct rl_db {
 
     //load the 8 events starting at event 'entry' into t's temporary vectors:
     int n_points = t->Draw("bpat:ypat", "", "", 8, entry);
+    double *bpat=t->GetV1();
+    double *ypat=t->GetV2();
     //now V1 contains eight values of bpat and V2 contains 8 values of ypat.
 
-    // std::cout << "*(t->GetV1() + 3) " << *(t->GetV1() + 3) << std::endl;
-    int ishift = 2;
-    if (equal(t->GetV1(), ppmm) && equal(t->GetV2(), pppp)) {
+    //compare bpat and ypat against our reference patterns to find which spin pattern we're in:
+    if (equal(bpat, ppmm) && equal(ypat, pppp)) {
       // cout << runnumber << " pat1 " << endl;
       return 1;
-    } else if (equal(t->GetV1(), mmpp) && equal(t->GetV2(), pppp)) {
+    } else if (equal(bpat, mmpp) && equal(ypat, pppp)) {
       // cout << runnumber << " pat2 " << endl;
       return 2;
-    } else if (equal(t->GetV1(), ppmm) && equal(t->GetV2(), mmmm)) {
+    } else if (equal(bpat, ppmm) && equal(ypat, mmmm)) {
       // cout << runnumber << " pat3 " << endl;
       return 3;
-    } else if (equal(t->GetV1(), mmpp) && equal(t->GetV2(), mmmm)) {
+    } else if (equal(bpat, mmpp) && equal(ypat, mmmm)) {
       // cout << runnumber << " pat4 " << endl;
       return 4;
-    } else if (equal(t->GetV1(), pppp) && equal(t->GetV2(), ppmm)) {
+    } else if (equal(bpat, pppp) && equal(ypat, ppmm)) {
       // cout << runnumber << " pat5 " << endl;
       return 5;
-    } else if (equal(t->GetV1(), pppp) && equal(t->GetV2(), mmpp)) {
+    } else if (equal(bpat, pppp) && equal(ypat, mmpp)) {
       // cout << runnumber << " pat6 " << endl;
       return 6;
-    } else if (equal(t->GetV1(), mmmm) && equal(t->GetV2(), ppmm)) {
+    } else if (equal(bpat, mmmm) && equal(ypat, ppmm)) {
       // cout << runnumber << " pat7 " << endl;
       return 7;
-    } else if (equal(t->GetV1(), mmmm) && equal(t->GetV2(), mmpp)) {
+    } else if (equal(bpat, mmmm) && equal(ypat, mmpp)) {
       // cout << runnumber << " pat8 " << endl;
       return 8;
-    } else if (equal(t->GetV1(), mmpp) && equal(t->GetV2(), pppps2)) {
+    } else if (equal(bpat, mmpp) && equal(ypat, pppps2)) {
       // cout << runnumber << " pat21 " << endl;
       return 21;
-    } else if (equal(t->GetV1(), ppmm) && equal(t->GetV2(), pppps2)) {
+    } else if (equal(bpat, ppmm) && equal(ypat, pppps2)) {
       // cout << runnumber << " pat22 " << endl;
       return 22;
-    } else if (equal(t->GetV1(), mmpp) && equal(t->GetV2(), mmmms2)) {
+    } else if (equal(bpat, mmpp) && equal(ypat, mmmms2)) {
       // cout << runnumber << " pat23 " << endl;
       return 23;
-    } else if (equal(t->GetV1(), ppmm) && equal(t->GetV2(), mmmms2)) {
+    } else if (equal(bpat, ppmm) && equal(ypat, mmmms2)) {
       // cout << runnumber << " pat24 " << endl;
       return 24;
-    } else if (equal(t->GetV1(), pppps2) && equal(t->GetV2(), mmpp)) {
+    } else if (equal(bpat, pppps2) && equal(ypat, mmpp)) {
       // cout << runnumber << " pat25 " << endl;
       return 25;
-    } else if (equal(t->GetV1(), pppps2) && equal(t->GetV2(), ppmm)) {
+    } else if (equal(bpat, pppps2) && equal(ypat, ppmm)) {
       // cout << runnumber << " pat26 " << endl;
       return 26;
-    } else if (equal(t->GetV1(), mmmms2) && equal(t->GetV2(), mmpp)) {
+    } else if (equal(bpat, mmmms2) && equal(ypat, mmpp)) {
       // cout << runnumber << " pat27 " << endl;
       return 27;
-    } else if (equal(t->GetV1(), mmmms2) && equal(t->GetV2(), ppmm)) {
+    } else if (equal(bpat, mmmms2) && equal(ypat, ppmm)) {
       // cout << runnumber << " pat28 " << endl;
       return 28;
     } else {
@@ -323,30 +326,33 @@ struct rl_db {
     }
   }
 
-  TGraphErrors *get_ratio_vs_crossing(const int runnumber, const TString num,
-                                      const TString den,
+  TGraphErrors *get_ratio_vs_crossing(const int runnumber, const TString numerator,
+                                      const TString denominator,
                                       const TCut extra_cut = "",
                                       const double err_factor = 1.) {
 
-    // TString run_str = "runnumber == ";
-    // run_str += runnumber;
-    // TCut run_cut = run_str;
+    // plot numerator/denominator along with errorbars that are propagated assuming num and denom are independent
+    // and with an additional scale factor of err_factor applied to both numerator and denominator errors.
 
     TCut cuts = final_cuts + extra_cut;
 
     int index = m[runnumber];
 
-    TString nume = num;
+    TString nume = numerator;
     nume += "err * ";
     nume += err_factor;
-    TString dene = den;
+    TString dene = denominator;
     dene += "err * ";
     dene += err_factor;
 
-    TString formula = num + " / " + den + ":" + nume + "/" + num + ":" + dene +
-                      "/" + den + ":crossing";
+    TString formula = numerator + " / " + denominator + ":" + nume + "/" + numerator + ":" + dene +
+                      "/" + denominator + ":crossing";
     // std::cout << "formula " << formula << std::endl;
+
+    //load ratio into v1, numerator fractional error into v2, denominator fractional error into v3, and crossing into v4
     int n_p = t->Draw(formula, cuts, "", 120, index * 120);
+    //n_p==number of points in the vectors.
+    
     // std::cout << "n_p " << n_p << std::endl;
 
     if (n_p == 0)
@@ -354,25 +360,35 @@ struct rl_db {
 
     vector<double> err;
 
+    //extract pointers to the four things we plotted:
+    //note that these contents will change if we t->Draw() again.
+    double *fraction=t->GetV1(); //numerator/denominator
+    double *errnum=t->GetV2();  // error on the numerator
+    double *errden=t->GetV3();  // error on the denominator
+    double *bunchxing=t->GetV4(); // bunch xing number
+    
+
+    //propagate the errors from the numerator and denominator into the error on the ratio.
     for (std::size_t ip = 0; ip < n_p; ip++) {
-      double errnum = t->GetV2()[ip];
-      double errden = t->GetV3()[ip];
-      err.push_back(fabs(t->GetV1()[ip]) *
-                    sqrt(pow(errnum, 2) + pow(errden, 2)));
-      // std::cout << "ratio " << t->GetV1()[ip] << std::endl;
-      // std::cout << "errnum " << errnum << std::endl;
-      // std::cout << "errden " << errden << std::endl;
-      // std::cout << "err[ip] " << err[ip] << std::endl;
+      err.push_back(fabs(fraction[ip]) *
+                    sqrt(pow(errnum[ip], 2) + pow(errden[ip], 2)));
     }
 
     vector<double> zero_pad(120, 0);
-
-    return new TGraphErrors(n_p, t->GetV4(), t->GetV1(), &zero_pad[0], &err[0]);
+    //plot fraction vs crossing, no error on crossing #.
+    return new TGraphErrors(n_p,bunchxing, fraction, &zero_pad[0], &err[0]);
   }
 
+
+  
   TGraphErrors *get_al(const bool is_blue = true,
                        const TString num = "fbf_bbcwide",
                        const TString den = "fbf_zdcwide") {
+
+    //generate a TGraph with the single-spin asymmetry of "num/den".
+    //as a function of ... run number?  I'm still reading.
+    //with all cuts in 'cuts' applied:
+    
     TCut cuts = default_cuts + crossing_qa_cuts + run_livetime_cuts +
                 crossing_livetime_cuts + single_arm_qa_cuts +
                 north_south_qa_cuts + pileup_cuts + bad_fills + fill_cuts +
@@ -383,17 +399,6 @@ struct rl_db {
     TCut pcuts = cuts && TString(pat + "==1");
     TCut mcuts = cuts && TString(pat + "==-1");
 
-    int npp = t->Draw("runnumber", final_cuts + "bpat*ypat==1");
-    vector<int> runspp;
-    for (std::size_t i = 0; i < npp; i++) {
-      runspp.push_back(t->GetV1()[i]);
-    }
-
-    int npm = t->Draw("runnumber", final_cuts + "bpat*ypat==-1");
-    vector<int> runspm;
-    for (std::size_t i = 0; i < npm; i++) {
-      runspm.push_back(t->GetV1()[i]);
-    }
 
     TGraphErrors *result = new TGraphErrors();
 
@@ -429,6 +434,7 @@ struct rl_db {
 
     int n_points = t->Draw(query, pcuts);
 
+    //load our last four items into vectors so they don't disappear on the next query
     for (std::size_t ip = 0; ip < n_points; ip++) {
       runs_p.push_back(t->GetV1()[ip]);
       cros_p.push_back(t->GetV2()[ip]);
@@ -481,6 +487,21 @@ struct rl_db {
 
     // std::size_t index_pp = 0;
     // std::size_t index_m = 0;
+
+    //record the number of like-spin post-cut bunch-crossings per run, and the list of each run (duplicated for each xing that satisfies it)
+    int npp = t->Draw("runnumber", final_cuts + "bpat*ypat==1");
+    vector<int> runspp;
+    for (std::size_t i = 0; i < npp; i++) {
+      runspp.push_back(t->GetV1()[i]);
+    }
+
+    //record the number of unlike-spin post-cut bunch-crossings per run and the list of each run (duplicated for each xing that satisfies it). 
+    int npm = t->Draw("runnumber", final_cuts + "bpat*ypat==-1");
+    vector<int> runspm;
+    for (std::size_t i = 0; i < npm; i++) {
+      runspm.push_back(t->GetV1()[i]);
+    }
+    
 
     map<int, int>::iterator rit = m.begin();
 
