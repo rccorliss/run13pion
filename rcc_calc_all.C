@@ -26,7 +26,7 @@ void rcc_calc_all(const int runnumber = 398149,
   TH2F *hRunYieldByBunchAndPt=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
    
   //load run scalers from the spindb, do some error checks on them
-  gSystem->Load("libuspin.so");
+  //handled in the macro that runs this:  gSystem->Load("libuspin.so");
   SpinDBContent spin_cont;
   SpinDBOutput spin_out("phnxrc");
   spin_out.StoreDBContent(runnumber, runnumber);
@@ -40,10 +40,10 @@ void rcc_calc_all(const int runnumber = 398149,
  
   // for each bunch, accumulate yields and bunch info into the appropriate spinpattern grouping:
   TH1F *hYieldByPtAndSpin[2][2];
-  hYieldByPtAndSpin[0][0]=new TH1F("hYieldByPtNN","Pion Yield by ptbin for B-,Y-",ptbins,pt_limits);
-  hYieldByPtAndSpin[1][0]=new TH1F("hYieldByPtPN","Pion Yield by ptbin for B+,Y-",ptbins,pt_limits);
-  hYieldByPtAndSpin[0][1]=new TH1F("hYieldByPtNP","Pion Yield by ptbin for B-,Y+",ptbins,pt_limits);
-  hYieldByPtAndSpin[1][1]=new TH1F("hYieldByPtPP","Pion Yield by ptbin for B+,Y+",ptbins,pt_limits);
+  hYieldByPtAndSpin[0][0]=new TH1F("hYieldByPtNN","Pion Yield by ptbin for B-,Y-",nptbins,pt_limits);
+  hYieldByPtAndSpin[1][0]=new TH1F("hYieldByPtPN","Pion Yield by ptbin for B+,Y-",nptbins,pt_limits);
+  hYieldByPtAndSpin[0][1]=new TH1F("hYieldByPtNP","Pion Yield by ptbin for B-,Y+",nptbins,pt_limits);
+  hYieldByPtAndSpin[1][1]=new TH1F("hYieldByPtPP","Pion Yield by ptbin for B+,Y+",nptbins,pt_limits);
 
   //
   double weighted_bpol_sum[2][2];
@@ -68,7 +68,7 @@ void rcc_calc_all(const int runnumber = 398149,
     spin_cont.GetPolarizationYellow(cad_i, ypol, ypolerr, ypolsys);
     int bspin = spin_cont.GetSpinPatternBlue(cad_i); //helicity of blue bunch
     int yspin = spin_cont.GetSpinPatternYellow(cad_i); //helicity of yellow bunch
-    if (bspin>1 || bspin==0 || yspin > 1 || yspin=0) continue; // skip the empty and unpolarized crossings.
+    if (bspin>1 || bspin==0 || yspin > 1 || yspin==0) continue; // skip the empty and unpolarized crossings.
     int bspinbin=(bspin>0);//0 for neg. helicity, 1 for pos. helicity.
     int yspinbin=(yspin>0);
     
@@ -123,10 +123,10 @@ void rcc_calc_all(const int runnumber = 398149,
   TH1F* hNumer=new TH1F("hNumer","Numerator of ALL",nptbins,pt_limits);
 
   //sum the numerator and denominator for the ALL:
-  TH1F *hLikeSum= new TH1F(hYieldByPtAndSpin[0][0]);
+  TH1F *hLikeSum= TH1F::Copy(hYieldByPtAndSpin[0][0]);
   hLikeSum.Add(hYieldByPtAndSpin[1][1]);
 
-  TH1F *hUnlikeSum= new TH1F(hYieldByPtAndSpin[0][1]);
+  TH1F *hUnlikeSum= TH1F::Copy(hYieldByPtAndSpin[0][1]);
   hUnlikeSum.Add(hYieldByPtAndSpin[1][0]);
 	       
   hNumer.Add(hLikeSum);
