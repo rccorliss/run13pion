@@ -1,4 +1,7 @@
-
+#include "TString.h"
+#include "TFile.h"
+#include "TH2F.h"
+#include "TH1F.h"
 
 void rcc_calc_all(const int runnumber = 398149,
 			 const char * inputdir="/",
@@ -12,22 +15,10 @@ void rcc_calc_all(const int runnumber = 398149,
   double pt_limits[nptbins+1] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 
  
-  /*
-   TH2F *hYieldByPtAnd[ndivs];
-  for (int i=0;i<ndivs;i++){
-    hYieldByPtAnd[i]=new TH2F(Form("hYieldByPtAndDivision%d",i),
-			      Form("Pion yield by ptbin and %s;pt;%s",binname[i],binname[i]),
-			      ptbins,pt_limits,
-			      sparsebins[i],sparsebinsmin[i],sparsebinsmax[i]);
-  }
-  */
-
-  
 
   //get run cluster yield
-  //revise this yield filename for the next pass.  It was a way to emulate pedro's directories.
   TString yieldfname = inputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
-  yieldfname += runnum;
+  yieldfname += runnumber;
   yieldfname += ".MPC.yields.rcc.hist.root";
   TFile *yieldfile = TFile::Open(yieldfname);
   TH2F *hRunYieldByBunchAndPt=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
@@ -147,7 +138,7 @@ void rcc_calc_all(const int runnumber = 398149,
   hAllByPt->Scale(1/(bpol_ALL*ypol_ALL));
 
   TString allfname = outputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
-  allfname += runnum;
+  allfname += runnumber;
   allfname += ".MPC.ALL.rcc.hist.root";
   TFile *allfile = TFile::Open(allfname,"RECREATE");
   allfile->cd();
