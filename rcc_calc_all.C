@@ -22,7 +22,11 @@ void rcc_calc_all(const int runnumber = 398149,
   TString yieldfname = inputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
   yieldfname += runnumber;
   yieldfname += ".MPC.yields.rcc.hist.root";
-  TFile *yieldfile = TFile::Open(yieldfname);
+  TFile *yieldfile = NULL;
+  yieldfile=TFile::Open(yieldfname);
+  if (yieldfile==NULL || yieldfile->IsZombie()|| !yieldfile->GetNkeys())
+    return;
+
   TH2F *hRunYieldByBunchAndPt=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
    
   //load run scalers from the spindb, do some error checks on them

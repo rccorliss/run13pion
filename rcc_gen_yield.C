@@ -113,8 +113,9 @@ void rcc_gen_yield(int runnum,
   fullfile += runnum;
   fullfile += ".root";
 
-  TFile *rootin = new TFile(fullfile, "READONLY");
-  if ((rootin->IsZombie()) || !rootin->GetNkeys())
+  TFile *rootin = NULL;
+  rootin=TFile::Open(fullfile, "READONLY");
+  if (rootin==NULL || rootin->IsZombie()|| !rootin->GetNkeys())
     return;
 
   ttree = (TTree *)rootin->Get("T");
