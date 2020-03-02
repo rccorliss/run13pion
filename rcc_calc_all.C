@@ -124,16 +124,16 @@ void rcc_calc_all(const int runnumber = 398149,
 
   //sum the numerator and denominator for the ALL:
   TH1F *hLikeSum= TH1F::Copy(hYieldByPtAndSpin[0][0]);
-  hLikeSum.Add(hYieldByPtAndSpin[1][1]);
+  hLikeSum->Add(hYieldByPtAndSpin[1][1]);
 
   TH1F *hUnlikeSum= TH1F::Copy(hYieldByPtAndSpin[0][1]);
-  hUnlikeSum.Add(hYieldByPtAndSpin[1][0]);
+  hUnlikeSum->Add(hYieldByPtAndSpin[1][0]);
 	       
-  hNumer.Add(hLikeSum);
-  hNumer.Add(hUnlikeSum,-rellumi);
+  hNumer->Add(hLikeSum);
+  hNumer->Add(hUnlikeSum,-rellumi);
 
-  hDenom.Add(hLikeSum);
-  hDenom.Add(hUnlikeSum,rellumi);
+  hDenom->Add(hLikeSum);
+  hDenom->Add(hUnlikeSum,rellumi);
 
   hAllByPt->Add(hNumer);
   hAllByPt->Divide(hDenom);
