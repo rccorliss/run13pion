@@ -107,11 +107,9 @@ recoConsts *rc;
 void rcc_gen_yield(int runnum,
 		   const char * inputdir="/",
 		   const char * outputdir="/phenix/spin/spin1/phnxsp01/rosscorliss/trees/") {
-) {
   //MB is at:
   //        "/phenix/spin/phnxsp01/pmontu/taxi/Run13pp510MinBias/10699/data/";
-  else
-    fullfile = inputdir;//"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/";
+  TString fullfile = inputdir;//"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/";
   fullfile += runnum;
   fullfile += ".root";
 
