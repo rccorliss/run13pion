@@ -154,7 +154,7 @@ void rcc_calc_all(const int runnumber = 398149,
   allfile->cd();
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
-      hYieldByPtAndSpin[i][i]->Write();
+      hYieldByPtAndSpin[i][j]->Write();
     }
   }
   hAllByPt->Write();
