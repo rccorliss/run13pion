@@ -51,6 +51,8 @@ void rcc_draw_all_plots()
       int sourcebin=temp->FindBin(ptmid);
       double asym=temp->GetBinContent(sourcebin);
       double err=temp->GetBinError(sourcebin);
+      if (err<1e-6) err=asym; //if no error, assign 100% error for play.
+      if (err<1e-6) continue; //if still no error, the asym was 0.  skip it.
       double err2=err*err;
       double w=1/err2;
       hWeightedAsym->Fill(ptmid,asym*w);
