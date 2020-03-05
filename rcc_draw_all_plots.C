@@ -50,7 +50,7 @@ void rcc_draw_all_plots()
       double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
       int sourcebin=temp->FindBin(ptmid);
       double asym=temp->GetBinContent(sourcebin);
-      double err=temp->GetBinError(sourcebin);
+      double err=1;//temp->GetBinError(sourcebin);
       if (err<1e-6) err=asym; //if no error, assign 100% error for play.
       if (err<1e-6) continue; //if still no error, the asym was 0.  skip it.
       double err2=err*err;
