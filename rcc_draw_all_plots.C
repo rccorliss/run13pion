@@ -15,8 +15,8 @@ void rcc_draw_all_plots()
 
 
   int ngoodruns=0;
-  int maxruns=1000;
-  int maxptbins=10;
+  const int maxruns=1000;
+  const int maxptbins=10;
   double rawAsym[maxruns*maxptbins];
   double *asymByBin[maxptbins];
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
