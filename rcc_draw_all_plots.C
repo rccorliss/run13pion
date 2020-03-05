@@ -20,6 +20,7 @@ void rcc_draw_all_plots()
   double rawAsym[maxruns*maxptbins];
   double *asymByBin[maxptbins];
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
+  TH1F *hWeightSum=new TH1F("hWeightSum","Sum of Weights vs pt",nptbins,pt_limits);
   hWeightedAsym->Sumw2();
   
   for (int i=0;i<maxptbins;i++)
