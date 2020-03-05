@@ -69,9 +69,15 @@ void rcc_draw_all_plots()
   for (int i=0;i<nptbins;i++){
     double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
     int sourcebin=hWeightedAsym->FindBin(ptmid);
+    double sumasym=hWeightedAsym->GetBinContent(sourcebin);
+    double sumweight=hWeightSum->GetBinContent(sourcebin);
+    if (sumweight==0) continue; //skip if we have no weight in this bin.
+    double asym=sumasym/sumweight;
     //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
     double err=sqrt(1/hWeightSum->GetBinContent(sourcebin));
-    
+    if (err>1) continue; //if large error,s omething went wrong.  skip it.
+
+    hWeightedAsym->SetBinContent(sourcebin,asym);
     hWeightedAsym->SetBinError(sourcebin,err);
     }
 
