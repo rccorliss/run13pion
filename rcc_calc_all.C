@@ -119,6 +119,9 @@ void rcc_calc_all(const int runnumber = 398149,
   double bpol_sum=0;
   double ypol_sum=0;
   double zdc_sum=0;
+  double bpol_error_numerator=0;
+  double ypol_error_numerator=0;
+
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
       average_bpol[i][j]=weighted_bpol_sum[i][j]/zdc_narrow_sum[i][j];
@@ -136,10 +139,10 @@ void rcc_calc_all(const int runnumber = 398149,
       ypol_sum+=weighted_ypol_sum[i][j];
       bpol_error_numerator+=(bpolerr2_zdc2_sum[i][j]
 			     +bpol2_zdc_sum[i][j]
-			     -average_bpol[i][j]*average_bpol[i][j]*zdc_narrow_sum[i][j])
+			     -average_bpol[i][j]*average_bpol[i][j]*zdc_narrow_sum[i][j]);
       ypol_error_numerator+=(ypolerr2_zdc2_sum[i][j]
 			     +ypol2_zdc_sum[i][j]
-			     -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j])
+			     -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j]);
       zdc_sum+=zdc_narrow_sum[i][j];
     }
   }
@@ -166,12 +169,12 @@ void rcc_calc_all(const int runnumber = 398149,
   hLikeSum->Add(hYieldByPtAndSpin[0][0]);
   hLikeSum->Add(hYieldByPtAndSpin[1][1]);
 
-  TH1F *hScaledUnlikeSum=new TH1F("hUnlikeSum","Sum of +- and -+ bins of pion yield",nptbins,pt_limits);
+  TH1F *hUnlikeSum=new TH1F("hUnlikeSum","Sum of +- and -+ bins of pion yield",nptbins,pt_limits);
   hUnlikeSum->Add(hYieldByPtAndSpin[1][0]);
   hUnlikeSum->Add(hYieldByPtAndSpin[0][1]);
   for (int i=0;i<nptbins;i++){
     double rawyield=hScaledUnlikeSum->GetBinContent(i);
-    double err=sqrt(rawyield*rawyield*rellumi_err*rellumi_err+rellum*rellumi*rawyield);
+    double err=sqrt(rawyield*rawyield*rellumi_err*rellumi_err+rellumi*rellumi*rawyield);
     hUnlikeSum->SetBinContent(i+1,rawyield*rellumi);
     hUnlikeSum->SetBinError(i+1,err);
   }
