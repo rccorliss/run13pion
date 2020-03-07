@@ -83,8 +83,22 @@ void rcc_calc_all(const int runnumber = 398149,
     long long scaler_zdc_narrow = spin_cont.GetScalerZdcNarrow(cad_i);
 
     //accumulate average polarizations by spin configuration:
-    weighted_bpol_sum[bspinbin][yspinbin]+=bpol*scaler_zdc_narrow;
-    weighted_ypol_sum[bspinbin][yspinbin]+=ypol*scaler_zdc_narrow;
+    double bpol_times_zdc=bpol*scaler_zdc_narrow;
+    double ypol_times_zdc=ypol*scaler_zdc_narrow;
+    weighted_bpol_sum[bspinbin][yspinbin]+=bpol_times_zdc;
+    weighted_ypol_sum[bspinbin][yspinbin]+=ypol_times_zdc;
+
+    //accumulate various moments of the weighted sums for error propagation:
+    //sum of (square of zdc counts times square of pol error)
+    double bpolerr_times_zdc=bpolerr*scaler_zdc_narrow;
+    double ypolerr_times_zdc=ypolerr*scaler_zdc_narrow;
+    bpolerr2_zdc2_sum[bspinbin][yspinbin]+=bpolerr_times_zdc*bpolerr_times_zdc;
+    ypolerr2_zdc2_sum[bspinbin][yspinbin]+=ypolerr_times_zdc*ypolerr_times_zdc;
+
+    //sum of (square of polarization times square of zdc error):
+    bpol2_zdc_sum[bspinbin][yspinbin]+=bpol*bpol_times_zdc;
+    ypol2_zdc_sum[bspinbin][yspinbin]+=ypol*ypol_times_zdc;
+
     
     //todo:  use corrected relative luminosity following pedro!
     zdc_narrow_sum[bspinbin][yspinbin]+=scaler_zdc_narrow;
@@ -109,43 +123,98 @@ void rcc_calc_all(const int runnumber = 398149,
     for (int j=0;j<2;j++){
       average_bpol[i][j]=weighted_bpol_sum[i][j]/zdc_narrow_sum[i][j];
       average_ypol[i][j]=weighted_ypol_sum[i][j]/zdc_narrow_sum[i][j];
+      average_bpol_err[i][j]=sqrt(bpolerr2_zdc2_sum[i][j]
+				  +bpol2_zdc_sum[i][j]
+				  -average_bpol[i][j]*average_bpol[i][j]*zdc_narrow_sum[i][j]
+				  )/zdc_narrow_sum[i][j];
+      average_ypol_err[i][j]=sqrt(ypolerr2_zdc2_sum[i][j]
+				  +ypol2_zdc_sum[i][j]
+				  -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j]
+				  )/zdc_narrow_sum[i][j];
+      
       bpol_sum+=weighted_bpol_sum[i][j];
       ypol_sum+=weighted_ypol_sum[i][j];
+      bpol_error_numerator+=(bpolerr2_zdc2_sum[i][j]
+			     +bpol2_zdc_sum[i][j]
+			     -average_bpol[i][j]*average_bpol[i][j]*zdc_narrow_sum[i][j])
+      ypol_error_numerator+=(ypolerr2_zdc2_sum[i][j]
+			     +ypol2_zdc_sum[i][j]
+			     -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j])
       zdc_sum+=zdc_narrow_sum[i][j];
     }
   }
   //averaged over all spin states:
   double bpol_ALL=bpol_sum/zdc_sum;
   double ypol_ALL=ypol_sum/zdc_sum;
+  double bpol_ALL_err=sqrt(bpol_error_numerator)/zdc_sum;
+  double ypol_ALL_err=sqrt(ypol_error_numerator)/zdc_sum;
 
 
   //this should use the corrected luminosity, not the straightforward one:
   double rellumi=(zdc_narrow_sum[0][0]+zdc_narrow_sum[1][1])/(zdc_narrow_sum[0][1]+zdc_narrow_sum[1][0]);
+  double rellumi_err=rellumi*sqrt(1/(zdc_narrow_sum[0][0]+zdc_narrow_sum[1][1])
+				  +1/(zdc_narrow_sum[0][1]+zdc_narrow_sum[1][0]));
 
   TH1F* hAllByPt=new TH1F("hAllByPt","A_LL by pT;pT;A_LL",nptbins,pt_limits);
   TH1F* hDenom=new TH1F("hDenom","Denominator of ALL",nptbins,pt_limits);
   TH1F* hNumer=new TH1F("hNumer","Numerator of ALL",nptbins,pt_limits);
+  
+  TH1F* hRelLumi=new TH1F("hRelLumi","relative luminosity for multiplyin'",nptbins,pt_limits);
 
   //sum the numerator and denominator for the ALL:
   TH1F *hLikeSum=new TH1F("hLikeSum","Sum of ++ and -- bins of pion yield",nptbins,pt_limits);
   hLikeSum->Add(hYieldByPtAndSpin[0][0]);
   hLikeSum->Add(hYieldByPtAndSpin[1][1]);
 
-  TH1F *hUnlikeSum=new TH1F("hUnlikeSum","Sum of +- and -+ bins of pion yield",nptbins,pt_limits);
+  TH1F *hScaledUnlikeSum=new TH1F("hUnlikeSum","Sum of +- and -+ bins of pion yield",nptbins,pt_limits);
   hUnlikeSum->Add(hYieldByPtAndSpin[1][0]);
   hUnlikeSum->Add(hYieldByPtAndSpin[0][1]);
-
- 
-	       
+  for (int i=0;i<nptbins;i++){
+    double rawyield=hScaledUnlikeSum->GetBinContent(i);
+    double err=sqrt(rawyield*rawyield*rellumi_err*rellumi_err+rellum*rellumi*rawyield);
+    hUnlikeSum->SetBinContent(i+1,rawyield*rellumi);
+    hUnlikeSum->SetBinError(i+1,err);
+  }
+  
   hNumer->Add(hLikeSum);
   hNumer->Add(hUnlikeSum,-rellumi);
 
   hDenom->Add(hLikeSum);
   hDenom->Add(hUnlikeSum,rellumi);
 
+  
+  hAllByPt->Sumw2;
   hAllByPt->Add(hNumer);
   hAllByPt->Divide(hDenom);
   hAllByPt->Scale(1/(bpol_ALL*ypol_ALL));
+
+  //propagate the messy errors:
+  for (int i=0;i<nptbins;i++){
+    //'t' just to avoid repeating a variable I've named elsewhere in this mess.
+    double tunlike=hUnlikeSum->GetBinContent(i+1);
+    double trelunlike=tunlike*rellumi;
+    double tlike=hScaledUnlikeSum->GetBinContent(i+1);
+    double tasym=hAllByPt->GetBinContent(i+1);
+    
+    double tbpolerrterm=-tasym/bpol_ALL * bpol_ALL_err;
+    double typolerrterm=-tasym/ypol_ALL * ypol_ALL_err;
+
+    double tlikesumerrterm=tasym*2*trelunlike/(tlike*tlike-trelunlike*trelunlike) * tlike;
+
+    double tunlikesumerrterm=-tasym*(2*trelunlike*tunlike)/(tlike*tlike-trelunlike*trelunlike) * tunlike;
+
+    double trellumierrterm=-tasym*(2*trelunlike*rellumi)/(tlike*tlike-trelunlike*trelunlike) * rellumi_err;
+
+    double err2=(tbpolerrterm*tbpolerrterm
+		 +typolerrterm*typolerrterm
+		 +tlikesumerrterm*tlikesumerrterm
+		 +tunlikesumerrterm*tunlikesumerrterm
+		 +trellumierrterm*trellumierrterm);
+    
+    double err=sqrt(err2);
+    hAllByPt->SetBinError(i+1,err);
+  }
+  
 
   TString allfname = outputdir;//"/direct/phenix+u/rosscorliss/pion_ana/output/"
   allfname += runnumber;
