@@ -199,6 +199,7 @@ void rcc_calc_all(const int runnumber = 398149,
     double tbpolerrterm=-tasym/bpol_ALL * bpol_ALL_err;
     double typolerrterm=-tasym/ypol_ALL * ypol_ALL_err;
 
+    //note that this particular way of expressing it adds some 0/0 poles that root may not resolve correctly
     double tlikesumerrterm=tasym*2*trelunlike/(tlike*tlike-trelunlike*trelunlike) * tlike;
 
     double tunlikesumerrterm=-tasym*(2*trelunlike*tunlike)/(tlike*tlike-trelunlike*trelunlike) * tunlike;
