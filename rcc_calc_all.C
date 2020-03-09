@@ -224,8 +224,10 @@ void rcc_calc_all(const int runnumber = 398149,
     hAllByPt->SetBinError(i+1,err);
     if (isnan(err2))
 	hAllByPt->SetBinError(i+1,1);
-    if (tlike+tunlike==0)
+    if (tlike+trelunlike==0){
+      printf("bin %d has sum=%f+%f=0\n",i,tlike,trelunlike);
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.
+    }
   }
   
 
