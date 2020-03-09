@@ -222,7 +222,7 @@ void rcc_calc_all(const int runnumber = 398149,
     
     double err=sqrt(err2);
     hAllByPt->SetBinError(i+1,err);
-    if (TMath::IsNaN(hAllByPt->GetBinContent(i+1)))
+    if (isnan(hAllByPt->GetBinContent(i+1)))
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.
   }
   
