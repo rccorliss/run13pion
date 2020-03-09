@@ -217,8 +217,8 @@ void rcc_calc_all(const int runnumber = 398149,
 
     double err2=(tbpolerrterm*tbpolerrterm
 		 +typolerrterm*typolerrterm
-		 +tlikesumcoeff*tlikesumcoeff*tlikesum
-		 +tunlikesumcoeff*tunlikesumcoeff*tunlikesum
+		 +tlikesumcoeff*tlikesumcoeff*tlike
+		 +tunlikesumcoeff*tunlikesumcoeff*tunlike
 		 +trellumierrterm*trellumierrterm);
     
     double err=sqrt(err2);
