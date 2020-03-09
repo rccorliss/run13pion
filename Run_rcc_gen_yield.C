@@ -24,6 +24,6 @@ void Run_rcc_gen_yield()
     //rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/","./yields/");
     rcc_calc_all(filename,"./yields/","./asyms/");
       
-    }
+   
   }
 }
