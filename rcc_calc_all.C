@@ -202,28 +202,30 @@ void rcc_calc_all(const int runnumber = 398149,
     double tunlike=hUnlikeSum->GetBinContent(i+1);
     double trelunlike=tunlike*rellumi;
     double tlike=hLikeSum->GetBinContent(i+1);
+    double tsum=tlike+trelunlike;
+    double tdiff=tlike-trelunlike;
     double tasym=hAllByPt->GetBinContent(i+1);
     
     double tbpolerrterm=-tasym/bpol_ALL * bpol_ALL_err;
     double typolerrterm=-tasym/ypol_ALL * ypol_ALL_err;
 
     //note that this particular way of expressing it adds some 0/0 poles that root may not resolve correctly
-    double tlikesumerrterm=tasym*2*trelunlike/(tlike*tlike-trelunlike*trelunlike) * tlike;
+    double tlikesumcoeff=1/(bpol_ALL*ypol_ALL)*(2*trelunlike)/(tsum*tsum);
+    double tunlikesumcoeff=-1/(bpol_ALL*ypol_ALL)*(2*trelunlike*rellumi)/(tsum*tsum);
+    double trellumierrterm=-1/(bpol_ALL*ypol_ALL)*(2*trelunlike*tunlike)/(tsum*tsum)*rellumi_err;
 
-    double tunlikesumerrterm=-tasym*(2*trelunlike*tunlike)/(tlike*tlike-trelunlike*trelunlike) * tunlike;
-
-    double trellumierrterm=-tasym*(2*trelunlike*rellumi)/(tlike*tlike-trelunlike*trelunlike) * rellumi_err;
 
     double err2=(tbpolerrterm*tbpolerrterm
 		 +typolerrterm*typolerrterm
-		 +tlikesumerrterm*tlikesumerrterm
-		 +tunlikesumerrterm*tunlikesumerrterm
+		 +tlikesumcoeff*tlikesumcoeff*tlikesum
+		 +tunlikesumcoeff*tunlikesumcoeff*tunlikesum
 		 +trellumierrterm*trellumierrterm);
     
     double err=sqrt(err2);
     hAllByPt->SetBinError(i+1,err);
+    hAllByPt->SetBinContent(i+1,abs(tasym));//temporary so I can set log scale and see what's going on.
     if (isnan(err2))
-	hAllByPt->SetBinError(i+1,1);
+	hAllByPt->SetBinError(i+1,0.00001);
     if (tlike+trelunlike==0){
       printf("bin %d has sum=%f+%f=0\n",i,tlike,trelunlike);
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.
