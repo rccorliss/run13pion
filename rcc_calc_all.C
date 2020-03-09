@@ -117,8 +117,10 @@ void rcc_calc_all(const int runnumber = 398149,
 
 
   //get the average polarizations for each spin state:
-  double average_bpol[2][2];
-  double average_ypol[2][2];
+  double average_bpol[2][2]; //weighted average polarization for particular spin pairing
+  double average_ypol[2][2]; //weightedaverage polarization for particular spin pairing
+  double average_bpol_err[2][2]; //err on average polarization for that spin pairing.
+  double average_ypol_err[2][2];//err on average polarization for that spin pairing.
   double bpol_sum=0;
   double ypol_sum=0;
   double zdc_sum=0;
@@ -176,9 +178,8 @@ void rcc_calc_all(const int runnumber = 398149,
   hUnlikeSum->Add(hYieldByPtAndSpin[1][0]);
   hUnlikeSum->Add(hYieldByPtAndSpin[0][1]);
   for (int i=0;i<nptbins;i++){
-    double rawyield=hScaledUnlikeSum->GetBinContent(i);
+    double rawyield=hUnlikeSum->GetBinContent(i+1);
     double err=sqrt(rawyield*rawyield*rellumi_err*rellumi_err+rellumi*rellumi*rawyield);
-    hUnlikeSum->SetBinContent(i+1,rawyield*rellumi);
     hUnlikeSum->SetBinError(i+1,err);
   }
   
@@ -189,12 +190,13 @@ void rcc_calc_all(const int runnumber = 398149,
   hDenom->Add(hUnlikeSum,rellumi);
 
   
-  hAllByPt->Sumw2;
+  hAllByPt->Sumw2();
   hAllByPt->Add(hNumer);
   hAllByPt->Divide(hDenom);
   hAllByPt->Scale(1/(bpol_ALL*ypol_ALL));
 
-  //propagate the messy errors:
+  //because numerator and denominator have correlated errors, sumw2 isn't sufficient to get the right uncertainty
+  //so we do the math elsewhere and implement that here:
   for (int i=0;i<nptbins;i++){
     //'t' just to avoid repeating a variable I've named elsewhere in this mess.
     double tunlike=hUnlikeSum->GetBinContent(i+1);
