@@ -52,7 +52,10 @@ void rcc_calc_all(const int runnumber = 398149,
   //
   double weighted_bpol_sum[2][2];
   double weighted_ypol_sum[2][2];
- 
+  double bpolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
+  double ypolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
+  double bpol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
+  double ypol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
 
   //do I have a scale separation between sum and contribution?  only 120 bins, so no.
   double zdc_narrow_sum[2][2];
