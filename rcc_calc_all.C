@@ -201,7 +201,7 @@ void rcc_calc_all(const int runnumber = 398149,
     //'t' just to avoid repeating a variable I've named elsewhere in this mess.
     double tunlike=hUnlikeSum->GetBinContent(i+1);
     double trelunlike=tunlike*rellumi;
-    double tlike=hScaledUnlikeSum->GetBinContent(i+1);
+    double tlike=hLikeSum->GetBinContent(i+1);
     double tasym=hAllByPt->GetBinContent(i+1);
     
     double tbpolerrterm=-tasym/bpol_ALL * bpol_ALL_err;
