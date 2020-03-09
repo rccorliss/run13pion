@@ -224,7 +224,7 @@ void rcc_calc_all(const int runnumber = 398149,
     hAllByPt->SetBinError(i+1,err);
     if (isnan(err2))
 	hAllByPt->SetBinError(i+1,1);
-    if (tlike+tunlike==0))
+    if (tlike+tunlike==0)
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.
   }
   
