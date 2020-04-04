@@ -21,6 +21,8 @@ void rcc_draw_all_plots()
   double *asymByBin[maxptbins];
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
   TH1F *hWeightSum=new TH1F("hWeightSum","Sum of Weights vs pt",nptbins,pt_limits);
+  TH2F *hWeightedAsymLumi=new TH2F("hWeightedAsym","Weighted average asymmetry vs pt",200,0,1e10,nptbins,pt_limits);
+  TH2F *hWeightSumLumi=new TH2F("hWeightSum","Sum of Weights vs pt",200,0,1e10,nptbins,pt_limits);
   hWeightedAsym->Sumw2();
   
   for (int i=0;i<maxptbins;i++)
@@ -39,20 +41,41 @@ void rcc_draw_all_plots()
     if ((histfile==NULL) || histfile->IsZombie() || !histfile->GetNkeys()) continue;
 
     
-    TH1F *temp=0;
+    TH1F *temp=0, *hLumi=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
+    hLumi=((TH1F*)(histfile->Get("hTotalLumi")));
+    double lumi=hLumi->Sum();//does this work?  Tired.
 
 
     //two things I can do:
-    //1) plot vs pt and run
+    //1) plot vs pt and runnumber
+    
+    //1.1) plot vs pt for 'low' and 'high' luminosity:
+    for (int i=0;i<nptbins;i++){
+      double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
+      int sourcebin=temp->FindBin(ptmid);
+      double asym=temp->GetBinContent(sourcebin);
+      double err=temp->GetBinError(sourcebin);
+      if (err<1e-9) err=asym; //if no error, assign 100% error for play.
+      if (err<1e-9) {
+	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
+      }
+      double err2=err*err;
+      double w=1/err2;
+      hWeightedAsymLumi->Fill(lumi,ptmid,asym*w);
+      hWeightSumLumi->Fill(lumi,ptmid,w);
+
+      
     //2) plot vs pt with sumw2.
     for (int i=0;i<nptbins;i++){
       double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
       int sourcebin=temp->FindBin(ptmid);
       double asym=temp->GetBinContent(sourcebin);
       double err=temp->GetBinError(sourcebin);
-      if (err<1e-6) err=asym; //if no error, assign 100% error for play.
-      if (err<1e-6) continue; //if still no error, the asym was 0.  skip it.
+      if (err<1e-9) err=asym; //if no error, assign 100% error for play.
+      if (err<1e-9) {
+	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
+      }
       double err2=err*err;
       double w=1/err2;
       hWeightedAsym->Fill(ptmid,asym*w);

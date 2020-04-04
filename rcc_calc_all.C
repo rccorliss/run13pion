@@ -41,7 +41,10 @@ void rcc_calc_all(const int runnumber = 398149,
   int badrun = spin_cont.GetBadRunFlag();
   int cross_shift = spin_cont.GetCrossingShift(); //spindb stores data in the C-AD convention, which doesn't match the PHENIX numbering.  This is the relative offset.
 
- 
+
+  //for future use, accumulate the luminosity in a 1x2 histogram:
+  TH1F *hTotalLumi=new TH1F("hTotalLumi","Unlike (like) zdc-narrow lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
+  
   // for each bunch, accumulate yields and bunch info into the appropriate spinpattern grouping:
   TH1F *hYieldByPtAndSpin[2][2];
   hYieldByPtAndSpin[0][0]=new TH1F("hYieldByPtNN","Pion Yield by ptbin for B-,Y-",nptbins,pt_limits);
@@ -90,6 +93,9 @@ void rcc_calc_all(const int runnumber = 398149,
     long long scaler_bbc_nocut  =  spin_cont.GetScalerBbcNoCut(cad_i);
     long long  scaler_zdc_wide   =  spin_cont.GetScalerZdcWide(cad_i);
     long long scaler_zdc_narrow = spin_cont.GetScalerZdcNarrow(cad_i);
+
+    //accumulate total zdc narrow counts:
+    hTotalLumi->Fill((bspinbin==yspinbin),scaler_zdc_narrow);
 
     //accumulate average polarizations by spin configuration:
     double bpol_times_zdc=bpol*scaler_zdc_narrow;
@@ -155,13 +161,17 @@ void rcc_calc_all(const int runnumber = 398149,
 			     +ypol2_zdc_sum[i][j]
 			     -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j]);
       zdc_sum+=zdc_narrow_sum[i][j];
+
+      //uncorrected lumi scalers, for like and unlike:
+      hTotalLumi->Fill((i==j),zdc_narrow_sum[i][j]);      
     }
   }
-  //averaged over all spin states:
+  //polarization averaged over all spin states:
   double bpol_ALL=bpol_sum/zdc_sum;
   double ypol_ALL=ypol_sum/zdc_sum;
   double bpol_ALL_err=sqrt(bpol_error_numerator)/zdc_sum;
   double ypol_ALL_err=sqrt(ypol_error_numerator)/zdc_sum;
+
 
 
   //this should use the corrected luminosity, not the straightforward one:
@@ -249,6 +259,7 @@ void rcc_calc_all(const int runnumber = 398149,
       hYieldByPtAndSpin[i][j]->Write();
     }
   }
+  hTotalLumi->Write();
   hAllByPt->Write();
 
   
