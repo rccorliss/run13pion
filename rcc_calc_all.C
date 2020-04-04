@@ -44,7 +44,12 @@ void rcc_calc_all(const int runnumber = 398149,
 
   //for future use, accumulate the luminosity in a 1x2 histogram:
   TH1F *hTotalLumi=new TH1F("hTotalLumi","Unlike (like) zdc-narrow lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
-  
+  TH2F *hPolarizationBySpin[2][2];
+  hPolarizationBySpin[0][0]=new TH2F("hPolarizationBySpinNN","Polarization for B-,Y-;B;Y",100,-1,1,100,-1,1);
+  hPolarizationBySpin[1][0]=new TH2F("hPolarizationBySpinPN","Polarization for B+,Y-;B;Y",100,-1,1,100,-1,1);
+  hPolarizationBySpin[0][1]=new TH2F("hPolarizationBySpinNP","Polarization for B-,Y+;B;Y",100,-1,1,100,-1,1);
+  hPolarizationBySpin[1][1]=new TH2F("hPolarizationBySpinPP","Polarization for B+,Y+;B;Y",100,-1,1,100,-1,1);
+
   // for each bunch, accumulate yields and bunch info into the appropriate spinpattern grouping:
   TH1F *hYieldByPtAndSpin[2][2];
   hYieldByPtAndSpin[0][0]=new TH1F("hYieldByPtNN","Pion Yield by ptbin for B-,Y-",nptbins,pt_limits);
@@ -96,6 +101,9 @@ void rcc_calc_all(const int runnumber = 398149,
 
     //accumulate total zdc narrow counts:
     hTotalLumi->Fill((bspinbin==yspinbin),scaler_zdc_narrow);
+
+    //fill bare polarization plot:
+    hPolarizationBySpin[bspinbin][yspinbin]->Fill(bpol,ypol);
 
     //accumulate average polarizations by spin configuration:
     double bpol_times_zdc=bpol*scaler_zdc_narrow;
@@ -257,6 +265,7 @@ void rcc_calc_all(const int runnumber = 398149,
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
       hYieldByPtAndSpin[i][j]->Write();
+      hPolarizationBySpin[i][j]->Write();
     }
   }
   hTotalLumi->Write();
