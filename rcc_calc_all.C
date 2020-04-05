@@ -112,8 +112,15 @@ void rcc_calc_all(const int runnumber = 398149,
     }
     char bbit=(bspin>0);//0 for neg. helicity, 1 for pos. helicity.
     char ybit=(yspin>0);
-    bspinpat+=bbit<<cad_i;
-    yspinpat+=ybit<<cad_i;
+    bspinpat|=(bbit<<(7-cad_i));
+    yspinpat|=(ybit<<(7-cad_i));
+    printf("blue spinpat:%d%d%d%d%d%d%d%d\n",
+	   (bspinpat&128)>0,(bspinpat&64)>0,(bspinpat&32)>0,(bspinpat&16)>0,
+	   (bspinpat&8)>0,(bspinpat&4)>0,(bspinpat&2)>0,(bspinpat&1)>0);
+    printf("yellow spinpat:%d%d%d%d%d%d%d%d\n",
+	   (yspinpat&128)>0,(yspinpat&64)>0,(yspinpat&32)>0,(yspinpat&16)>0,
+	   (yspinpat&8)>0,(yspinpat&4)>0,(yspinpat&2)>0,(yspinpat&1)>0);
+
   }
   int spinpattern=lookupSpinPattern(bspinpat,  yspinpat);
   hTags->Fill("spinpattern",spinpattern);
@@ -323,7 +330,7 @@ void rcc_calc_all(const int runnumber = 398149,
 
 
 int lookupSpinPattern(char bpat, char ypat){
-  //take eight consecutive spinbits, where the lowest bit is the 0th bunch, and the highest bit is the 7th
+  //take eight consecutive spinbits, where the lowest bit is the 7th bunch, and the highest bit is the 0th
   //look these up against the labeled spin patterns and return the correct spin pattern number.
   //assumes '1' = spin up, and '0' = spin down;
 

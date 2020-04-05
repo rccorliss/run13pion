@@ -21,8 +21,8 @@ void rcc_draw_all_plots()
   double *asymByBin[maxptbins];
 
   //some sanity check plots:
-  TH2F *hPolarizationRMS=new TH2F("hPolarizationRMS","RMS of bpol and ypol per run (checks if they vary over the run);bpol RMS;ypol RMS",20,0,1,20,0,1);
-  TH2F *hPolarizationMean=new TH2F("hPolarizationMean","Mean bpol and ypol for each run;bpol,ypol",100,-1,1,100,-1,1);
+  TH2F *hPolarizationRMS=new TH2F("hPolarizationRMS","RMS of bpol and ypol per run (checks if they vary over the run);bpol RMS;ypol RMS",20,0,0.01,20,0,0.01);
+  TH2F *hPolarizationMean=new TH2F("hPolarizationMean","Mean bpol and ypol for each run;bpol;ypol",100,0.2,1,100,0.2,1);
 
 
   //some other monitor plots:
