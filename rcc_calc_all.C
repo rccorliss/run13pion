@@ -342,14 +342,15 @@ int lookupSpinPattern(char bpat, char ypat){
     char bbit=(bpat>>bit)&1;//just the bit'th bit, shifted to the ones place.
     char bnextbit=(bpat>>(bit+1))&1;
     printf("comparing bbits: %d%d\n", bbit,bnextbit);
-    if ( bbit!=(bpat>>(bit+1))&1) {
+    if ( bbit!=bnextbit) {
       printf("parity wrong in spin pattern\n");
       return -2;
     }
     bshort+=bbit<<(bit/2);//make the 'even bits only' object.
     
     char ybit=(ypat>>bit)&1;//just the bit'th bit, shifted to the ones place.
-    if ( ybit!=(ypat>>(bit+1))&1) {
+     char ynextbit=(ypat>>(bit+1))&1;
+   if ( ybit!=ynextbit) {
       printf("parity wrong in spin pattern\n");
       return -2;
     }
