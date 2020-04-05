@@ -114,13 +114,15 @@ void rcc_calc_all(const int runnumber = 398149,
     char ybit=(yspin>0);
     bspinpat|=(bbit<<(7-cad_i));
     yspinpat|=(ybit<<(7-cad_i));
-    printf("blue spinpat:%d%d%d%d%d%d%d%d\n",
-	   (bspinpat&128)>0,(bspinpat&64)>0,(bspinpat&32)>0,(bspinpat&16)>0,
-	   (bspinpat&8)>0,(bspinpat&4)>0,(bspinpat&2)>0,(bspinpat&1)>0);
-    printf("yellow spinpat:%d%d%d%d%d%d%d%d\n",
-	   (yspinpat&128)>0,(yspinpat&64)>0,(yspinpat&32)>0,(yspinpat&16)>0,
-	   (yspinpat&8)>0,(yspinpat&4)>0,(yspinpat&2)>0,(yspinpat&1)>0);
-
+    if(0){
+      //checks to make sure I'm loading the spin pattern correctly.
+      printf("blue spinpat:%d%d%d%d%d%d%d%d\n",
+	     (bspinpat&128)>0,(bspinpat&64)>0,(bspinpat&32)>0,(bspinpat&16)>0,
+	     (bspinpat&8)>0,(bspinpat&4)>0,(bspinpat&2)>0,(bspinpat&1)>0);
+      printf("yellow spinpat:%d%d%d%d%d%d%d%d\n",
+	     (yspinpat&128)>0,(yspinpat&64)>0,(yspinpat&32)>0,(yspinpat&16)>0,
+	     (yspinpat&8)>0,(yspinpat&4)>0,(yspinpat&2)>0,(yspinpat&1)>0);
+    }
   }
   int spinpattern=lookupSpinPattern(bspinpat,  yspinpat);
   hTags->Fill("spinpattern",spinpattern);
@@ -341,7 +343,7 @@ int lookupSpinPattern(char bpat, char ypat){
   for (int bit=0;bit<8;bit+=2){
     char bbit=(bpat>>bit)&1;//just the bit'th bit, shifted to the ones place.
     char bnextbit=(bpat>>(bit+1))&1;
-    printf("comparing bbits: %d%d\n", bbit,bnextbit);
+    //printf("comparing bbits: %d%d\n", bbit,bnextbit);
     if ( bbit!=bnextbit) {
       printf("parity wrong in spin pattern\n");
       return -2;

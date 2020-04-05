@@ -7,6 +7,8 @@ void rcc_draw_all_plots()
 
   const int nptbins=10;
   double pt_limits[nptbins+1] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
+  const int nzdcbins=3;
+  double zdc_limits[nzdcbins+1]={0,2e9,4e9,1e10};
 
 
   
@@ -33,9 +35,15 @@ void rcc_draw_all_plots()
   
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
   TH1F *hWeightSum=new TH1F("hWeightSum","Sum of Weights vs pt",nptbins,pt_limits);
-  TH2F *hWeightedAsymLumi=new TH2F("hWeightedAsym","Weighted average asymmetry vs pt",200,0,1e10,nptbins,pt_limits);
-  TH2F *hWeightSumLumi=new TH2F("hWeightSum","Sum of Weights vs pt",200,0,1e10,nptbins,pt_limits);
   hWeightedAsym->Sumw2();
+
+  //accumulators for asymmetry divided into adc bins
+  TH2F *hWeightedAsymByLumi=new TH2F("hWeightedAsymByLumi","Weighted average asymmetry vs pt",nzdcbins,zdc_limits,nptbins,pt_limits);
+  TH2F *hWeightSumByLumi=new TH2F("hWeightSumByLumi","Sum of Weights vs pt",nzdcbins,zdc_limits,nptbins,pt_limits);
+
+  //accumulators for asymmetry divided into spin patterns bins
+  TH2F *hWeightedAsymBySpinpat=new TH2F("hWeightedAsymBySpinpat","Weighted average asymmetry vs pt",30,0.5,30.5,nptbins,pt_limits);
+  TH2F *hWeightSumBySpinpat=new TH2F("hWeightSumBySpinpat","Sum of Weights vs pt",30,0.5,30.5,nptbins,pt_limits);
   
   for (int i=0;i<maxptbins;i++)
     asymByBin[i]=&(rawAsym[i*maxruns]);
@@ -54,6 +62,8 @@ void rcc_draw_all_plots()
     histfile=new TFile(filename,"READONLY");
     if ((histfile==NULL) || histfile->IsZombie() || !histfile->GetNkeys()) continue;
 
+    TH1F* htags=((TH1F*)(histfile->Get("hTags")));
+    int spinpat=htags->GetBinContent(htags->FindBin("spinpattern"));
   
     TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
@@ -96,6 +106,13 @@ void rcc_draw_all_plots()
       double w=1/err2;
       hWeightedAsym->Fill(ptmid,asym*w);
       hWeightSum->Fill(ptmid,w);
+
+      //add this to a weighted sum for the zdc bin of choice:
+      hWeightedAsymByLumi->Fill(lumi,ptmid,asym*w);
+      hWeightSumByLumi->Fill(lumi,ptmid,w);
+      hWeightedAsymBySpinpat->Fill(spinpat,ptmid,asym*w);
+      hWeightSumBySpinpat->Fill(spinpat,ptmid,w);
+      
       //hErrSum->Fill(ptmid,err2/(asym*asym));
     //eventually, I should move this all to a simple ttree that puts entries in more granular way so I can divvy however I want.
     //Note that if input hist has Sumw2 set, Sumw2 is automatically called for this if not already set.
@@ -104,7 +121,12 @@ void rcc_draw_all_plots()
 
   
   hWeightedAsym->Divide(hWeightSum);
-  
+  hWeightedAsymByLumi->Divide(hWeightSumByLumi);
+  hWeightedAsymBySpinpat->Divide(hWeightSumBySpinPat);
+  //error might be wrong on this one still...
+
+  /*
+//by-hand division that is hopefully superceded by the previous.
   for (int i=0;i<nptbins;i++){
     double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
     int sourcebin=hWeightedAsym->FindBin(ptmid);
@@ -119,11 +141,14 @@ void rcc_draw_all_plots()
     hWeightedAsym->SetBinContent(sourcebin,asym);
     hWeightedAsym->SetBinError(sourcebin,err);
     }
+  */
 
   hWeightedAsym->Draw();
   TFile *outfile=TFile::Open("rcc_draw_all_plots.hist.root","RECREATE");
   outfile->cd();
   hWeightedAsym->Write();
+  hWeightedAsymByLumi->Write();
+  hWeightedAsymBySpinpat->Write();
   hPolarizationRMS->Write();
   hPolarizationMean->Write();
   hZdcNarrowSum->Write();
