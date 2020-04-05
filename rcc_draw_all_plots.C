@@ -63,7 +63,7 @@ void rcc_draw_all_plots()
     if ((histfile==NULL) || histfile->IsZombie() || !histfile->GetNkeys()) continue;
 
     TH1F* htags=((TH1F*)(histfile->Get("hTags")));
-    int spinpat=htags->GetBinContent(htags->FindBin("spinpattern"));
+    int spinpat=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("spinpattern")));
   
     TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
