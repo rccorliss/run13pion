@@ -5,6 +5,9 @@
 #include <SpinDBContent.hh>
 #include <SpinDBOutput.hh>
 
+int lookupSpinPattern(char bpat, char ypat);
+
+
 void rcc_calc_all(const int runnumber = 398149,
 			 const char * inputdir="/",
                          const char * outputdir="/phenix/spin/spin1/phnxsp01/rosscorliss/trees/") {
@@ -27,8 +30,11 @@ void rcc_calc_all(const int runnumber = 398149,
   if (yieldfile==NULL || yieldfile->IsZombie()|| !yieldfile->GetNkeys())
     return;
 
+  //this assumes yields vs pt_limit bins have been put into the following histogram:
   TH2F *hRunYieldByBunchAndPt=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
-   
+  //the rest of the data needed to generate asymmetries are loaded from the spin db.
+
+  
   //load run scalers from the spindb, do some error checks on them
   //handled in the macro that runs this:  gSystem->Load("libuspin.so");
   SpinDBContent spin_cont;
@@ -42,13 +48,25 @@ void rcc_calc_all(const int runnumber = 398149,
   int cross_shift = spin_cont.GetCrossingShift(); //spindb stores data in the C-AD convention, which doesn't match the PHENIX numbering.  This is the relative offset.
 
 
-  //for future use, accumulate the luminosity in a 1x2 histogram:
+  //accumulate a few numbers in a hTags holder:
+  TH1F *hTags=new TH1F("hTags","Various named numbers that can be stored safely as floats",100,0,100);
+  //firstly, the run number, just in case:
+  hTags->Fill("runnumber",runnumber);
+
+  //accumulate the luminosity in a 1x2 histogram:
   TH1F *hTotalLumi=new TH1F("hTotalLumi","Unlike (like) zdc-narrow lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
+
+  //polarizations are actually single-valued across a run, but these accumulate them bunch by bunch
+  //which allows that to be cross-checked for consistency:
   TH2F *hPolarizationBySpin[2][2];
   hPolarizationBySpin[0][0]=new TH2F("hPolarizationBySpinNN","Polarization for B-,Y-;B;Y",100,-1,1,100,-1,1);
   hPolarizationBySpin[1][0]=new TH2F("hPolarizationBySpinPN","Polarization for B+,Y-;B;Y",100,-1,1,100,-1,1);
   hPolarizationBySpin[0][1]=new TH2F("hPolarizationBySpinNP","Polarization for B-,Y+;B;Y",100,-1,1,100,-1,1);
   hPolarizationBySpin[1][1]=new TH2F("hPolarizationBySpinPP","Polarization for B+,Y+;B;Y",100,-1,1,100,-1,1);
+
+  
+
+  
 
   // for each bunch, accumulate yields and bunch info into the appropriate spinpattern grouping:
   TH1F *hYieldByPtAndSpin[2][2];
@@ -80,7 +98,26 @@ void rcc_calc_all(const int runnumber = 398149,
       ypol2_zdc_sum[i][j]=0;
     }
   }
-  
+
+  //get the spin pattern:
+  char bspinpat=0;
+  char yspinpat=0;
+  for (int cad_i=0;cad_i<8;cad_i++){
+    int bspin = spin_cont.GetSpinPatternBlue(cad_i); //helicity of blue bunch
+    int yspin = spin_cont.GetSpinPatternYellow(cad_i); //helicity of yellow bunch
+    if (bspin>1 || bspin==0 || yspin > 1 || yspin==0) {
+      printf("an empty bunch in the first eight in cad numbering!\n");
+      assert (1==2);//panic.  this shouldn't happen.
+    }
+    char bbit=(bspin>0);//0 for neg. helicity, 1 for pos. helicity.
+    char ybit=(yspin>0);
+    bspinpat+=bbit<<cad_i;
+    yspinpat+=ybit<<cad_i;
+  }
+  int spinpattern=lookupSpinPattern(bspinpat,  yspinpat);
+  hTags->Fill("spinpattern",spinpattern);
+
+    
   for (int phenix_i=0;phenix_i<120;phenix_i++){
     int cad_i=(phenix_i+cross_shift)%120; //compute the C-AD bunch number
     double bpol,bpolerr,bpolsys;
@@ -262,6 +299,8 @@ void rcc_calc_all(const int runnumber = 398149,
   allfname += ".MPC.ALL.rcc.hist.root";
   TFile *allfile = TFile::Open(allfname,"RECREATE");
   allfile->cd();
+
+  hTags->Write();
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
       hYieldByPtAndSpin[i][j]->Write();
@@ -276,3 +315,89 @@ void rcc_calc_all(const int runnumber = 398149,
   
   return;
 }
+
+
+
+
+
+
+int lookupSpinPattern(char bpat, char ypat){
+  //take eight consecutive spinbits, where the lowest bit is the 0th bunch, and the highest bit is the 7th
+  //look these up against the labeled spin patterns and return the correct spin pattern number.
+  //assumes '1' = spin up, and '0' = spin down;
+
+  //note that all valid patterns have pairs of bunches in the same config.
+  //if we check this parity first, we only have to check four bits instead of 8
+  char bshort=0;
+  char yshort=0;
+  for (int bit=0;bit<8;bit+=2){
+    char bbit=(bpat>>bit)&1;//just the bit'th bit, shifted to the ones place.
+    if ( bbit!=(bpat>>(bit+1))&1) {
+      printf("parity wrong in spin pattern\n");
+      return -2;
+    }
+    bshort+=bbit<<(bit/2);//make the 'even bits only' object.
+    
+    char ybit=(ypat>>bit)&1;//just the bit'th bit, shifted to the ones place.
+    if ( ybit!=(ypat>>(bit+1))&1) {
+      printf("parity wrong in spin pattern\n");
+      return -2;
+    }
+    yshort+=ybit<<(bit/2);//make the 'even bits only' object.
+  }
+  
+  char base[6];
+  base[0]=0b1010;//base1 and 1a
+  base[1]=0b0101;//base2 and 2a
+  base[2]=0b1100;//base3  
+  base[3]=0b0011;//base4
+  base[4]=0b0110;//base3a
+  base[5]=0b1001;//base4a
+
+  //define the valid patterns:
+  int patlookup[6][6];//blue then yellow
+  for (int i=0;i<6;i++){
+    for (int j=0;j<6;j++){
+      patlookup[i][j]=0;
+    }
+  }
+  //defined by AN1125:
+  patlookup[0][2]=1;
+  patlookup[1][2]=2;
+  patlookup[0][3]=3;
+  patlookup[1][3]=4;
+  patlookup[2][0]=5;
+  patlookup[2][1]=6;
+  patlookup[3][0]=7;
+  patlookup[3][1]=8;
+
+  patlookup[0][4]=21;
+  patlookup[1][4]=22;
+  patlookup[0][5]=23;
+  patlookup[1][5]=24;
+  patlookup[4][0]=25;
+  patlookup[4][1]=26;
+  patlookup[5][0]=27;
+  patlookup[5][1]=28;
+  
+  //find which pattern we have:
+  int blabel=-1;
+  int ylabel=-1;
+  for (int i=0;i<6;i++){
+    if (bshort==base[i]) {
+      blabel=i;
+      break;
+    }
+  }
+  for (int i=0;i<6;i++){
+    if (yshort==base[i]) {
+      ylabel=i;
+      break;
+    }
+  }
+  if (blabel<0 || ylabel<0){
+    printf("couldn't find a spin pattern.  parity is good, but not balanced.\n");
+    return -1;
+  return patlookup[blabel][ylabel];
+}
+  

@@ -24,6 +24,12 @@ void rcc_draw_all_plots()
   TH2F *hPolarizationRMS=new TH2F("hPolarizationRMS","RMS of bpol and ypol per run (checks if they vary over the run);bpol RMS;ypol RMS",20,0,1,20,0,1);
   TH2F *hPolarizationMean=new TH2F("hPolarizationMean","Mean bpol and ypol for each run;bpol,ypol",100,-1,1,100,-1,1);
 
+
+  //some other monitor plots:
+  TH1F *hZdcNarrowSum=new TH1F("hZdcNarrowSum","ZdcNarrow sum for all runs",200,0,1e10);
+  TH1F *hZdcNarrowRatio=new TH1F("hZdcNarrowRatio","ZdcNarrow Ratio (Unlike over Like spin) for all runs",200,0.5,1.5);
+  
+
   
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
   TH1F *hWeightSum=new TH1F("hWeightSum","Sum of Weights vs pt",nptbins,pt_limits);
@@ -48,12 +54,16 @@ void rcc_draw_all_plots()
     histfile=new TFile(filename,"READONLY");
     if ((histfile==NULL) || histfile->IsZombie() || !histfile->GetNkeys()) continue;
 
-    
+  
     TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
     
     TH1F *hLumi=((TH1F*)(histfile->Get("hTotalLumi")));
-    double lumi=hLumi->Sum();//does this work?  Tired.
+    float lumi=hLumi->Integral();//does this work?  Tired.
+    float lumiLike=hLumi->GetBinContent(2);
+    float lumiUnlike=hLumi->GetBinContent(1);
+    hZdcNarrowSum->Fill(lumi);
+    hZdcNarrowRatio->Fill(lumiUnlike/lumiLike);
 
     TH2F *hPol=0;
     for (int i=0;i<2;i++){
@@ -70,20 +80,7 @@ void rcc_draw_all_plots()
     //1) plot vs pt and runnumber
     
     //1.1) plot vs pt for 'low' and 'high' luminosity:
-    for (int i=0;i<nptbins;i++){
-      double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
-      int sourcebin=temp->FindBin(ptmid);
-      double asym=temp->GetBinContent(sourcebin);
-      double err=temp->GetBinError(sourcebin);
-      if (err<1e-9) err=asym; //if no error, assign 100% error for play.
-      if (err<1e-9) {
-	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
-      }
-      double err2=err*err;
-      double w=1/err2;
-      hWeightedAsymLumi->Fill(lumi,ptmid,asym*w);
-      hWeightSumLumi->Fill(lumi,ptmid,w);
-
+    
       
     //2) plot vs pt with sumw2.
     for (int i=0;i<nptbins;i++){
@@ -129,9 +126,11 @@ void rcc_draw_all_plots()
   hWeightedAsym->Write();
   hPolarizationRMS->Write();
   hPolarizationMean->Write();
+  hZdcNarrowSum->Write();
+  hZdcNarrowRatio->Write();
   outfile->Close();
   return;
 
 
   
-}
+  }
