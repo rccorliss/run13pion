@@ -122,7 +122,7 @@ void rcc_draw_all_plots()
   
   hWeightedAsym->Divide(hWeightSum);
   hWeightedAsymByLumi->Divide(hWeightSumByLumi);
-  hWeightedAsymBySpinpat->Divide(hWeightSumBySpinPat);
+  hWeightedAsymBySpinpat->Divide(hWeightSumBySpinpat);
   //error might be wrong on this one still...
 
   /*
