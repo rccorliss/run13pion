@@ -70,7 +70,7 @@ void rcc_draw_all_plots()
       char b=(i?'P':'N');
       for (int j=0;j<2;j++){
 	char y=(j?'P':'N');
-	hPol=((TH2F*)(histfile->Get(Form("hPolarizationBySpin%c%c",b,p))));
+	hPol=((TH2F*)(histfile->Get(Form("hPolarizationBySpin%c%c",b,y))));
 	hPolarizationRMS->Fill(hPol->GetRMS(1),hPol->GetRMS(2));
 	hPolarizationMean->Fill(hPol->GetMean(1),hPol->GetMean(2));
       }
