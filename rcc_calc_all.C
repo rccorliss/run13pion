@@ -4,6 +4,7 @@
 #include <TH1F.h>
 #include <SpinDBContent.hh>
 #include <SpinDBOutput.hh>
+#include <assert.h>
 
 int lookupSpinPattern(char bpat, char ypat);
 
@@ -398,6 +399,7 @@ int lookupSpinPattern(char bpat, char ypat){
   if (blabel<0 || ylabel<0){
     printf("couldn't find a spin pattern.  parity is good, but not balanced.\n");
     return -1;
+  }
   return patlookup[blabel][ylabel];
 }
   
