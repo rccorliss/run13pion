@@ -19,6 +19,12 @@ void rcc_draw_all_plots()
   const int maxptbins=10;
   double rawAsym[maxruns*maxptbins];
   double *asymByBin[maxptbins];
+
+  //some sanity check plots:
+  TH2F *hPolarizationRMS=new TH2F("hPolarizationRMS","RMS of bpol and ypol per run (checks if they vary over the run);bpol RMS;ypol RMS",20,0,1,20,0,1);
+  TH2F *hPolarizationMean=new TH2F("hPolarizationMean","Mean bpol and ypol for each run;bpol,ypol",100,-1,1,100,-1,1);
+
+  
   TH1F *hWeightedAsym=new TH1F("hWeightedAsym","Weighted average asymmetry vs pt",nptbins,pt_limits);
   TH1F *hWeightSum=new TH1F("hWeightSum","Sum of Weights vs pt",nptbins,pt_limits);
   TH2F *hWeightedAsymLumi=new TH2F("hWeightedAsym","Weighted average asymmetry vs pt",200,0,1e10,nptbins,pt_limits);
@@ -27,7 +33,9 @@ void rcc_draw_all_plots()
   
   for (int i=0;i<maxptbins;i++)
     asymByBin[i]=&(rawAsym[i*maxruns]);
-  
+
+
+  //loop over all runs.
   while (listfile.good()){
     listfile >> runnumber;
     // if (filename != 398149)
@@ -41,12 +49,23 @@ void rcc_draw_all_plots()
     if ((histfile==NULL) || histfile->IsZombie() || !histfile->GetNkeys()) continue;
 
     
-    TH1F *temp=0, *hLumi=0;
+    TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
-    hLumi=((TH1F*)(histfile->Get("hTotalLumi")));
+    
+    TH1F *hLumi=((TH1F*)(histfile->Get("hTotalLumi")));
     double lumi=hLumi->Sum();//does this work?  Tired.
 
-
+    TH2F *hPol=0;
+    for (int i=0;i<2;i++){
+      char b=(i?'P':'N');
+      for (int j=0;j<2;j++){
+	char y=(j?'P':'N');
+	hPol=((TH2F*)(histfile->Get(Form("hPolarizationBySpin%c%c",b,p))));
+	hPolarizationRMS->Fill(hPol->GetRMS(1),hPol->GetRMS(2));
+	hPolarizationMean->Fill(hPol->GetMean(1),hPol->GetMean(2));
+      }
+    }
+    
     //two things I can do:
     //1) plot vs pt and runnumber
     
@@ -104,12 +123,14 @@ void rcc_draw_all_plots()
     hWeightedAsym->SetBinError(sourcebin,err);
     }
 
-hWeightedAsym->Draw();
-TFile *outfile=TFile::Open("rcc_draw_all_plots.hist.root","RECREATE");
-outfile->cd();
-hWeightedAsym->Write();
-outfile->Close();
-return;
+  hWeightedAsym->Draw();
+  TFile *outfile=TFile::Open("rcc_draw_all_plots.hist.root","RECREATE");
+  outfile->cd();
+  hWeightedAsym->Write();
+  hPolarizationRMS->Write();
+  hPolarizationMean->Write();
+  outfile->Close();
+  return;
 
 
   
