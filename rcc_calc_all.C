@@ -340,6 +340,8 @@ int lookupSpinPattern(char bpat, char ypat){
   char yshort=0;
   for (int bit=0;bit<8;bit+=2){
     char bbit=(bpat>>bit)&1;//just the bit'th bit, shifted to the ones place.
+    char bnextbit=(bpat>>(bit+1))&1;
+    printf("comparing bbits: %d%d\n", bbit,bnextbit);
     if ( bbit!=(bpat>>(bit+1))&1) {
       printf("parity wrong in spin pattern\n");
       return -2;
