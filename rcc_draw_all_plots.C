@@ -96,7 +96,7 @@ void rcc_draw_all_plots()
     for (int i=0;i<nptbins;i++){
       double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
       int sourcebin=temp->FindBin(ptmid);
-      double asym=temp->GetBinContent(sourcebin);
+      float asym=temp->GetBinContent(sourcebin);
       double err=temp->GetBinError(sourcebin);
       if (err<1e-9) err=asym; //if no error, assign 100% error for play.
       if (err<1e-9) {
