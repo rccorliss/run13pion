@@ -9,6 +9,7 @@ void rcc_draw_all_plots()
   double pt_limits[nptbins+1] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
   const int nzdcbins=3;
   double zdc_limits[nzdcbins+1]={0,2e9,4e9,1e10};
+  const int nspinpats=30;
 
 
   
@@ -97,7 +98,7 @@ void rcc_draw_all_plots()
       double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
       int sourcebin=temp->FindBin(ptmid);
       float asym=temp->GetBinContent(sourcebin);
-      double err=temp->GetBinError(sourcebin);
+      float  err=temp->GetBinError(sourcebin);
       if (err<1e-9) err=asym; //if no error, assign 100% error for play.
       if (err<1e-9) {
 	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
