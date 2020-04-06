@@ -13,6 +13,7 @@ void rcc_draw_all_plots()
   double ratio_limits[nratiobins+1]={0.8,0.95,1.03,1.2};
   const int nspinpats=10;
   const int spinpat_lower_limit=20;
+  float spinpat_bound[]={spinpat_lower_limit-0.5,spinpat_lower_limit+nspinpats-0.5};
 
   
   TString filename;
@@ -62,8 +63,8 @@ void rcc_draw_all_plots()
   TH2F *hWeightSumByRatio=new TH2F("hWeightSumByRatio","Sum of Weights vs pt and zdc ratio",nratiobins,ratio_limits,nptbins,pt_limits);
 
   //accumulators for asymmetry divided into spin patterns bins
-  TH2F *hWeightedAsymBySpinpat=new TH2F("hWeightedAsymBySpinpat","Weighted average asymmetry vs pt;spinpat;pt [GeV]",30,0.5,30.5,nptbins,pt_limits);
-  TH2F *hWeightSumBySpinpat=new TH2F("hWeightSumBySpinpat","Sum of Weights vs pt",nspinpats,spinpat_lower_limit-0.5,spinpat_lower_limit+nspinpats-0.5,nptbins,pt_limits);
+  TH2F *hWeightedAsymBySpinpat=new TH2F("hWeightedAsymBySpinpat","Weighted average asymmetry vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
+  TH2F *hWeightSumBySpinpat=new TH2F("hWeightSumBySpinpat","Sum of Weights vs pt",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
 
   m_i=0;
   for (int i=0;i<maxptbins;i++)
