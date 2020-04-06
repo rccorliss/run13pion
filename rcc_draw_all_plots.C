@@ -32,7 +32,7 @@ void rcc_draw_all_plots()
   TH1F *hZdcNarrowSum=new TH1F("hZdcNarrowSum","ZdcNarrow sum for all runs",200,0,1e10);
   TH1F *hZdcNarrowRatio=new TH1F("hZdcNarrowRatio","ZdcNarrow Ratio (Unlike over Like spin) for all runs",200,0.5,1.5);
 
-  TTree *mTree=new TTree("mTree","Run-wise Metadata Tree");
+  TTree *mtree=new TTree("mTree","Run-wise Metadata Tree");
   float m_zdcsum,m_zdcratio;
   int m_spinpat,m_run;
   float m_bpol,m_ypol;
