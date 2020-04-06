@@ -31,6 +31,14 @@ void rcc_draw_all_plots()
   //some other monitor plots:
   TH1F *hZdcNarrowSum=new TH1F("hZdcNarrowSum","ZdcNarrow sum for all runs",200,0,1e10);
   TH1F *hZdcNarrowRatio=new TH1F("hZdcNarrowRatio","ZdcNarrow Ratio (Unlike over Like spin) for all runs",200,0.5,1.5);
+
+  TTree *mTree=new TTree("mTree","Run-wise Metadata Tree");
+  float m_zdcsum,m_zdcratio;
+  int m_spinpat,m_run;
+  mtree->Branch("zdcsum",&m_zdcsum);
+  mtree->Branch("zdcratio",&m_zdcratio);
+  mtree->Branch("spinpat",&m_spinpat);
+  mtree->Branch("run",&m_run);
   
 
   
@@ -75,7 +83,13 @@ void rcc_draw_all_plots()
     float lumiUnlike=hLumi->GetBinContent(1);
     hZdcNarrowSum->Fill(lumi);
     hZdcNarrowRatio->Fill(lumiUnlike/lumiLike);
+    m_zdcsum=lumi;
+    m_zdcratio=lumiUnlike/lumiLike;
+    m_spinpat=spinpat;
+    m_run=runnumber;
+    mtree->Fill();
 
+    
     TH2F *hPol=0;
     for (int i=0;i<2;i++){
       char b=(i?'P':'N');
@@ -194,7 +208,7 @@ void rcc_draw_all_plots()
       hFinalAsymByLumi[j]->Write();
   }
 
-  
+  mtree->Write();
   outfile->Close();
   return;
 
