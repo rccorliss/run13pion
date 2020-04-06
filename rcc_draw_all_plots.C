@@ -56,7 +56,7 @@ void rcc_draw_all_plots()
 
   //accumulators for asymmetry divided into zdc bins
   TH2F *hWeightedAsymByLumi=new TH2F("hWeightedAsymByLumi","Weighted average asymmetry vs pt",nzdcbins,zdc_limits,nptbins,pt_limits);
-  TH2F *hWeightSumByLumi=new TH2F("hWeightSumByLumi","Sum of Weights vs pt",nratiobins,ratio_limits,nptbins,pt_limits);
+  TH2F *hWeightSumByLumi=new TH2F("hWeightSumByLumi","Sum of Weights vs pt",nzdcbins,zdc_limits,nptbins,pt_limits);
 
    //accumulators for asymmetry divided into zdc bins
   TH2F *hWeightedAsymByRatio=new TH2F("hWeightedAsymByRatio","Weighted average asymmetry vs pt and zdc ratio",nratiobins,ratio_limits,nptbins,pt_limits);
