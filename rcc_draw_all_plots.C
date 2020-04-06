@@ -135,7 +135,7 @@ void rcc_draw_all_plots()
     float sumweight=hWeightSum->GetBinContent(i+1);
     if (sumweight==0) continue; //skip if we have no weight in this bin.
     //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
-    double err=sqrt(1/sumweight);
+    float err=sqrt(1/sumweight);
     hWeightedAsym->SetBinError(i+1,err);
   }
 
@@ -152,7 +152,7 @@ void rcc_draw_all_plots()
       float asym=hWeightedAsymByLumi->GetBinContent(j+1,i+1);
       if (sumweight==0) continue; //skip if we have no weight in this bin.
       //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
-      double err=sqrt(1/sumweight);
+      float err=sqrt(1/sumweight);
       hFinalAsymByLumi[j]->SetBinContent(i+1,asym);
       hFinalAsymByLumi[j]->SetBinError(i+1,err);
     }
@@ -166,7 +166,7 @@ void rcc_draw_all_plots()
       float asym=hWeightedAsymBySpinpat->GetBinContent(j+1,i+1);
       if (sumweight==0) continue; //skip if we have no weight in this bin.
       //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
-      double err=sqrt(1/sumweight);
+      float err=sqrt(1/sumweight);
       hFinalAsymBySpinpat[j]->SetBinContent(i+1,asym);
       hFinalAsymBySpinpat[j]->SetBinError(i+1,err);
     }
