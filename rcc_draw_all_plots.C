@@ -35,10 +35,13 @@ void rcc_draw_all_plots()
   TTree *mTree=new TTree("mTree","Run-wise Metadata Tree");
   float m_zdcsum,m_zdcratio;
   int m_spinpat,m_run;
+  float m_bpol,m_ypol;
   mtree->Branch("zdcsum",&m_zdcsum);
   mtree->Branch("zdcratio",&m_zdcratio);
   mtree->Branch("spinpat",&m_spinpat);
   mtree->Branch("run",&m_run);
+  mtree->Branch("bpol",&m_bpol);
+  mtree->Branch("ypol",&m_ypol);
   
 
   
@@ -83,12 +86,7 @@ void rcc_draw_all_plots()
     float lumiUnlike=hLumi->GetBinContent(1);
     hZdcNarrowSum->Fill(lumi);
     hZdcNarrowRatio->Fill(lumiUnlike/lumiLike);
-    m_zdcsum=lumi;
-    m_zdcratio=lumiUnlike/lumiLike;
-    m_spinpat=spinpat;
-    m_run=runnumber;
-    mtree->Fill();
-
+ 
     
     TH2F *hPol=0;
     for (int i=0;i<2;i++){
@@ -100,6 +98,15 @@ void rcc_draw_all_plots()
 	hPolarizationMean->Fill(hPol->GetMean(1),hPol->GetMean(2));
       }
     }
+
+    m_zdcsum=lumi;
+    m_zdcratio=lumiUnlike/lumiLike;
+    m_spinpat=spinpat;
+    m_run=runnumber;
+    m_bpol=hPol->GetMean(1);
+    m_ypol=hPol->GetMean(2);
+    mtree->Fill();
+
     
     //two things I can do:
     //1) plot vs pt and runnumber
