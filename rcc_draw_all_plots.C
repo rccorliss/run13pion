@@ -105,7 +105,7 @@ void rcc_draw_all_plots()
       double err2=err*err;
       double w=1/err2;
       hWeightedAsym->Fill(ptmid,asym*w);
-      hWeightSum->Fill(ptmid,w);
+      hWeightSum->Fill(ptmid,w); //so every bin gets the same weight, for later division.
 
       //add this to a weighted sum for the zdc bin of choice:
       hWeightedAsymByLumi->Fill(lumi,ptmid,asym*w);
@@ -119,30 +119,59 @@ void rcc_draw_all_plots()
     }
   }
 
+  //at this point we have two histograms:
+  //weightedAsym has the sum of asym/asym_err^2 over all runs
+  //weightSum has the sum of 1/asym_err^2 over all runs, and for convenience has the same bin structure
+  //the average Asym per bin would be the ratio of these two, but that might not respect the error propagation.
+  //as long as our weighting was weight=1/err2, the err on the average is sqrt(1/sum of weights).
   
   hWeightedAsym->Divide(hWeightSum);
   hWeightedAsymByLumi->Divide(hWeightSumByLumi);
   hWeightedAsymBySpinpat->Divide(hWeightSumBySpinpat);
-  //error might be wrong on this one still...
 
-  /*
-//by-hand division that is hopefully superceded by the previous.
+  //fix the errorbars:
   for (int i=0;i<nptbins;i++){
-    double ptmid=(pt_limits[i]+pt_limits[i+1])/2;
-    int sourcebin=hWeightedAsym->FindBin(ptmid);
-    double sumasym=hWeightedAsym->GetBinContent(sourcebin);
-    double sumweight=hWeightSum->GetBinContent(sourcebin);
+    float sumweight=hWeightSum->GetBinContent(i+1);
     if (sumweight==0) continue; //skip if we have no weight in this bin.
-    double asym=sumasym/sumweight;
     //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
-    double err=sqrt(1/hWeightSum->GetBinContent(sourcebin));
-    //if (err>1) continue; //if large error,s omething went wrong.  skip it.
+    double err=sqrt(1/sumweight);
+    hWeightedAsym->SetBinError(i+1,err);
+  }
 
-    hWeightedAsym->SetBinContent(sourcebin,asym);
-    hWeightedAsym->SetBinError(sourcebin,err);
+  //fix the error bars on the 2D plots and extract their 1D components, so they can be more easily visualized:
+  TH1F hFinalAsymBySpinpat[30];
+  TH1F hFinalAsymByLumi[nzdcbins];
+  for (int j=0;j<nzdcbins;j++){
+    hFinalAsymByLumi[j]=new TH1F(Form("hFinalAsymByLumi%d",j),
+				 Form("Weighted asymmetry vs pt for runs with %f<zdc_narrow<=%f",
+				      zdc_limits[j],zdc_limits[j+1]),
+				 nptbins,pt_limits);
+    for (int i=0;i<nptbins;i++){
+      float sumweight=hWeightSumByLumi->GetBinContent(j+1,i+1);
+      float asym=hWeightedAsymByLumi->GetBinContent(j+1,i+1);
+      if (sumweight==0) continue; //skip if we have no weight in this bin.
+      //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
+      double err=sqrt(1/sumweight);
+      hFinalAsymByLumi[j]->SetBinContent(i+1,asym);
+      hFinalAsymByLumi[j]->SetBinError(i+1,err);
     }
-  */
-
+  }
+  for (int j=0;j<nspinpats;j++){
+    hFinalAsymBySpinpat[j]=new TH1F(Form("hFinalAsymBySpinpat%d",j),
+				 Form("Weighted asymmetry vs pt for runs with spinpat=%d",j),
+				 nptbins,pt_limits);
+    for (int i=0;i<nptbins;i++){
+      float sumweight=hWeightSumBySpinpat->GetBinContent(j+1,i+1);
+      float asym=hWeightedAsymBySpinpat->GetBinContent(j+1,i+1);
+      if (sumweight==0) continue; //skip if we have no weight in this bin.
+      //err_on_average=sqrt(1/sum of weights) as long as we pick weight=1/err2;
+      double err=sqrt(1/sumweight);
+      hFinalAsymBySpinpat[j]->SetBinContent(i+1,asym);
+      hFinalAsymBySpinpat[j]->SetBinError(i+1,err);
+    }
+  }
+    
+  
   hWeightedAsym->Draw();
   TFile *outfile=TFile::Open("rcc_draw_all_plots.hist.root","RECREATE");
   outfile->cd();
@@ -153,6 +182,18 @@ void rcc_draw_all_plots()
   hPolarizationMean->Write();
   hZdcNarrowSum->Write();
   hZdcNarrowRatio->Write();
+
+  //only draw the ones that had some entries.
+  for (int j=0;j<nspinpats;j++){
+    //if (hWeightSumBySpinpat[j]->GetBinContent(1,1)>0)
+      hFinalAsymBySpinpat[j]->Write();
+  }
+  for (int j=0;j<nzdcbins;j++){
+    //if (hWeightSumByLumi[j]->GetBinContent(1,1)>0)
+      hFinalAsymByLumi[j]->Write();
+  }
+
+  
   outfile->Close();
   return;
 
