@@ -140,8 +140,8 @@ void rcc_draw_all_plots()
   }
 
   //fix the error bars on the 2D plots and extract their 1D components, so they can be more easily visualized:
-  TH1F hFinalAsymBySpinpat[30];
-  TH1F hFinalAsymByLumi[nzdcbins];
+  TH1F *hFinalAsymBySpinpat[nspinpats];
+  TH1F *hFinalAsymByLumi[nzdcbins];
   for (int j=0;j<nzdcbins;j++){
     hFinalAsymByLumi[j]=new TH1F(Form("hFinalAsymByLumi%d",j),
 				 Form("Weighted asymmetry vs pt for runs with %f<zdc_narrow<=%f",
