@@ -282,8 +282,15 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
+  c=new TCanvas("cqa","cqa",900,700);
+    c->Divide(3,2);
+    c->cd(1);
+    mTree->Draw("bpol*ypol:spinpat","1","colz");
+    c->cd(2);
+    mTree->Draw("zdclike/zdcunlike:spinpat","1","colz");
+  
   if(0){
-    c=new TCanvas("c","c",900,700);
+    c=new TCanvas("clumasym","clumasym",900,700);
     c->Divide(3,3);
     c->cd(1);
     mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike)");
@@ -307,6 +314,7 @@ void rcc_draw_all_plots()
 
 
   //Plots of asymmetries:
+  if (0){
   c=new TCanvas("c1","c1",800,600);
   c->Divide(3,3);
  for (int j=1;j<nspinpats;j++){
@@ -317,7 +325,7 @@ void rcc_draw_all_plots()
  c->cd(9);
  hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
  hWeightedAsym->Draw();
-
+  }
  
   outfile->Close();
   return;
