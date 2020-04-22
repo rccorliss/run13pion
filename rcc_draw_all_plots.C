@@ -254,7 +254,7 @@ void rcc_draw_all_plots()
   }
     
   
-  hWeightedAsym->Draw();
+  //hWeightedAsym->Draw();
   TFile *outfile=TFile::Open("rcc_draw_all_plots.hist.root","RECREATE");
   outfile->cd();
   hWeightedAsym->Write();
@@ -314,6 +314,9 @@ void rcc_draw_all_plots()
    hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
    hFinalAsymBySpinpat[j]->Draw();
   }
+ c->cd(9);
+ hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
+ hWeightedAsym->Draw();
 
  
   outfile->Close();
