@@ -147,8 +147,8 @@ void rcc_draw_all_plots()
     m_run=runnumber;
     m_bpol=hPol->GetMean(1);
     m_ypol=hPol->GetMean(2);
-    m_bpolerr=hTags->GetBinContent(hTags->FindBin("bpolerr"));
-    m_ypol=hTags->GetBinContent(hTags->FindBin("ypolerr"));
+    m_bpolerr=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("bpolerr")));
+    m_ypol=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("ypolerr")));
     mtree->Fill();
     m_i++;
     
