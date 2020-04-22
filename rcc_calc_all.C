@@ -83,8 +83,8 @@ void rcc_calc_all(const int runnumber = 398149,
   //polarization variables
   //NOTE:  detailed error handling is not needed.  See comment in for loop.
   //these were previously per-bunch, but now just overall values:
-  double bpol, bpolerr, bpolsys;
-  double ypol, ypolerr, ypolsys;
+  double bpol=0, bpolerr=0, bpolsys=0;
+  double ypol=0, ypolerr=0, ypolsys=0;
   
   //double weighted_bpol_sum[2][2];
   //double weighted_ypol_sum[2][2];
@@ -149,6 +149,13 @@ void rcc_calc_all(const int runnumber = 398149,
     if (phenix_i==0){
     spin_cont.GetPolarizationBlue(cad_i, bpol, bpolerr, bpolsys);
     spin_cont.GetPolarizationYellow(cad_i, ypol, ypolerr, ypolsys);
+
+    hTags->Fill("ypolerr",ypolerr);
+    hTags->Fill("bpolerr",bpolerr);
+   hTags->Fill("ypol",ypol);
+    hTags->Fill("bpol",bpol);
+ 
+    
     }
     int bspin = spin_cont.GetSpinPatternBlue(cad_i); //helicity of blue bunch
     int yspin = spin_cont.GetSpinPatternYellow(cad_i); //helicity of yellow bunch
@@ -156,9 +163,7 @@ void rcc_calc_all(const int runnumber = 398149,
     int bspinbin=(bspin>0);//0 for neg. helicity, 1 for pos. helicity.
     int yspinbin=(yspin>0);
 
-    hTags->Fill("ypolerr",ypolerr);
-    hTags->Fill("bpolerr",bpolerr);
-    
+     
     
     long long  scaler_bbc_vtxcut =  spin_cont.GetScalerBbcVertexCut(cad_i);
     long long scaler_bbc_nocut  =  spin_cont.GetScalerBbcNoCut(cad_i);
