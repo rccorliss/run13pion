@@ -37,13 +37,28 @@ void rcc_draw_all_plots()
 
   TTree *mtree=new TTree("mTree","Run-wise Metadata Tree");
   float m_zdcsum,m_zdcratio;
-  int m_spinpat,m_run;
+  float m_zdclike,m_zdcunlike;
+  float m_zdcwlike,m_zdcwunlike;
+  float m_bbclike,m_bbcunlike;
+  float m_bbcwlike,m_bbcwunlike;
+
+  int m_spinpat,m_run, m_fill;
   float m_bpol,m_ypol;
   int m_i;//increments by one every tiem we fill.  Unique run ID, but not run number.
+  
   mtree->Branch("zdcsum",&m_zdcsum);
   mtree->Branch("zdcratio",&m_zdcratio);
+  mtree->Branch("zdclike",&m_zdclike);
+  mtree->Branch("zdcunlike",&m_zdcunlike);
+  mtree->Branch("zdcwlike",&m_zdcwlike);
+  mtree->Branch("zdcwunlike",&m_zdcwunlike);
+  mtree->Branch("bbclike",&m_bbclike);
+  mtree->Branch("bbcunlike",&m_bbcunlike);
+  mtree->Branch("bbcwlike",&m_bbcwlike);
+  mtree->Branch("bbcwunlike",&m_bbcwunlike);
   mtree->Branch("spinpat",&m_spinpat);
   mtree->Branch("run",&m_run);
+  mtree->Branch("fill",&m_fill);
   mtree->Branch("bpol",&m_bpol);
   mtree->Branch("ypol",&m_ypol);
   mtree->Branch("index",&m_i);
@@ -90,10 +105,14 @@ void rcc_draw_all_plots()
     TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
     
-    TH1F *hLumi=((TH1F*)(histfile->Get("hTotalLumi")));
-    float lumi=hLumi->Integral();//does this work?  Tired.
-    float lumiLike=hLumi->GetBinContent(2);
-    float lumiUnlike=hLumi->GetBinContent(1);
+    TH1F *hLumi[4];
+    hLumi[0]=((TH1F*)(histfile->Get("hTotalLumi")));
+    hLumi[1]=((TH1F*)(histfile->Get("hTotalZdcWide")));
+    hLumi[2]=((TH1F*)(histfile->Get("hTotalBbc")));
+    hLumi[3]=((TH1F*)(histfile->Get("hTotalBbcWide")));
+    float lumi=hLumi[0]->Integral();//does this work?  Tired.
+    float lumiLike=hLumi[0]->GetBinContent(2);
+    float lumiUnlike=hLumi[0]->GetBinContent(1);
     hZdcNarrowSum->Fill(lumi);
     hZdcNarrowRatio->Fill(lumiUnlike/lumiLike);
  
@@ -111,6 +130,16 @@ void rcc_draw_all_plots()
 
     m_zdcsum=lumi;
     m_zdcratio=lumiUnlike/lumiLike;
+    m_zdclike=lumiLike;
+    m_zdcunlike=lumiUnlike;
+    m_zdcwlike=hLumi[1]->GetBinContent(2);
+    m_zdcwunlike=hLumi[1]->GetBinContent(1);
+    m_bbclike=hLumi[2]->GetBinContent(2);
+    m_bbcunlike=hLumi[2]->GetBinContent(1);
+    m_bbcwlike=hLumi[3]->GetBinContent(2);
+    m_bbcwunlike=hLumi[3]->GetBinContent(1);
+
+    
     m_spinpat=spinpat;
     m_run=runnumber;
     m_bpol=hPol->GetMean(1);
@@ -249,6 +278,13 @@ void rcc_draw_all_plots()
       hFinalAsymByRatio[j]->Write();
   }
   mtree->Write();
+
+  TCanvas *c;
+
+  //QA over full runlist
+  c=new TCanvas(
+
+  
   outfile->Close();
   return;
 

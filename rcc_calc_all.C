@@ -53,9 +53,13 @@ void rcc_calc_all(const int runnumber = 398149,
   TH1F *hTags=new TH1F("hTags","Various named numbers that can be stored safely as floats",100,0,100);
   //firstly, the run number, just in case:
   hTags->Fill("runnumber",runnumber);
+  hTags->Fill("fill",fill);
 
   //accumulate the luminosity in a 1x2 histogram:
   TH1F *hTotalLumi=new TH1F("hTotalLumi","Unlike (like) zdc-narrow lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
+  TH1F *hTotalZdcWide=new TH1F("hTotalZdcWide","Unlike (like) zdc-wide lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
+  TH1F *hTotalBbc=new TH1F("hTotalBbc","Unlike (like) bbc-narrow lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
+  TH1F *hTotalBbcWide=new TH1F("hTotalBbcWide","Unlike (like) bbc-wide lumi scaler sums;unlike=0,like=1;sum",2,-0.5,1.5);
 
   //polarizations are actually single-valued across a run, but these accumulate them bunch by bunch
   //which allows that to be cross-checked for consistency:
@@ -91,10 +95,14 @@ void rcc_calc_all(const int runnumber = 398149,
 
   //do I have a scale separation between sum and contribution?  only 120 bins, so no.
   double zdc_narrow_sum[2][2];
+  double zdc_wide_sum[2][2];
+  double bbc_vtxcut_sum[2][2];
   double bbc_nocut_sum[2][2];
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
       zdc_narrow_sum[i][j]=0;
+      zdc_wide_sum[i][j]=0;
+      bbc_vtxcut_sum[i][j]=0;
       bbc_nocut_sum[i][j]=0;
       //weighted_bpol_sum[i][j]=0;
       //weighted_ypol_sum[i][j]=0;
@@ -155,6 +163,9 @@ void rcc_calc_all(const int runnumber = 398149,
 
     //accumulate total zdc narrow counts:
     hTotalLumi->Fill((bspinbin==yspinbin),scaler_zdc_narrow);
+    hTotalZdcWide->Fill((bspinbin==yspinbin),scaler_zdc_wide);
+    hTotalBbcWide->Fill((bspinbin==yspinbin),scaler_bbc_nocut);
+    hTotalBbc->Fill((bspinbin==yspinbin),scaler_bbc_vtxcut);
 
 
     //manage polarization monitoring and averaging:
@@ -186,6 +197,8 @@ void rcc_calc_all(const int runnumber = 398149,
     //todo:  use corrected relative luminosity following pedro!
     zdc_narrow_sum[bspinbin][yspinbin]+=scaler_zdc_narrow;
     bbc_nocut_sum[bspinbin][yspinbin]+=scaler_bbc_nocut;
+    zdc_wide_sum[bspinbin][yspinbin]+=scaler_zdc_wide;
+    bbc_vtxcut_sum[bspinbin][yspinbin]+=scaler_bbc_vtxcut;
 
     //accumulate this run's data by spin pattern:
     for (int i=0;i<nptbins;i++){
@@ -233,7 +246,7 @@ void rcc_calc_all(const int runnumber = 398149,
       zdc_sum+=zdc_narrow_sum[i][j];
 
       //uncorrected lumi scalers, for like and unlike:
-      hTotalLumi->Fill((i==j),zdc_narrow_sum[i][j]);      
+      //this is done in the loop above. hTotalLumi->Fill((i==j),zdc_narrow_sum[i][j]);      
     }
   }
   //polarization averaged over all spin states:
@@ -246,6 +259,7 @@ void rcc_calc_all(const int runnumber = 398149,
 
 
   //this should use the corrected luminosity, not the straightforward one:
+  //options are zdc_narrow_sum , zdc_wide_sum, bbc_vtxcut_sum, bbc_nocut_sum
   double rellumi=(zdc_narrow_sum[0][0]+zdc_narrow_sum[1][1])/(zdc_narrow_sum[0][1]+zdc_narrow_sum[1][0]);
   double rellumi_err=rellumi*sqrt(1/(zdc_narrow_sum[0][0]+zdc_narrow_sum[1][1])
 				  +1/(zdc_narrow_sum[0][1]+zdc_narrow_sum[1][0]));
@@ -333,6 +347,9 @@ void rcc_calc_all(const int runnumber = 398149,
     }
   }
   hTotalLumi->Write();
+  hTotalZdcWide->Write();
+  hTotalBbc->Write();
+  hTotalBbcWide->Write();
   hAllByPt->Write();
 
   
