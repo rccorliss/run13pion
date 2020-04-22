@@ -76,13 +76,18 @@ void rcc_calc_all(const int runnumber = 398149,
   hYieldByPtAndSpin[0][1]=new TH1F("hYieldByPtNP","Pion Yield by ptbin for B-,Y+",nptbins,pt_limits);
   hYieldByPtAndSpin[1][1]=new TH1F("hYieldByPtPP","Pion Yield by ptbin for B+,Y+",nptbins,pt_limits);
 
-  //
-  double weighted_bpol_sum[2][2];
-  double weighted_ypol_sum[2][2];
-  double bpolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
-  double ypolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
-  double bpol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
-  double ypol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
+  //polarization variables
+  //NOTE:  detailed error handling is not needed.  See comment in for loop.
+  //these were previously per-bunch, but now just overall values:
+  double bpol, bpolerr, bpolsys;
+  double ypol, ypolerr, ypolsys;
+  
+  //double weighted_bpol_sum[2][2];
+  //double weighted_ypol_sum[2][2];
+  //double bpolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
+  //double ypolerr2_zdc2_sum[2][2]; //square of zdc counts times square of pol error
+  //double bpol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
+  //double ypol2_zdc_sum[2][2]; //square of polarization times square of zdc error (which is just zdc counts)
 
   //do I have a scale separation between sum and contribution?  only 120 bins, so no.
   double zdc_narrow_sum[2][2];
@@ -130,10 +135,12 @@ void rcc_calc_all(const int runnumber = 398149,
     
   for (int phenix_i=0;phenix_i<120;phenix_i++){
     int cad_i=(phenix_i+cross_shift)%120; //compute the C-AD bunch number
-    double bpol,bpolerr,bpolsys;
-    double ypol,ypolerr,ypolsys;
+    //double bpol,bpolerr,bpolsys;
+    //double ypol,ypolerr,ypolsys;
+    if (phenix_i==0){
     spin_cont.GetPolarizationBlue(cad_i, bpol, bpolerr, bpolsys);
     spin_cont.GetPolarizationYellow(cad_i, ypol, ypolerr, ypolsys);
+    }
     int bspin = spin_cont.GetSpinPatternBlue(cad_i); //helicity of blue bunch
     int yspin = spin_cont.GetSpinPatternYellow(cad_i); //helicity of yellow bunch
     if (bspin>1 || bspin==0 || yspin > 1 || yspin==0) continue; // skip the empty and unpolarized crossings.
@@ -149,26 +156,32 @@ void rcc_calc_all(const int runnumber = 398149,
     //accumulate total zdc narrow counts:
     hTotalLumi->Fill((bspinbin==yspinbin),scaler_zdc_narrow);
 
-    //fill bare polarization plot:
-    hPolarizationBySpin[bspinbin][yspinbin]->Fill(bpol,ypol);
 
+    //manage polarization monitoring and averaging:
+    //NOTE:  the polarization is ~always constant across all bunches, so it is inappropriate to treat the polarization as the weighted average of all the measurements -- they're completely correlated, and this only serves to artificially reduce the polarization error.
+    
+    //fill bare polarization plot:
+    //hPolarizationBySpin[bspinbin][yspinbin]->Fill(bpol,ypol);
+      
     //accumulate average polarizations by spin configuration:
-    double bpol_times_zdc=bpol*scaler_zdc_narrow;
-    double ypol_times_zdc=ypol*scaler_zdc_narrow;
-    weighted_bpol_sum[bspinbin][yspinbin]+=bpol_times_zdc;
-    weighted_ypol_sum[bspinbin][yspinbin]+=ypol_times_zdc;
+    //double bpol_times_zdc=bpol*scaler_zdc_narrow;
+    //double ypol_times_zdc=ypol*scaler_zdc_narrow;
+    //weighted_bpol_sum[bspinbin][yspinbin]+=bpol_times_zdc;
+    //weighted_ypol_sum[bspinbin][yspinbin]+=ypol_times_zdc;
 
     //accumulate various moments of the weighted sums for error propagation:
     //sum of (square of zdc counts times square of pol error)
-    double bpolerr_times_zdc=bpolerr*scaler_zdc_narrow;
-    double ypolerr_times_zdc=ypolerr*scaler_zdc_narrow;
-    bpolerr2_zdc2_sum[bspinbin][yspinbin]+=bpolerr_times_zdc*bpolerr_times_zdc;
-    ypolerr2_zdc2_sum[bspinbin][yspinbin]+=ypolerr_times_zdc*ypolerr_times_zdc;
+    //double bpolerr_times_zdc=bpolerr*scaler_zdc_narrow;
+    //double ypolerr_times_zdc=ypolerr*scaler_zdc_narrow;
+    //bpolerr2_zdc2_sum[bspinbin][yspinbin]+=bpolerr_times_zdc*bpolerr_times_zdc;
+    //ypolerr2_zdc2_sum[bspinbin][yspinbin]+=ypolerr_times_zdc*ypolerr_times_zdc;
 
     //sum of (square of polarization times square of zdc error):
-    bpol2_zdc_sum[bspinbin][yspinbin]+=bpol*bpol_times_zdc;
-    ypol2_zdc_sum[bspinbin][yspinbin]+=ypol*ypol_times_zdc;
+    //bpol2_zdc_sum[bspinbin][yspinbin]+=bpol*bpol_times_zdc;
+    //ypol2_zdc_sum[bspinbin][yspinbin]+=ypol*ypol_times_zdc;
 
+
+    
     
     //todo:  use corrected relative luminosity following pedro!
     zdc_narrow_sum[bspinbin][yspinbin]+=scaler_zdc_narrow;
@@ -196,6 +209,7 @@ void rcc_calc_all(const int runnumber = 398149,
 
   for (int i=0;i<2;i++){
     for (int j=0;j<2;j++){
+      /*
       average_bpol[i][j]=weighted_bpol_sum[i][j]/zdc_narrow_sum[i][j];
       average_ypol[i][j]=weighted_ypol_sum[i][j]/zdc_narrow_sum[i][j];
       average_bpol_err[i][j]=sqrt(bpolerr2_zdc2_sum[i][j]
@@ -215,6 +229,7 @@ void rcc_calc_all(const int runnumber = 398149,
       ypol_error_numerator+=(ypolerr2_zdc2_sum[i][j]
 			     +ypol2_zdc_sum[i][j]
 			     -average_ypol[i][j]*average_ypol[i][j]*zdc_narrow_sum[i][j]);
+      */
       zdc_sum+=zdc_narrow_sum[i][j];
 
       //uncorrected lumi scalers, for like and unlike:
@@ -222,10 +237,11 @@ void rcc_calc_all(const int runnumber = 398149,
     }
   }
   //polarization averaged over all spin states:
-  double bpol_ALL=bpol_sum/zdc_sum;
-  double ypol_ALL=ypol_sum/zdc_sum;
-  double bpol_ALL_err=sqrt(bpol_error_numerator)/zdc_sum;
-  double ypol_ALL_err=sqrt(ypol_error_numerator)/zdc_sum;
+  //per the above, this is single-valued, so we just copy the data from phenix-numbered bunch 0:
+  double bpol_ALL=bpol;//bpol_sum/zdc_sum;
+  double ypol_ALL=ypol;//ypol_sum/zdc_sum;
+  double bpol_ALL_err=bpolerr;//sqrt(bpol_error_numerator)/zdc_sum;
+  double ypol_ALL_err=ypolerr;//sqrt(ypol_error_numerator)/zdc_sum;
 
 
 
@@ -261,7 +277,6 @@ void rcc_calc_all(const int runnumber = 398149,
   hDenom->Add(hUnlikeSum,rellumi);
 
   
-  hAllByPt->Sumw2();
   hAllByPt->Add(hNumer);
   hAllByPt->Divide(hDenom);
   hAllByPt->Scale(1/(bpol_ALL*ypol_ALL));
@@ -269,7 +284,7 @@ void rcc_calc_all(const int runnumber = 398149,
   //because numerator and denominator have correlated errors, sumw2 isn't sufficient to get the right uncertainty
   //so we do the math elsewhere and implement that here:
   for (int i=0;i<nptbins;i++){
-    //'t' just to avoid repeating a variable I've named elsewhere in this mess.
+    //prepend 't' to avoid repeating a variable I've named elsewhere in this mess.
     double tunlike=hUnlikeSum->GetBinContent(i+1);
     double trelunlike=tunlike*rellumi;
     double tlike=hLikeSum->GetBinContent(i+1);
@@ -297,7 +312,7 @@ void rcc_calc_all(const int runnumber = 398149,
     //hAllByPt->SetBinContent(i+1,abs(tasym));//uncomment this if you want a wrong answer that is definitely not zero
     if (isnan(err2))
 	hAllByPt->SetBinError(i+1,0.00001);
-    if (tlike+trelunlike==0){
+    if (tsum==0){
       printf("bin %d has sum=%f+%f=0\n",i,tlike,trelunlike);
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.
     }
@@ -375,9 +390,9 @@ int lookupSpinPattern(char bpat, char ypat){
     }
   }
   //defined by AN1125:
-  patlookup[0][2]=1;
-  patlookup[1][2]=2;
-  patlookup[0][3]=3;
+  patlookup[0][2]=1;//B=1, Y=3
+  patlookup[1][2]=2;//B=2, Y=4
+  patlookup[0][3]=3;//add one both to indices, etc
   patlookup[1][3]=4;
   patlookup[2][0]=5;
   patlookup[2][1]=6;
