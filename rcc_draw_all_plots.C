@@ -286,9 +286,16 @@ void rcc_draw_all_plots()
   c->Divide(3,2);
   c->cd(1);
   mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike):run");
-  mTree->Draw("(zdcwlike/bbclike-zdcwunlike/bbcunlike)/(zdcwlike/bbclike+zdcwunlike/bbcunlike):run","1","same");
-  mTree->Draw("(bbcwlike/bbclike-bbcwunlike/bbcunlike)/(bbcwlike/bbclike+bbcwunlike/bbcunlike):run","1","same");
-  
+  c->cd(2);
+  mTree->Draw("(zdcwlike/bbclike-zdcwunlike/bbcunlike)/(zdcwlike/bbclike+zdcwunlike/bbcunlike):run");
+  c->cd(3);
+  mTree->Draw("(bbcwlike/bbclike-bbcwunlike/bbcunlike)/(bbcwlike/bbclike+bbcwunlike/bbcunlike):run");
+  c->cd(4);
+  mTree->Draw("zdclike/zdcunlike:bbclike/bbcunlike");
+  c->cd(5);
+  mTree->Draw("zdcwlike/zdcwunlike:bbclike/bbcunlike");
+  c->cd(6);
+  mTree->Draw("bbcwlike/bbcwunlike:bbclike/bbcunlike");
 
   
   outfile->Close();
