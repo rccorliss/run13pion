@@ -287,12 +287,20 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
-  c=new TCanvas("cqa","cqa",900,700);
+  c=new TCanvas("cpolqa","cpolqa",900,700);
     c->Divide(3,2);
     c->cd(1);
     mTree->Draw("bpol*ypol:spinpat","1","colz");
-    c->cd(2);
+    c->cd(4);
     mTree->Draw("zdclike/zdcunlike:spinpat","1","colz");
+    c->cd(2);
+    mTree->Draw("bpol");
+    c->cd(5);
+    mTree->Draw("ypol");
+    c->cd(3);
+    mTree->Draw("ypolerr:spinpat","1","colz");
+    c->cd(6);
+    mTree->Draw("bpolerr:spinpat","1","colz");
   
   if(0){
     c=new TCanvas("clumasym","clumasym",900,700);
