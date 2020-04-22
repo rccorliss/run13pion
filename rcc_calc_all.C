@@ -96,12 +96,12 @@ void rcc_calc_all(const int runnumber = 398149,
     for (int j=0;j<2;j++){
       zdc_narrow_sum[i][j]=0;
       bbc_nocut_sum[i][j]=0;
-      weighted_bpol_sum[i][j]=0;
-      weighted_ypol_sum[i][j]=0;
-      bpolerr2_zdc2_sum[i][j]=0;
-      ypolerr2_zdc2_sum[i][j]=0;
-      bpol2_zdc_sum[i][j]=0;
-      ypol2_zdc_sum[i][j]=0;
+      //weighted_bpol_sum[i][j]=0;
+      //weighted_ypol_sum[i][j]=0;
+      //bpolerr2_zdc2_sum[i][j]=0;
+      //ypolerr2_zdc2_sum[i][j]=0;
+      //bpol2_zdc_sum[i][j]=0;
+      //ypol2_zdc_sum[i][j]=0;
     }
   }
 
