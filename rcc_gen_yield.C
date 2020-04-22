@@ -57,7 +57,7 @@ int num_tdcovers;
 TTree *rccRunTree;
 //contains: run,fill,neve (not clusters!),nbins,nbounds(=nbins+1)
 int rccRun, rccFill, rccNeve, rccTotRawClust, rccTotGoodClust, rccNbins, rccNbounds;
-const float rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
+const Float_t rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 TTree *rccBunchTree;
 //contains nEvenBunchEve,nOddBunchEve,nBunchEve
 //(iDet=0 ==> north, 1==> south, 2==>both
