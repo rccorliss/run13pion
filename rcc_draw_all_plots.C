@@ -282,8 +282,8 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
-  c=new TCanvas("c","c",1000,600);
-  c->Divide(3,2);
+  c=new TCanvas("c","c",900,700);
+  c->Divide(3,3);
   c->cd(1);
   mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike)");
   c->cd(2);
@@ -296,6 +296,12 @@ void rcc_draw_all_plots()
   mTree->Draw("zdcwlike/zdcwunlike:bbclike/bbcunlike");
   c->cd(6);
   mTree->Draw("bbcwlike/bbcwunlike:bbclike/bbcunlike");
+  c->cd(7);
+  mTree->Draw("(zdclike/zdcunlike)/(bbclike/bbcunlike)");
+  c->cd(8);
+  mTree->Draw("(zdcwlike/zdcwunlike)/(bbclike/bbcunlike)");
+  c->cd(9);
+  mTree->Draw("(bbcwlike/bbcwunlike)/(bbclike/bbcunlike)");
 
   
   outfile->Close();
