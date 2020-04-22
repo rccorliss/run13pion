@@ -44,6 +44,7 @@ void rcc_draw_all_plots()
 
   int m_spinpat,m_run, m_fill;
   float m_bpol,m_ypol;
+  float m_bpolerr,m_ypolerr;
   int m_i;//increments by one every tiem we fill.  Unique run ID, but not run number.
   
   mtree->Branch("zdcsum",&m_zdcsum);
@@ -61,6 +62,8 @@ void rcc_draw_all_plots()
   mtree->Branch("fill",&m_fill);
   mtree->Branch("bpol",&m_bpol);
   mtree->Branch("ypol",&m_ypol);
+  mtree->Branch("bpolerr",&m_bpolerr);
+  mtree->Branch("ypolerr",&m_ypolerr);
   mtree->Branch("index",&m_i);
   
 
@@ -144,6 +147,8 @@ void rcc_draw_all_plots()
     m_run=runnumber;
     m_bpol=hPol->GetMean(1);
     m_ypol=hPol->GetMean(2);
+    m_bpolerr=hTags->GetBinContent(hTags->FindBin("bpolerr"));
+    m_ypol=hTags->GetBinContent(hTags->FindBin("ypolerr"));
     mtree->Fill();
     m_i++;
     
