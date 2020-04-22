@@ -139,6 +139,7 @@ void rcc_calc_all(const int runnumber = 398149,
   }
   int spinpattern=lookupSpinPattern(bspinpat,  yspinpat);
   hTags->Fill("spinpattern",spinpattern);
+ 
 
     
   for (int phenix_i=0;phenix_i<120;phenix_i++){
@@ -154,6 +155,9 @@ void rcc_calc_all(const int runnumber = 398149,
     if (bspin>1 || bspin==0 || yspin > 1 || yspin==0) continue; // skip the empty and unpolarized crossings.
     int bspinbin=(bspin>0);//0 for neg. helicity, 1 for pos. helicity.
     int yspinbin=(yspin>0);
+
+    hTags->Fill("ypolerr",ypolerr);
+    hTags->Fill("bpolerr",bpolerr);
     
     
     long long  scaler_bbc_vtxcut =  spin_cont.GetScalerBbcVertexCut(cad_i);
@@ -172,7 +176,7 @@ void rcc_calc_all(const int runnumber = 398149,
     //NOTE:  the polarization is ~always constant across all bunches, so it is inappropriate to treat the polarization as the weighted average of all the measurements -- they're completely correlated, and this only serves to artificially reduce the polarization error.
     
     //fill bare polarization plot:
-    //hPolarizationBySpin[bspinbin][yspinbin]->Fill(bpol,ypol);
+    hPolarizationBySpin[bspinbin][yspinbin]->Fill(bpol,ypol);
       
     //accumulate average polarizations by spin configuration:
     //double bpol_times_zdc=bpol*scaler_zdc_narrow;
