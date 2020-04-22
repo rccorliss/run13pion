@@ -298,9 +298,9 @@ void rcc_draw_all_plots()
     c->cd(5);
     mTree->Draw("ypol");
     c->cd(3);
-    mTree->Draw("ypolerr:spinpat","1","colz");
-    c->cd(6);
     mTree->Draw("bpolerr:spinpat","1","colz");
+    c->cd(6);
+    mTree->Draw("ypolerr:spinpat","1","colz");
   
   if(0){
     c=new TCanvas("clumasym","clumasym",900,700);
