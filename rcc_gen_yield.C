@@ -34,7 +34,7 @@ float zvtx;
 short bunch;
 short trig;
 
-// Input tree cluster variables
+// Input tree cluster variables used for cluster cuts:
 float ecore[MAXCLUSTERS];
 short feecore[MAXCLUSTERS]; // fee576ch of central tower
 float pt[MAXCLUSTERS];
@@ -54,6 +54,32 @@ int num_tdcovers;
 // float etow[MAXTOWERS];
 // int chtow[MAXTOWERS];
 
+TTree *rccRunTree;
+//contains: run,fill,neve (not clusters!),nbins,nbounds(=nbins+1)
+int rccRun, rccFill, rccNeve, rccTotRawClust, rccTotGoodClust, rccNbins, rccNbounds;
+const float rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
+TTree *rccBunchTree;
+//contains nEvenBunchEve,nOddBunchEve,nBunchEve
+//(iDet=0 ==> north, 1==> south, 2==>both
+//to make sure I have the implicit ordering correctly, doing this out long-hand:
+int rccRawClust[NBUNCHES*NPTBINS];//raw events in this bunch and ptbin, index by iBun*NPT+iPt)
+int rccGoodClust[NBUNCHES*NPTBINS];//good clusters in this bunch and ptbin
+int rccRawClustN[NBUNCHES*NPTBINS];//raw events in this bunch and ptbin, index by iBun*NPT+iPt)
+int rccGoodClustN[NBUNCHES*NPTBINS];//good clusters in this bunch and ptbin
+int rccRawClustS[NBUNCHES*NPTBINS];//raw events in this bunch and ptbin, index by iBun*NPT+iPt)
+int rccGoodClustS[NBUNCHES*NPTBINS];//good clusters in this bunch and ptbin
+
+int *rccRawClustPtr, *rccGoodClustPtr;
+int *rccRawClustPtrN, *rccGoodClustPtrN;
+int *rccRawClustPtrS, *rccGoodClustPtrS;
+
+
+
+//like:  rccRawClust[iBun*NPTBINS+iPt]++;
+//and: rccRawClust[(isNorth+1)*NBUNCHES*NPTBINS+iBun*NPTBINS+iPt]++;
+
+
+
 // QA objects
 bool isWarn[576];
 int tdcover[576];
@@ -66,6 +92,8 @@ TFile *histfile;
 TFile *treefile;
 
 TH2F *hYieldByBunchAndPt;
+TH2F *hYieldByBunchAndPtNorth;
+TH2F *hYieldByBunchAndPtSouth;
 TH1F *ptyield[NPTBINS][2];
 TH1F *checkpt;
 TH1F *ptspectrum_raw[2][2];
@@ -125,6 +153,30 @@ void rcc_gen_yield(int runnum,
   InitDB(runnum);
   InitWarn(runnum);
 
+  rccRun=runnum;
+
+  //set rcc tree data:
+  rccRun=runnum;
+  rccNeve=ttree->GetEntries();
+  //rccFill=;//this is set in InitDB
+  rccTotRawClust=0;//accumulate these over the file
+  rccTotGoodClust=0;//accumulate these over the file
+  rccNbins=NPTBINS;
+  rccNbounds=NPTBINS+1;
+//to make sure I have the implicit ordering correctly, doing this out long-hand:
+  for (int i=0;i<NBUNCHES;i++){
+    for (int j=0;j<NPTBINS;j++){
+      rccRawClust[i*NPTBINS+j]=0;
+      rccGoodClust[i*NPTBINS+j]=0;
+      rccRawClustN[i*NPTBINS+j]=0;
+      rccGoodClustN[i*NPTBINS+j]=0;
+      rccRawClustS[i*NPTBINS+j]=0;
+      rccGoodClustS[i*NPTBINS+j]=0;
+    }
+  }
+//these are filled into the tree by incrementing a pointer through them at fixed intervals.
+  
+
   int is_north, even_or_odd, spin_pattern;
   double cluster_r;
   int nentries = ttree->GetEntries();
@@ -140,7 +192,24 @@ void rcc_gen_yield(int runnum,
     even_or_odd = (corrbunch % 2); // 0 for even, 1 for odd
 
     for (int iclus = 0; iclus < nclus; iclus++) {
+
+      int rccPtBin=0;
+      for (rccPtBin=0;rccPtBin<NPTBINS;rccPtBin++){
+	if (rccBound[rccPtBin]<=pt[iclus] && pt[iclus]<rccBound[rccPtBin+1]) break; //stop searching when we find the match;
+      }
+      int rccBinID=corrbunch*NPTBINS+rccPtBin;
+
+      
       is_north = (feecore[iclus] < 288) ? 0 : 1;
+
+      rccTotRawClust++;
+      rccRawClust[rccBinID]++;
+      if (is_north){
+	rccRawClustN[rccBinID]++;
+      }else{
+	rccRawClustS[rccBinID]++;
+      }
+      
 
       cluster_r=sqrt(x[iclus] * x[iclus] + y[iclus] * y[iclus]);
 
@@ -207,11 +276,41 @@ void rcc_gen_yield(int runnum,
       int iy = mpcmap->getGridY(feecore[iclus]);
       toweryields[is_north]->Fill(ix, iy);
       hYieldByBunchAndPt->Fill(pt[iclus],bunch);
+      if (is_north){
+	hYieldByBunchAndPtNorth->Fill(pt[iclus],bunch);
+      }else{
+	hYieldByBunchAndPtSouth->Fill(pt[iclus],bunch);
+      }
+
+      rccTotGoodClust++;
+      rccGoodClust[rccBinID]++;
+      if (is_north){
+	rccGoodClustN[rccBinID]++;
+      }else{
+	rccGoodClustS[rccBinID]++;
+      }
+
+      
     }
   }
   rootin->Close();
   delete rootin;
-  End();
+
+  //fill our one-liner run variables:
+  rccRunTree->Fill();
+  
+  //fill our 120-line bunch variables:
+  for (int b=0;b<120;b++){
+    rccRawClustPtr=rccRawClust+(b*NPTBINS);
+    rccGoodClustPtr=rccGoodClust+(b*NPTBINS);
+    rccRawClustPtrN=rccRawClustN+(b*NPTBINS);
+    rccGoodClustPtrN=rccGoodClustN+(b*NPTBINS);
+    rccRawClustPtrS=rccRawClustS+(b*NPTBINS);
+    rccGoodClustPtrS=rccGoodClustS+(b*NPTBINS);
+    rccBunchTree->Fill();
+  }
+  
+  End();//write and close output files.
 }
 
 void get_entry(int ientry) {
@@ -245,7 +344,28 @@ void InitOutput(int runnum, const char* outputdir){
   yieldfname += runnum;
   yieldfname += ".MPC.yields.rcc.hist.root";
   histfile = new TFile(yieldfname, "RECREATE");
-  printf("opening SpinDb histfile at %s\n",yieldfname.Data());
+  printf("creating yield histfile at %s\n",yieldfname.Data());
+
+  rccRunTree=new TTree("runTree","per-run variables and totals");
+  rccRunTree->Branch("run",&rccRun);
+  rccRunTree->Branch("fill",&rccFill);
+  rccRunTree->Branch("neve",&rccNeve);
+  rccRunTree->Branch("nraw",&rccTotRawClust);
+  rccRunTree->Branch("npi0",&rccTotGoodClust);
+  rccRunTree->Branch("nptbins",&rccNbins);
+  rccRunTree->Branch("nbounds",&rccNbounds);
+  rccRunTree->Branch("ptbound",&rccBounds,"ptbound[nbounds]/F");
+
+  rccBunchTree=new TTree("bunchTree","per-bunch total raw and good clusters per det and sum");
+  rccBunchTree->Branch("nRawByPt",rccRawClustPtr,Form("nRawByPt[%d]/F",NPTBINS));
+  rccBunchTree->Branch("nPiByPt",rccGoodClustPtr,Form("nPiByPt[%d]/F",NPTBINS));
+  rccBunchTree->Branch("nRawByPtN",rccRawClustPtrN,Form("nRawByPtN[%d]/F",NPTBINS));
+  rccBunchTree->Branch("nPiByPtN",rccGoodClustPtrN,Form("nPiByPtN[%d]/F",NPTBINS));
+  rccBunchTree->Branch("nRawByPtS",rccRawClustPtrS,Form("nRawByPtS[%d]/F",NPTBINS));
+  rccBunchTree->Branch("nPiByPtS",rccGoodClustPtrS,Form("nPiByPtS[%d]/F",NPTBINS));
+
+
+  
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
   Double_t sparsebinsmin[4] = {-.5, -.5, -.5, 1.0};
@@ -253,6 +373,8 @@ void InitOutput(int runnum, const char* outputdir){
   Double_t pt_limits[11] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 
   hYieldByBunchAndPt=new TH2F("hYieldByBunchAndPt","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hYieldByBunchAndPtNorth=new TH2F("hYieldByBunchAndPtNorth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hYieldByBunchAndPtSouth=new TH2F("hYieldByBunchAndPtSouth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
 
   vtx[0][0] = new TH1D("evenvtxS", "evenvtxS", 600, -300, 300);
@@ -396,6 +518,7 @@ void InitDB(int n_runnum) {
   }
   spin_out.GetDBContentStore(spin_cont, n_runnum);
   int fillnum = spin_cont.GetFillNumber();
+  rccFill=fillnum;
 
   rc = recoConsts::instance();
   rc->set_IntFlag("RUNNUMBER", n_runnum);
@@ -512,7 +635,10 @@ void End() {
   histfile->cd();
 
   hYieldByBunchAndPt->Write();
-
+  hYieldByBunchAndPtNorth->Write();
+  hYieldByBunchAndPtSouth->Write();
+  rccBunchTree->Write();
+  rccRunTree->Write();
 
 
 
