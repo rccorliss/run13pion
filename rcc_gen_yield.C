@@ -354,7 +354,7 @@ void InitOutput(int runnum, const char* outputdir){
   rccRunTree->Branch("npi0",&rccTotGoodClust);
   rccRunTree->Branch("nptbins",&rccNbins);
   rccRunTree->Branch("nbounds",&rccNbounds);
-  rccRunTree->Branch("ptbound",rccBounds,"ptbound[nbounds]/F");
+  rccRunTree->Branch("ptbound",&rccBounds[0],"ptbound[nbounds]/F");
 
   rccBunchTree=new TTree("bunchTree","per-bunch total raw and good clusters per det and sum");
   rccBunchTree->Branch("nRawByPt",rccRawClustPtr,Form("nRawByPt[%d]/F",NPTBINS));
