@@ -311,6 +311,7 @@ void rcc_draw_all_plots()
   c->Divide(3,3);
  for (int j=1;j<nspinpats;j++){
    c->cd(j);
+   hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
    hFinalAsymBySpinpat[j]->Draw();
   }
 
