@@ -282,7 +282,13 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
-  c=new TCanvas(
+  c=new TCanvas("c","c",1000,600);
+  c->Divide(3,2);
+  c->cd(1);
+  mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike):run");
+  mTree->Draw("(zdcwlike/bbclike-zdcwunlike/bbcunlike)/(zdcwlike/bbclike+zdcwunlike/bbcunlike):run","1","same");
+  mTree->Draw("(bbcwlike/bbclike-bbcwunlike/bbcunlike)/(bbcwlike/bbclike+bbcwunlike/bbcunlike):run","1","same");
+  
 
   
   outfile->Close();
