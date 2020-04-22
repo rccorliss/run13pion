@@ -195,7 +195,7 @@ void rcc_gen_yield(int runnum,
 
       int rccPtBin=0;
       for (rccPtBin=0;rccPtBin<NPTBINS;rccPtBin++){
-	if (rccBound[rccPtBin]<=pt[iclus] && pt[iclus]<rccBound[rccPtBin+1]) break; //stop searching when we find the match;
+	if (rccBounds[rccPtBin]<=pt[iclus] && pt[iclus]<rccBounds[rccPtBin+1]) break; //stop searching when we find the match;
       }
       int rccBinID=corrbunch*NPTBINS+rccPtBin;
 
@@ -354,7 +354,7 @@ void InitOutput(int runnum, const char* outputdir){
   rccRunTree->Branch("npi0",&rccTotGoodClust);
   rccRunTree->Branch("nptbins",&rccNbins);
   rccRunTree->Branch("nbounds",&rccNbounds);
-  rccRunTree->Branch("ptbound",&rccBounds,"ptbound[nbounds]/F");
+  rccRunTree->Branch("ptbound",rccBounds,"ptbound[nbounds]/F");
 
   rccBunchTree=new TTree("bunchTree","per-bunch total raw and good clusters per det and sum");
   rccBunchTree->Branch("nRawByPt",rccRawClustPtr,Form("nRawByPt[%d]/F",NPTBINS));
