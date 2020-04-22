@@ -282,28 +282,39 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
-  c=new TCanvas("c","c",900,700);
-  c->Divide(3,3);
-  c->cd(1);
-  mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike)");
-  c->cd(2);
-  mTree->Draw("(zdcwlike/bbclike-zdcwunlike/bbcunlike)/(zdcwlike/bbclike+zdcwunlike/bbcunlike)");
-  c->cd(3);
-  mTree->Draw("(bbcwlike/bbclike-bbcwunlike/bbcunlike)/(bbcwlike/bbclike+bbcwunlike/bbcunlike)");
-  c->cd(4);
-  mTree->Draw("zdclike/zdcunlike:bbclike/bbcunlike");
-  c->cd(5);
-  mTree->Draw("zdcwlike/zdcwunlike:bbclike/bbcunlike");
-  c->cd(6);
-  mTree->Draw("bbcwlike/bbcwunlike:bbclike/bbcunlike");
-  c->cd(7);
-  mTree->Draw("(zdclike/zdcunlike)/(bbclike/bbcunlike)");
-  c->cd(8);
-  mTree->Draw("(zdcwlike/zdcwunlike)/(bbclike/bbcunlike)");
-  c->cd(9);
-  mTree->Draw("(bbcwlike/bbcwunlike)/(bbclike/bbcunlike)");
+  if(0){
+    c=new TCanvas("c","c",900,700);
+    c->Divide(3,3);
+    c->cd(1);
+    mTree->Draw("(zdclike/bbclike-zdcunlike/bbcunlike)/(zdclike/bbclike+zdcunlike/bbcunlike)");
+    c->cd(2);
+    mTree->Draw("(zdcwlike/bbclike-zdcwunlike/bbcunlike)/(zdcwlike/bbclike+zdcwunlike/bbcunlike)");
+    c->cd(3);
+    mTree->Draw("(bbcwlike/bbclike-bbcwunlike/bbcunlike)/(bbcwlike/bbclike+bbcwunlike/bbcunlike)");
+    c->cd(4);
+    mTree->Draw("zdclike/zdcunlike:bbclike/bbcunlike");
+    c->cd(5);
+    mTree->Draw("zdcwlike/zdcwunlike:bbclike/bbcunlike");
+    c->cd(6);
+    mTree->Draw("bbcwlike/bbcwunlike:bbclike/bbcunlike");
+    c->cd(7);
+    mTree->Draw("(zdclike/zdcunlike)/(bbclike/bbcunlike)");
+    c->cd(8);
+    mTree->Draw("(zdcwlike/zdcwunlike)/(bbclike/bbcunlike)");
+    c->cd(9);
+    mTree->Draw("(bbcwlike/bbcwunlike)/(bbclike/bbcunlike)");
+  }
 
-  
+
+  //Plots of asymmetries:
+  c=new TCanvas("c1","c1",800,600);
+  c->Divide(3,3);
+ for (int j=1;j<nspinpats;j++){
+   c->cd(j);
+   hFinalAsymBySpinpat[j]->Draw();
+  }
+
+ 
   outfile->Close();
   return;
 
