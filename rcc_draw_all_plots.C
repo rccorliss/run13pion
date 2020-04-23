@@ -83,7 +83,7 @@ void rcc_draw_all_plots()
   //accumulators for asymmetry divided into spin patterns bins
   TH2F *hWeightedAsymBySpinpat=new TH2F("hWeightedAsymBySpinpat","Weighted average asymmetry vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
   TH2F *hWeightSumBySpinpat=new TH2F("hWeightSumBySpinpat","Sum of Weights vs pt",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
-  TH2F *hYieldBySpinpat=new TH2F("hYieldBySpinpat","Total yield vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_boudn[1],nptbins,pt_limits);
+  TH2F *hYieldBySpinpat=new TH2F("hYieldBySpinpat","Total yield vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
   m_i=0;
   for (int i=0;i<maxptbins;i++)
     asymByBin[i]=&(rawAsym[i*maxruns]);
