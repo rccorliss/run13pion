@@ -111,9 +111,9 @@ void rcc_draw_all_plots()
     TH1F *tempYspin=0;
     tempYspin=((TH1F*)(histfile->Get("hYieldByPtNN")));
     tempYield=tempYspin->Clone("tempYield");
-    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtNP")));
-    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPP")));
-    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPN")));
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtNP"))));
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPP"))));
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPN"))));
   
     TH1F *hLumi[4];
     hLumi[0]=((TH1F*)(histfile->Get("hTotalLumi")));
@@ -137,7 +137,7 @@ void rcc_draw_all_plots()
 	hPolarizationMean->Fill(hPol->GetMean(1),hPol->GetMean(2));
       }
     }
-
+		   
     m_zdcsum=lumi;
     m_zdcratio=lumiUnlike/lumiLike;
     m_zdclike=lumiLike;
@@ -298,7 +298,7 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
-  if(0){
+  if(1){
   c=new TCanvas("cpolqa","cpolqa",900,700);
     c->Divide(3,2);
     c->cd(1);
@@ -340,18 +340,18 @@ void rcc_draw_all_plots()
 
 
   //Plots of asymmetries:
-  if (1){
-  c=new TCanvas("c1","c1",800,600);
-  c->Divide(3,3);
- for (int j=1;j<nspinpats;j++){
-   c->cd(j);
-   hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
-   hFinalAsymBySpinpat[j]->Draw();
-  }
- c->cd(9);
- hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
- hWeightedAsym->Draw();
-  }
+		   if (1){
+		     c=new TCanvas("c1","c1",800,600);
+		     c->Divide(3,3);
+		     for (int j=1;j<nspinpats;j++){
+		       c->cd(j);
+		       hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
+		       hFinalAsymBySpinpat[j]->Draw();
+		     }
+		     c->cd(9);
+		     hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
+		     hWeightedAsym->Draw();
+		   }
  
   outfile->Close();
   return;
