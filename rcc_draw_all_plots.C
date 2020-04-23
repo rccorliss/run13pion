@@ -145,10 +145,10 @@ void rcc_draw_all_plots()
     
     m_spinpat=spinpat;
     m_run=runnumber;
-    m_bpol=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("bpolerr")));//hPol->GetMean(1);
+    m_bpol=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("bpol")));//hPol->GetMean(1);
     m_ypol=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("ypol")));//hPol->GetMean(2);
     m_bpolerr=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("bpolerr")));
-    m_ypol=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("ypolerr")));
+    m_ypolerr=htags->GetBinContent(htags->GetBin(htags->GetXaxis()->FindBin("ypolerr")));
     mtree->Fill();
     m_i++;
     
