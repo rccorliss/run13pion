@@ -171,7 +171,7 @@ void rcc_draw_all_plots()
       int sourcebin=temp->FindBin(ptmid);
       float asym=temp->GetBinContent(sourcebin);
       float  err=temp->GetBinError(sourcebin);
-      float y=tempYield->GetBinContent(sourcebin);
+      float yield=tempYield->GetBinContent(sourcebin);
       if (err<1e-9) err=asym; //if no error, assign 100% error for play.
       if (err<1e-9) {
 	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
@@ -190,7 +190,7 @@ void rcc_draw_all_plots()
       hWeightSumBySpinpat->Fill(spinpat,ptmid,w);
 
       //add the yield to the yield by spinpat
-      hYieldBySpinpat->Fill(spinpat,ptmid,y);
+      hYieldBySpinpat->Fill(spinpat,ptmid,yield);
       
       //hErrSum->Fill(ptmid,err2/(asym*asym));
     //eventually, I should move this all to a simple ttree that puts entries in more granular way so I can divvy however I want.
