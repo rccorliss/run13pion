@@ -110,7 +110,7 @@ void rcc_draw_all_plots()
     TH1F *tempYield=0;
     TH1F *tempYspin=0;
     tempYspin=((TH1F*)(histfile->Get("hYieldByPtNN")));
-    tempYield=tempYspin->Clone("tempYield");
+    tempYield=(TH1F*)tempYspin->Clone("tempYield");
     tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtNP"))));
     tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPP"))));
     tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPN"))));
