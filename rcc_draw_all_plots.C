@@ -83,7 +83,7 @@ void rcc_draw_all_plots()
   //accumulators for asymmetry divided into spin patterns bins
   TH2F *hWeightedAsymBySpinpat=new TH2F("hWeightedAsymBySpinpat","Weighted average asymmetry vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
   TH2F *hWeightSumBySpinpat=new TH2F("hWeightSumBySpinpat","Sum of Weights vs pt",nspinpats,spinpat_bound[0],spinpat_bound[1],nptbins,pt_limits);
-
+  TH2F *hYieldBySpinpat=new TH2F("hYieldBySpinpat","Total yield vs pt;spinpat;pt [GeV]",nspinpats,spinpat_bound[0],spinpat_boudn[1],nptbins,pt_limits);
   m_i=0;
   for (int i=0;i<maxptbins;i++)
     asymByBin[i]=&(rawAsym[i*maxruns]);
@@ -107,7 +107,14 @@ void rcc_draw_all_plots()
   
     TH1F *temp=0;
     temp=((TH1F*)(histfile->Get("hAllByPt")));
-    
+    TH1F *tempYield=0;
+    TH1F *tempYspin=0;
+    tempYspin=((TH1F*)(histfile->Get("hYieldByPtNN")));
+    tempYield=tempYspin->Clone("tempYield");
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtNP")));
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPP")));
+    tempYield->Add(((TH1F*)(histfile->Get("hYieldByPtPN")));
+  
     TH1F *hLumi[4];
     hLumi[0]=((TH1F*)(histfile->Get("hTotalLumi")));
     hLumi[1]=((TH1F*)(histfile->Get("hTotalZdcWide")));
@@ -164,6 +171,7 @@ void rcc_draw_all_plots()
       int sourcebin=temp->FindBin(ptmid);
       float asym=temp->GetBinContent(sourcebin);
       float  err=temp->GetBinError(sourcebin);
+      float y=tempYield->GetBinContent(sourcebin);
       if (err<1e-9) err=asym; //if no error, assign 100% error for play.
       if (err<1e-9) {
 	err=1e-9; //originally I skipped if this happened, but that might've artificially inflated if my error was very small.
@@ -180,6 +188,9 @@ void rcc_draw_all_plots()
       hWeightSumByRatio->Fill(m_zdcratio,ptmid,w);
       hWeightedAsymBySpinpat->Fill(spinpat,ptmid,asym*w);
       hWeightSumBySpinpat->Fill(spinpat,ptmid,w);
+
+      //add the yield to the yield by spinpat
+      hYieldBySpinpat->Fill(spinpat,ptmid,y);
       
       //hErrSum->Fill(ptmid,err2/(asym*asym));
     //eventually, I should move this all to a simple ttree that puts entries in more granular way so I can divvy however I want.
@@ -287,6 +298,7 @@ void rcc_draw_all_plots()
   TCanvas *c;
 
   //QA over full runlist
+  if(0){
   c=new TCanvas("cpolqa","cpolqa",900,700);
     c->Divide(3,2);
     c->cd(1);
@@ -294,13 +306,14 @@ void rcc_draw_all_plots()
     c->cd(4);
     mTree->Draw("zdclike/zdcunlike:spinpat","1","colz");
     c->cd(2);
-    mTree->Draw("bpol");
+    mTree->Draw("bpol:ypol","1","colz");
     c->cd(5);
-    mTree->Draw("ypol");
+    hYieldBySpinpat->Draw("colz");
     c->cd(3);
     mTree->Draw("bpolerr:spinpat","1","colz");
     c->cd(6);
     mTree->Draw("ypolerr:spinpat","1","colz");
+  }
   
   if(0){
     c=new TCanvas("clumasym","clumasym",900,700);
@@ -327,7 +340,7 @@ void rcc_draw_all_plots()
 
 
   //Plots of asymmetries:
-  if (0){
+  if (1){
   c=new TCanvas("c1","c1",800,600);
   c->Divide(3,3);
  for (int j=1;j<nspinpats;j++){
