@@ -334,7 +334,7 @@ void rcc_calc_all(const int runnumber = 398149,
     hAllByPt->SetBinError(i+1,err);
     //hAllByPt->SetBinContent(i+1,abs(tasym));//uncomment this if you want a wrong answer that is definitely not zero
     if (isnan(err2))
-	hAllByPt->SetBinError(i+1,0.00001);
+	hAllByPt->SetBinError(i+1,1.0);
     if (tsum==0){
       printf("bin %d has sum=%f+%f=0\n",i,tlike,trelunlike);
 	hAllByPt->SetBinContent(i+1,0);//temporary, I swear.

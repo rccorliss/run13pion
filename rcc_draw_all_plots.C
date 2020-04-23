@@ -340,18 +340,18 @@ void rcc_draw_all_plots()
 
 
   //Plots of asymmetries:
-		   if (1){
-		     c=new TCanvas("c1","c1",800,600);
-		     c->Divide(3,3);
-		     for (int j=1;j<nspinpats;j++){
-		       c->cd(j);
-		       hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
-		       hFinalAsymBySpinpat[j]->Draw();
-		     }
-		     c->cd(9);
-		     hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
-		     hWeightedAsym->Draw();
-		   }
+  if (1){
+    c=new TCanvas("cpiasym","cpiasym",800,600);
+    c->Divide(3,3);
+    for (int j=1;j<nspinpats;j++){
+      c->cd(j);
+      hFinalAsymBySpinpat[j]->GetYaxis()->SetRangeUser(-0.03,0.03);
+      hFinalAsymBySpinpat[j]->Draw();
+    }
+    c->cd(9);
+    hWeightedAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
+    hWeightedAsym->Draw();
+  }
  
   outfile->Close();
   return;
