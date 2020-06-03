@@ -95,7 +95,7 @@ void rcc_draw_lumi_plots(){
     c->cd(1);
     t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks && live70 && minbbcrate);
     t->SetLineColor(kRed);
-    t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks&& live70 &&minbbcrate &&bbcslope,"same");
+    t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks&& live70 &&minbbcrate &&bbsslope,"same");
     t->SetLineColor(kBlack);
     nc++;
   }
