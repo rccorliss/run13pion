@@ -47,7 +47,17 @@ void rcc_draw_lumi_plots(){
  //show how many live clocks we have in each bunch:
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("log(clk)");
+  t->Draw("log10(clk)");
+  t->SetLineColor(kRed);
+  t->Draw("log10(clk)","clk>1e6","same");
+  t->SetLineColor(kBlack);
+  nc++;
+  return;
+
+  //show how many live clocks we have in each bunch:
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("log10(clk)");
   nc++;
   return;
   
