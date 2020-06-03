@@ -57,30 +57,37 @@ void rcc_draw_lumi_plots(){
   }
    
   //show how the livetime goes with BBC rate
-  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-  c->cd(1);
-  t->Draw("clk/rclk:bbcwide",minclocks);
-  t->SetMarkerColor(kRed);
-  t->Draw("clk/rclk:bbcwide",minclocks && live70,"same");
-  t->SetMarkerColor(kBlack);
-  nc++;
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("clk/rclk:bbcwide",minclocks);
+    t->SetMarkerColor(kRed);
+    t->Draw("clk/rclk:bbcwide",minclocks && live70,"same");
+    t->SetMarkerColor(kBlack);
+    nc++;
+  }
 
  //show the uncorrected(?) BBC rate for the survivors:
-  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-  c->cd(1);
-  t->Draw("bbcwide",minclocks && live70);
-  t->SetLineColor(kRed);
-  t->Draw("bbcwide",minclocks&& live70 &&minbbcrate,"same");
-  t->SetLineColor(kBlack);
-  nc++;
-  return;
-
-  //show how bbcs singles to doubles goes with bbc rate
-  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-  c->cd(1);
-  t->Draw("bbscnt/bbcwidecnt:bbcwide","bbcwide>0.01","colz");
-  nc++;
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("bbcwide",minclocks && live70);
+    t->SetLineColor(kRed);
+    t->Draw("bbcwide",minclocks&& live70 &&minbbcrate,"same");
+    t->SetLineColor(kBlack);
+    nc++;
+  }
   
+  //show how bbcs singles to doubles goes with bbc rate, with livetime, rate, and runlength cuts
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("bbscnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate,"colz");
+    nc++;
+  }
+  
+
+  return;
    //show how bbcn singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
