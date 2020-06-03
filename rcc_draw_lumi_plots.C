@@ -46,32 +46,32 @@ void rcc_draw_lumi_plots(){
   //show how the livetime goes with BBC rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("rclk/clk:bbcwide","rclk/clk<2","colz");
+  t->Draw("clk/rclk:bbcwide","1","colz");
   nc++;
 
 
   //show how bbcs singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("bbscnt/bbcwidecnt:bbcwide","rclk/clk<2","colz");
+  t->Draw("bbscnt/bbcwidecnt:bbcwide","bbcwide>0.01","colz");
   nc++;
   
    //show how bbcn singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("bbncnt/bbcwidecnt:bbcwide","rclk/clk<2","colz");
+  t->Draw("bbncnt/bbcwidecnt:bbcwide","bbcwide>0.01","colz");
   nc++;
 
     //show how zdcs singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("zdscnt/zdcwidecnt:bbcwide","rclk/clk<2","colz");
+  t->Draw("zdscnt/zdcwidecnt:bbcwide","bbcwide>0.01","colz");
   nc++;
   
    //show how zdcn singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("zdncnt/zdcwidecnt:bbcwide","rclk/clk<2","colz");
+  t->Draw("zdncnt/zdcwidecnt:bbcwide","bbcwide>0.01","colz");
   nc++;
   
   /*
