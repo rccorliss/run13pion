@@ -43,6 +43,14 @@ void rcc_draw_lumi_plots(){
   //c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   //c->cd(1);
   //t->Draw("rclk/clk:bbcwide","1","colz");
+
+ //show how many live clocks we have in each bunch:
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("clk");
+  nc++;
+  return;
+  
   //show how the livetime goes with BBC rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
