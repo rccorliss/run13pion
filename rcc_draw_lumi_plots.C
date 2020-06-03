@@ -43,7 +43,7 @@ void rcc_draw_lumi_plots(){
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
   TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
-  TCut bbcslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7))<1.5"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  TCut bbcslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
   
  //show how many live clocks we have in each bunch:
   if (0){
