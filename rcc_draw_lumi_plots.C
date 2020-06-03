@@ -128,7 +128,7 @@ void rcc_draw_lumi_plots(){
     c->cd(1);
     t->Draw("zdscnt/zdcwidecnt:bbcwide",minclocks && live70 && minbbcrate);
     t->SetMarkerColor(kRed);
-    t->Draw("zdscnt/zdcwidecnt:bbcwide",minclocks && live70 && minbbcrate && bbcslope,"same");
+    t->Draw("zdscnt/zdcwidecnt:bbcwide",minclocks && live70 && minbbcrate && bbsslope,"same");
     t->SetMarkerColor(kBlack);   
     nc++;
   }
