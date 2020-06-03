@@ -27,7 +27,7 @@ void rcc_draw_lumi_plots(){
 
   auto dirname="/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/";
   auto dir = gSystem->OpenDirectory(dirname);
-  while (auto f = gSystem->GetDirEntry(dir)) { 
+  while (auto  f = gSystem->GetDirEntry(dir)) { 
     if (!strcmp(f,".") || !strcmp(f,"..")) continue;
     t->Add(TString(dirname) + f + "/*.root");
   }
