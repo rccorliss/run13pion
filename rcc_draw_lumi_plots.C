@@ -85,13 +85,23 @@ void rcc_draw_lumi_plots(){
     t->Draw("bbscnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate,"colz");
     nc++;
   }
+
+  //assuming these all intercept at y=1.1, x=0.7,
+  //we construct their slope
+  //show how ~k slope is distributed after cuts
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks && live70 && minbbcrate);
+    nc++;
+  }
   
 
   return;
    //show how bbcn singles to doubles goes with bbc rate
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
-  t->Draw("bbncnt/bbcwidecnt:bbcwide","bbcwide>0.01","colz");
+  t->Draw("bbncnt/bbcwidecnt:bbcwide","bbcwide>0.01");
   nc++;
 
     //show how zdcs singles to doubles goes with bbc rate
