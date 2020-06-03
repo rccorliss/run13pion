@@ -25,9 +25,10 @@ void rcc_draw_lumi_plots(){
   //  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
   //can't do this this way:  t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root"); // can't glob in this fashion.
 
-  auto dirname="/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/";
+  const char *dirname="/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/";
   auto dir = gSystem->OpenDirectory(dirname);
-  while (char *f = gSystem->GetDirEntry(dir)) { 
+  char f500];
+  while (f = gSystem->GetDirEntry(dir)) { 
     if (!strcmp(f,".") || !strcmp(f,"..")) continue;
     t->Add(TString(dirname) + f + "/*.root");
   }
