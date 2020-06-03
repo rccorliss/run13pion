@@ -24,7 +24,7 @@ void rcc_draw_lumi_plots(){
   TFileCollection fc("files"); // The name is irrelevant
   //  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
   t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
-  printf("t has %d entries\n",t->GetNentries());
+  printf("t has %d entries\n",t->GetEntries());
   // t->AddFileInfoList(fc.GetList());
   //delete fc;
 
