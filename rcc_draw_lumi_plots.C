@@ -1,5 +1,5 @@
 //code to read in bunch by bunch scalers and provide relative luminosity per bunch
-
+#include <TFileCollection>
 
 void rcc_draw_lumi_plots(){
   //printf("tried to run rcc_gen_lumi directly instead of using the proper function calls.\n");
@@ -22,8 +22,9 @@ void rcc_draw_lumi_plots(){
   //even better, make a tchain that loads all the runs from pedro
   TChain *t=new TChain("t");
   TFileCollection fc("files"); // The name is irrelevant
-  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
-  t->AddFileInfoList(fc.GetList());
+  //  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
+  t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
+  // t->AddFileInfoList(fc.GetList());
   delete fc;
 
   TCanvas *c;
