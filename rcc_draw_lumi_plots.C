@@ -25,7 +25,7 @@ void rcc_draw_lumi_plots(){
   //  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
   t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
   // t->AddFileInfoList(fc.GetList());
-  delete fc;
+  //delete fc;
 
   TCanvas *c;
   int nc=0;
