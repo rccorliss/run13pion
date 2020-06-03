@@ -126,9 +126,9 @@ void rcc_draw_lumi_plots(){
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
-    t->Draw("zdscnt/zdcwidecnt:bbcwide",minclocks && live70 && minbbcrate);
+    t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate);
     t->SetMarkerColor(kRed);
-    t->Draw("zdscnt/zdcwidecnt:bbcwide",minclocks && live70 && minbbcrate && bbsslope,"same");
+    t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"same");
     t->SetMarkerColor(kBlack);   
     nc++;
   }
