@@ -27,7 +27,7 @@ void rcc_draw_lumi_plots(){
 
   const char *dirname="/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/";
   auto dir = gSystem->OpenDirectory(dirname);
-  char f500];
+  char f[500];
   while (f = gSystem->GetDirEntry(dir)) { 
     if (!strcmp(f,".") || !strcmp(f,"..")) continue;
     t->Add(TString(dirname) + f + "/*.root");
@@ -42,9 +42,38 @@ void rcc_draw_lumi_plots(){
   
   //c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   //c->cd(1);
-  t->Draw("rclk/clk:bbcwide","1","colz");
-  
+  //t->Draw("rclk/clk:bbcwide","1","colz");
+  //show how the livetime goes with BBC rate
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("rclk/clk:bbcwide","rclk/clk<2","colz");
+  nc++;
 
+
+  //show how bbcs singles to doubles goes with bbc rate
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("bbscnt/bbcwidecnt:bbcwide","rclk/clk<2","colz");
+  nc++;
+  
+   //show how bbcn singles to doubles goes with bbc rate
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("bbncnt/bbcwidecnt:bbcwide","rclk/clk<2","colz");
+  nc++;
+
+    //show how zdcs singles to doubles goes with bbc rate
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("zdscnt/zdcwidecnt:bbcwide","rclk/clk<2","colz");
+  nc++;
+  
+   //show how zdcn singles to doubles goes with bbc rate
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+  c->cd(1);
+  t->Draw("zdncnt/zdcwidecnt:bbcwide","rclk/clk<2","colz");
+  nc++;
+  
   /*
   
   
