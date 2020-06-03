@@ -40,14 +40,9 @@ void rcc_draw_lumi_plots(){
   TCanvas *c;
   int nc=0;
   
-  //c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-  //c->cd(1);
-  //t->Draw("rclk/clk:bbcwide","1","colz");
-
-
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
-
+  TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
 
   
  //show how many live clocks we have in each bunch:
@@ -65,15 +60,18 @@ void rcc_draw_lumi_plots(){
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
   t->Draw("clk/rclk:bbcwide",minclocks);
-   t->SetLineColor(kRed);
+  t->SetMarkerColor(kRed);
   t->Draw("clk/rclk:bbcwide",minclocks && live70,"same");
-  t->SetLineColor(kBlack);
+  t->SetMarkerColor(kBlack);
   nc++;
 
  //show the uncorrected(?) BBC rate for the survivors:
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
   t->Draw("bbcwide",minclocks && live70);
+  t->SetLineColor(kRed);
+  t->Draw("bbcwide",minclocks&& live70 &&minbbcrate,"same");
+  t->SetLineColor(kBlack);
   nc++;
   return;
 
