@@ -30,7 +30,7 @@ void rcc_draw_lumi_plots(){
   TCanvas *c;
   int nc=0;
   
-  c=new TCanvas(Form("c%d",nc),800,600);
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd();
   t->Draw("rclk/clk:bbcwide","1","colz");
   
