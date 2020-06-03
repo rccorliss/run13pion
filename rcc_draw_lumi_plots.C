@@ -65,7 +65,7 @@ void rcc_draw_lumi_plots(){
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
   c->cd(1);
   t->Draw("clk/rclk:bbcwide",minclocks);
-   t->SetLieColor(kRed);
+   t->SetLineColor(kRed);
   t->Draw("clk/rclk:bbcwide",minclocks && live70,"same");
   t->SetLineColor(kBlack);
   nc++;
