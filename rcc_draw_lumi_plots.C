@@ -43,7 +43,7 @@ void rcc_draw_lumi_plots(){
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
   TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
-
+  TCut bbcslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7))<1.5"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
   
  //show how many live clocks we have in each bunch:
   if (0){
@@ -79,7 +79,7 @@ void rcc_draw_lumi_plots(){
   }
   
   //show how bbcs singles to doubles goes with bbc rate, with livetime, rate, and runlength cuts
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
     t->Draw("bbscnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate,"colz");
@@ -93,6 +93,20 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
     t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks && live70 && minbbcrate);
+    t->SetLineColor(kRed);
+    t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks&& live70 &&minbbcrate &&bbcslope,"same");
+    t->SetLineColor(kBlack);
+    nc++;
+  }
+  
+   //show how bbcs singles to doubles goes with bbc rate, with all cuts
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("bbscnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate);
+    t->SetMarkerColor(kRed);
+    t->Draw("bbscnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate && bbcslope,"same");
+    t->SetMarkerColor(kBlack);   
     nc++;
   }
   
