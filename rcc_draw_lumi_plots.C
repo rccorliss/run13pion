@@ -136,10 +136,12 @@ void rcc_draw_lumi_plots(){
   //show zdc vs bunch xing, to make the abort gaps visible.
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,1);
     c->cd(1);
-    t->Draw("cross:zdcwidecnt");
+    t->Draw("cross:zdcwidecnt","1","colz");
     t->SetMarkerColor(kRed);
-    t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"same");
+    c->cd(2);
+    t->Draw("cross:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"colz");
     t->SetMarkerColor(kBlack);   
     nc++;
   }
