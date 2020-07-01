@@ -112,7 +112,7 @@ void rcc_draw_lumi_plots(){
   }
 
   //show how bbc north singles to doubles goes with bbc rate, with all cuts -- do the south cuts apply to the north?
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
     t->Draw("bbncnt/bbcwidecnt:bbcwide",minclocks && live70 && minbbcrate && bbsslope);
@@ -122,11 +122,22 @@ void rcc_draw_lumi_plots(){
     nc++;
   }
 
-    //show how zdc south singles to doubles goes with bbc rate, with all cuts -- do the bbc cuts apply to the zdc?
-  if (1){
+  //show how zdc south singles to doubles goes with bbc rate, with all cuts -- do the bbc cuts apply to the zdc?
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
     t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate);
+    t->SetMarkerColor(kRed);
+    t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"same");
+    t->SetMarkerColor(kBlack);   
+    nc++;
+  }
+
+  //show zdc vs bunch xing, to make the abort gaps visible.
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->cd(1);
+    t->Draw("cross:zdcwidecnt");
     t->SetMarkerColor(kRed);
     t->Draw("zdscnt:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"same");
     t->SetMarkerColor(kBlack);   
