@@ -45,6 +45,7 @@ void rcc_draw_lumi_plots(){
   TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
   TCut bbnslope="abs((bbncnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
   TCut bbsslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  TCut abortgap="cross<111";
   
  //show how many live clocks we have in each bunch:
   if (0){
@@ -136,12 +137,18 @@ void rcc_draw_lumi_plots(){
   //show zdc vs bunch xing, to make the abort gaps visible.
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-    c->Divide(2,1);
+    c->Divide(2,2);
     c->cd(1);
     t->Draw("cross:zdcwidecnt","1","colz");
     t->SetMarkerColor(kRed);
     c->cd(2);
     t->Draw("cross:zdcwidecnt",minclocks && live70 && minbbcrate && bbsslope,"colz");
+    t->SetMarkerColor(kBlack);   
+    c->cd(3);
+    t->Draw("cross:zdcwidecnt",abortgap,"colz");
+    t->SetMarkerColor(kBlack);   
+    c->cd(4);
+    t->Draw("cross:zdcwidecnt",abortgap&&minclocks && live70 && minbbcrate && bbsslope,"colz");
     t->SetMarkerColor(kBlack);   
     nc++;
   }
