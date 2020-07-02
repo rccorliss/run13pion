@@ -52,6 +52,9 @@ void rcc_draw_lumi_plots(){
   allcuts=allcuts && bbsslope;
   TCut abortgap="cross<111";
   allcuts=allcuts && abortgap;
+  TCut stableratio="zdcwidecnt/bbcwidecnt<0.20";
+    allcuts=allcuts && stableratio;
+
   
  //show how many live clocks we have in each bunch:
   if (0){
