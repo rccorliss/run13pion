@@ -39,13 +39,19 @@ void rcc_draw_lumi_plots(){
 
   TCanvas *c;
   int nc=0;
-  
+
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
+  TCut allcuts=minclocks;
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
+  allcuts=allcuts && live70;
   TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
+  allcuts=allcuts && minbbcrate;
   TCut bbnslope="abs((bbncnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  allcuts=allcuts && bbnslope;
   TCut bbsslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  allcuts=allcuts && bbsslope;
   TCut abortgap="cross<111";
+  allcuts=allcuts && abortgap;
   
  //show how many live clocks we have in each bunch:
   if (0){
@@ -91,7 +97,7 @@ void rcc_draw_lumi_plots(){
   //assuming these all intercept at y=1.1, x=0.7,
   //we construct their slope
   //show how ~k slope is distributed after cuts
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->cd(1);
     t->Draw("(bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)",minclocks && live70 && minbbcrate);
@@ -135,7 +141,7 @@ void rcc_draw_lumi_plots(){
   }
 
   //show zdc vs bunch xing, to make the abort gaps visible.
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
@@ -149,6 +155,19 @@ void rcc_draw_lumi_plots(){
     t->SetMarkerColor(kBlack);   
     c->cd(4);
     t->Draw("cross:zdcwidecnt",abortgap&&minclocks && live70 && minbbcrate && bbsslope,"colz");
+    t->SetMarkerColor(kBlack);   
+    nc++;
+  }
+
+    //after all cuts,  zdc vs bunch xing, to make the abort gaps visible.
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,1);
+    c->cd(1);
+    t->Draw("zdcwidecnt/bbcwidecnt:run","1","colz");
+    t->SetMarkerColor(kRed);
+    c->cd(2);
+    t->Draw("zdcwidecnt/bbcwidecnt:run",allcuts,"colz");
     t->SetMarkerColor(kBlack);   
     nc++;
   }
