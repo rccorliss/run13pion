@@ -54,7 +54,7 @@ void rcc_draw_lumi_plots(){
   allcuts=allcuts && abortgap;
   TCut stableratio="zdcwidecnt/bbcwidecnt<0.20";
     allcuts=allcuts && stableratio;
-  TCut minzdccnt="zdcwidecnt>1";//reject bunches where the zdc trigger isn't acting right.
+  TCut minzdccnt="zdcwidecnt/rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
     allcuts=allcuts && minzdccnt;
 
   
