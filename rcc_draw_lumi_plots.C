@@ -181,7 +181,7 @@ void rcc_draw_lumi_plots(){
      c->cd(5);
      t->Draw("zdcwidecnt:bbcwidecnt",allcuts,"colz");
      c->cd(6);
-    t->Draw("zdcwidecnt/bbcwidecnt:bbccwidecnt",allcuts,"colz");  
+    t->Draw("zdcwidecnt/bbcwidecnt:bbcwidecnt",allcuts,"colz");  
     nc++;
   }
   
