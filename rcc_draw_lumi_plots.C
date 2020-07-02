@@ -162,11 +162,14 @@ void rcc_draw_lumi_plots(){
     //after all cuts,  zdc vs bunch xing, to make the abort gaps visible.
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-    c->Divide(2,1);
+    c->Divide(3,1);
     c->cd(1);
     t->Draw("zdcwidecnt/bbcwidecnt:run","1","colz");
     t->SetMarkerColor(kRed);
     c->cd(2);
+    t->Draw("zdcwidecnt/bbcwidecnt:run","zdcwidecnt/bbcwidecnt<0.45","colz");
+    t->SetMarkerColor(kRed);
+    c->cd(3);
     t->Draw("zdcwidecnt/bbcwidecnt:run",allcuts,"colz");
     t->SetMarkerColor(kBlack);   
     nc++;
