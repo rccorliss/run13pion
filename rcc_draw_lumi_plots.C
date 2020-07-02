@@ -159,10 +159,12 @@ void rcc_draw_lumi_plots(){
     nc++;
   }
 
-    //after all cuts,  zdc vs bunch xing, to make the abort gaps visible.
+    //after all cuts, zdc to bbc ratio, to look for excursions
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-    c->Divide(3,1);
+    c->Divide(3,2);
+
+    //ratio vs run
     c->cd(1);
     t->Draw("zdcwidecnt/bbcwidecnt:run","1","colz");
     t->SetMarkerColor(kRed);
@@ -171,7 +173,15 @@ void rcc_draw_lumi_plots(){
     t->SetMarkerColor(kRed);
     c->cd(3);
     t->Draw("zdcwidecnt/bbcwidecnt:run",allcuts,"colz");
-    t->SetMarkerColor(kBlack);   
+    t->SetMarkerColor(kBlack);
+
+    //ratios vs one part
+    c->cd(4);
+    t->Draw("zdcwidecnt/bbcwidecnt:zdcwidecnt",allcuts,"colz");
+     c->cd(5);
+     t->Draw("zdcwidecnt:bbcwidecnt",allcuts,"colz");
+     c->cd(6);
+    t->Draw("zdcwidecnt/bbcwidecnt:bbccwidecnt",allcuts,"colz");  
     nc++;
   }
   
