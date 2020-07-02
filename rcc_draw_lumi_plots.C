@@ -165,7 +165,7 @@ void rcc_draw_lumi_plots(){
   }
 
     //after all cuts, zdc to bbc ratio, to look for excursions
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(3,3);
 
@@ -194,6 +194,21 @@ void rcc_draw_lumi_plots(){
      t->Draw("zdcwidecnt/rclk:bbcwidecnt/rclk",allcuts,"colz");
      c->cd(9);
     t->Draw("zdcwidecnt/bbcwidecnt:bbcwidecnt/rclk",allcuts,"colz");  
+    nc++;
+  }
+
+  //after all cuts, inspect the corrected ratios and see how smooth they're getting...
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(1,3);
+
+  //ratios vs one part, normalized by live clocks
+    c->cd(1);
+    t->Draw("zdcwidecnt/bbcwidecnt:zdcwidecnt/clk",allcuts);
+     c->cd(2);
+     t->Draw("zdcwidecnt/rclk:bbcwidecnt/clk",allcuts);
+     c->cd(3);
+    t->Draw("zdcwidecnt/bbcwidecnt:bbcwidecnt/clk",allcuts);  
     nc++;
   }
   
