@@ -184,7 +184,7 @@ void rcc_draw_lumi_plots(){
     c->cd(4);
     t->Draw("zdcwidecnt/bbcwidecnt:zdcwidecnt",allcuts,"colz");
      c->cd(5);
-     t->Draw("zdcwidecnt/rclk:bbcwidecnt",allcuts,"colz");
+     t->Draw("zdcwidecnt:bbcwidecnt",allcuts,"colz");
      c->cd(6);
     t->Draw("zdcwidecnt/bbcwidecnt:bbcwidecnt",allcuts,"colz");  
   //ratios vs one part, normalized by live clocks
