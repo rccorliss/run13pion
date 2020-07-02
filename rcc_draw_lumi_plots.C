@@ -144,7 +144,7 @@ void rcc_draw_lumi_plots(){
   }
 
   //show zdc vs bunch xing, to make the abort gaps visible.
-  if (0){
+  if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
