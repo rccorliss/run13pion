@@ -62,13 +62,13 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
-    t->Draw("run:bunch","log10(rclk)","colz");
+    t->Draw("run:cross","log10(rclk)","colz");
     c->cd(2);
-    t->Draw("run:bunch","log10(clk)","colz");
+    t->Draw("run:cross","log10(clk)","colz");
     c->cd(3);
-    t->Draw("run:bunch","bbcwide","colz");
+    t->Draw("run:cross","bbcwide","colz");
     c->cd(4);
-    t->Draw("run:bunch","bbncnt/bbcwidecnt","colz");
+    t->Draw("run:cross","bbncnt/bbcwidecnt","colz");
     nc++;
   }
   return;
