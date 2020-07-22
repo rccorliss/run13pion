@@ -69,7 +69,7 @@ void rcc_draw_lumi_plots(){
     t->Draw("cross:fill","log10(clk)","colz");
     c->SetLogz();
     c->cd(3);
-    t->Draw("cross:fill","bbcwide","colz");
+    t->Draw("cross:fill>>hnew(120,17100,17700,120,-0.5,119.5)","bbcwide","colz");
     c->SetLogz();
     c->cd(4);
     t->Draw("cross:fill","bbncnt/bbcwidecnt","colz");
