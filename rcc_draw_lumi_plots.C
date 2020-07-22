@@ -58,7 +58,7 @@ void rcc_draw_lumi_plots(){
   allcuts=allcuts && minzdccnt;
 
   //display rates vs bunch and run
-  if (0){
+  if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
