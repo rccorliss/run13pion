@@ -58,11 +58,10 @@ void rcc_draw_lumi_plots(){
   allcuts=allcuts && minzdccnt;
 
   //display rates vs bunch and fill
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
-    TH2F *crossbyfill=new TH2F("cbf","cbf",500,17149.5,17649.5,120,-0.5,119.5);
     t->Draw("cross:fill>>hnew1(120,17180,17620,120,-0.5,119.5)","log10(rclk)","colz");
     c->cd(2);
     t->Draw("cross:fill>>hnew2(120,17180,17620,120,-0.5,119.5)","log10(clk)","colz");
@@ -73,6 +72,21 @@ void rcc_draw_lumi_plots(){
     c->cd(4);
     t->Draw("cross:fill","bbncnt/bbcwidecnt","colz");
     c->SetLogz();
+    nc++;
+  }
+
+   //check some bunch crossing-related anomalies
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,2);
+    c->cd(1);
+    t->Draw("cross:fill","bbcwide *(cross>20 && cross<40","colz");
+    c->cd(2);
+    t->Draw("cross:fill","bbcwide *(cross>60 && cross<80","colz");
+    c->cd(3);
+    t->Draw("cross","bbcwide * (fill<17210)","colz");
+    c->cd(4);
+     t->Draw("cross","bbcwide * (fill>17210)","colz");
     nc++;
   }
   return;
