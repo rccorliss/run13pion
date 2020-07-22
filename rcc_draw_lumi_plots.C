@@ -134,8 +134,8 @@ void rcc_draw_lumi_plots(){
     nc++;
   }
 
-  //look at the abort gap spectrum after the rcc_cross_qa cuts
-   if (1){
+  //a marginally useful look at the abort gap spectrum after the rcc_cross_qa cuts
+   if (0){
      c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
@@ -144,6 +144,21 @@ void rcc_draw_lumi_plots(){
     t->Draw("bbcwide","cross>110"+rcc_cross_qa,"colz");
     c->cd(3);
     t->Draw("run-386700","cross==29 || cross==30 || cross==69 || cross==70"+rcc_cross_qa,"colz");
+    c->cd(4);
+    t->Draw("bbcwide","cross==29 || cross==30 || cross==69 || cross==70"+rcc_cross_qa,"colz");
+    nc++;
+  }
+
+   //a better look at the abort gap spectrum after the rcc_cross_qa cuts
+   if (1){
+     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,2);
+    c->cd(1);
+    t->Draw("run-386700","cross>110"+rcc_cross_qa,"colz");
+    c->cd(2);
+    t->Draw("bbcwide","cross>110"+rcc_cross_qa,"colz");
+    c->cd(3);
+    t->Draw("run-386700:fill","cross>110"+rcc_cross_qa,"colz");
     c->cd(4);
     t->Draw("bbcwide","cross==29 || cross==30 || cross==69 || cross==70"+rcc_cross_qa,"colz");
     nc++;
