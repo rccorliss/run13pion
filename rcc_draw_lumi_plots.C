@@ -21,10 +21,13 @@ void rcc_draw_lumi_plots(){
 
   //even better, make a tchain that loads all the runs from pedro
   TChain *t=new TChain("t");
-  TFileCollection fc("files"); // The name is irrelevant
+
+
+  //TFileCollection fc("files"); // The name is irrelevant
   //  fc.AddFromDirectory("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root");
   //can't do this this way:  t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/*/rlstar.root"); // can't glob in this fashion.
 
+  /*
   const char *dirname="/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/star/run13pp510/";
   auto dir = gSystem->OpenDirectory(dirname);
   char *f;//[500];
@@ -34,6 +37,10 @@ void rcc_draw_lumi_plots(){
   }
   gSystem->FreeDirectory(dir);
   printf("t has %d entries\n",t->GetEntries());
+  */
+
+   t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/unique_db.root");//same number of entries as previous, but syncs with gl1 and starscalers both.
+  //one annoying catch:  all variables must be prefixed with "star_", "gl1_", or "gl1p_"
   // t->AddFileInfoList(fc.GetList());
   //delete fc;
 
@@ -41,30 +48,56 @@ void rcc_draw_lumi_plots(){
   int nc=0;
 
 
-  TCut rcc_cross_qa="bbcwide >0.05 && fill!=17443 && fill>17211"; //various cuts on basic bunch and rates
+  TCut rcc_cross_qa="star_bbcwide >0.05 && star_fill!=17443 && star_fill>17211"; //various cuts on basic bunch and rates
   TCut rcc_clip_loud_runs="1";
   int loud_runlist[]={391372,391581,391869,393906,398132,398026,398027,398019,398017,398018,398011,398010,398009,397176,389437,390177,391868,391870,398143,398030,398031,398029,398028,398020,398021,398014,398015,398013,398012,398005,398007,397177,397178};
   for (int i=0;i<33;i++){
-    rcc_clip_loud_runs=rcc_clip_loud_runs+Form("run!=%d",loud_runlist[i]);
+    rcc_clip_loud_runs=rcc_clip_loud_runs+Form("star_run!=%d",loud_runlist[i]);
   }
     
-  TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
+  TCut minclocks="star_clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut allcuts=minclocks;
-  TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
+  TCut live70="star_clk/star_rclk>0.70";//require a bunch to be live at least 70% of the time.
   allcuts=allcuts && live70;
-  TCut minbbcrate="bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
+  TCut minbbcrate="star_bbcwide>0.05";//reject bunches where the bbcwide trigger isn't acting right.
   allcuts=allcuts && minbbcrate;
-  TCut bbnslope="abs((bbncnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  TCut bbnslope="abs((star_bbncnt/star_bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
   allcuts=allcuts && bbnslope;
-  TCut bbsslope="abs((bbscnt/bbcwidecnt-1.1)/(bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
+  TCut bbsslope="abs((star_bbscnt/star_bbcwidecnt-1.1)/(star_bbcwide-0.7)+0.21)<0.2"; //reject bunches where the singles to doubles rates are far from expected -- could be SBB or other detector issue.
   allcuts=allcuts && bbsslope;
-  TCut abortgap="cross<111";
+  TCut abortgap="star_cross<111";
   allcuts=allcuts && abortgap;
-  TCut stableratio="zdcwidecnt/bbcwidecnt<0.20";
+  TCut crossing1="star_cross==1";
+  allcuts=allcuts+crossing1
+  TCut stableratio="star_zdcwidecnt/star_bbcwidecnt<0.20";
   allcuts=allcuts && stableratio;
-  TCut minzdccnt="zdcwidecnt/rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
+  TCut minzdccnt="star_zdcwidecnt/star_rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
   allcuts=allcuts && minzdccnt;
 
+  TCut rccCutSetA=rcc_cross_qa+rcc_clip_loud_runs+abortgap+crossing1;
+
+
+  //show the SetB parameters we're cutting on.
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,2);
+    c->cd(1);
+    t->Draw("star_bbcwidecnt/gl1_bbcwidelive",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    c->cd(2);
+    t->Draw("star_bbc30cnt/gl1_bbc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    c->cd(1);
+    t->Draw("star_zdcwidecnt/gl1_zdcwidelive",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    c->cd(2);
+    t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    nc++;
+  }
+
+
+
+  return;
+  printf("Caution!  Below this point are old Draw commands that assume we're running with the old starscaler-only files.  The names of variables will not match the combined db file.\n");
+  return;
+  
   //display rates vs bunch and fill
   if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
@@ -122,7 +155,7 @@ void rcc_draw_lumi_plots(){
   }
 
  //display rates vs bunch and fill after cuts designed to clean them.
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
@@ -168,7 +201,6 @@ void rcc_draw_lumi_plots(){
     t->Draw("run-386700:fill>>hnew2(350,17299.5,17649.5,100,2000,12000)","cross>110","colz");
     nc++;
   }
-  return;
   
  //show how many live clocks we have in each bunch:
   if (0){
