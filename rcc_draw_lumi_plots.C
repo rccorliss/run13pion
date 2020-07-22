@@ -85,10 +85,10 @@ void rcc_draw_lumi_plots(){
     t->Draw("star_bbcwidecnt/gl1_bbcwidelive",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     c->cd(2);
     t->Draw("star_bbc30cnt/gl1_bbc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
-    c->cd(1);
+    c->cd(3);
     t->Draw("star_zdcwidecnt/gl1_zdcwidelive",rcc_cross_qa+rcc_clip_loud_runs,"colz");
-    c->cd(2);
-    t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    c->cd(4);
+    //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     nc++;
   }
 
