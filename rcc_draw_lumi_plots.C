@@ -126,7 +126,7 @@ void rcc_draw_lumi_plots(){
     t->Draw("cross:fill>>hnew2(120,17180,17620,120,-0.5,119.5)","log10(clk)"+rcc_cross_qa,"colz");
     c->SetLogz();
     c->cd(3);
-    t->Draw("cross:fill>>hnew3(120,17180,17620,120,-0.5,119.5)","bbcwide"+rcc_cross_qa,"colz");
+    t->Draw("cross:fill>>hnew3(120,17180,17620,120,-0.5,119.5)","bbcwide"*rcc_cross_qa,"colz");
     c->SetLogz();
     c->cd(4);
     t->Draw("cross:fill","bbncnt/bbcwidecnt"+rcc_cross_qa,"colz");
