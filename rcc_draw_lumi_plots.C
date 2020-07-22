@@ -158,9 +158,9 @@ void rcc_draw_lumi_plots(){
     c->cd(2);
     t->Draw("bbcwide","cross>110"+rcc_cross_qa,"colz");
     c->cd(3);
-    t->Draw("run-386700:fill","cross>110"+rcc_cross_qa,"colz");
+    t->Draw("run-386700:fill>>hnew(350,17299.5,17649.5,100,2000,12000","cross>110"+rcc_cross_qa,"colz");
     c->cd(4);
-    t->Draw("bbcwide","cross==29 || cross==30 || cross==69 || cross==70"+rcc_cross_qa,"colz");
+    t->Draw("run-386700:fill>>hnew2(350,17299.5,17649.5,100,2000,12000","cross>110","colz");
     nc++;
   }
   return;
