@@ -101,7 +101,7 @@ void rcc_draw_lumi_plots(){
     c->cd(1);
     t->Draw("bbcwide","((cross==29 || cross==30 || cross==69 || cross==70) && fill>17380 && fill<17420)","colz");
     c->cd(2);
-    t->Draw("run-386700","bbcwide *((cross==29 || cross==30 || cross==69 || cross==70) && fill>17380 && fill<17420)","colz");
+    t->Draw("bbcwide>0.1:run-386700","((cross==29 || cross==30 || cross==69 || cross==70) && fill>17380 && fill<17420)","colz");
     c->cd(3);
     t->Draw("cross:run-386700","bbcwide * (fill<17212 && cross<5)","colz");
     c->cd(4);
