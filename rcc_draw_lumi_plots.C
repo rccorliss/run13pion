@@ -90,7 +90,7 @@ void rcc_draw_lumi_plots(){
     c->cd(5);
     t->Draw("cross:fill","bbcwide *(cross>100 && fill>17430 && fill<17450)","colz");
     c->cd(6);
-    t->Draw("(cross>110):bbcwide","1","colz");
+    t->Draw("(cross>110):bbcwide>>hnew(10,-0.05,0.95,2,-0.5,1.5)","1","colz");
    nc++;
   }
   return;
