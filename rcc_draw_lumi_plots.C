@@ -39,7 +39,7 @@ void rcc_draw_lumi_plots(){
 
   TCanvas *c;
   int nc=0;
-
+  
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut allcuts=minclocks;
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
@@ -53,10 +53,25 @@ void rcc_draw_lumi_plots(){
   TCut abortgap="cross<111";
   allcuts=allcuts && abortgap;
   TCut stableratio="zdcwidecnt/bbcwidecnt<0.20";
-    allcuts=allcuts && stableratio;
+  allcuts=allcuts && stableratio;
   TCut minzdccnt="zdcwidecnt/rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
-    allcuts=allcuts && minzdccnt;
+  allcuts=allcuts && minzdccnt;
 
+  //display rates vs bunch and run
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,2);
+    c->cd(1);
+    t->Draw("run:bunch","log10(rclk)","colz");
+    c->cd(2);
+    t->Draw("run:bunch","log10(clk)","colz");
+    c->cd(3);
+    t->Draw("run:bunch","bbcwide","colz");
+    c->cd(4);
+    t->Draw("run:bunch","bbncnt/bbcwidecnt","colz");
+    nc++;
+  }
+  return;
   
  //show how many live clocks we have in each bunch:
   if (0){
