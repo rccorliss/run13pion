@@ -117,7 +117,7 @@ void rcc_draw_lumi_plots(){
   }
 
  //display rates vs bunch and fill after cuts designed to clean them.
-  if (0){
+  if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
