@@ -80,13 +80,13 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
-    t->Draw("cross:fill","bbcwide *(cross>20 && cross<40","colz");
+    t->Draw("cross:fill","bbcwide *(cross>20 && cross<40)","colz");
     c->cd(2);
-    t->Draw("cross:fill","bbcwide *(cross>60 && cross<80","colz");
+    t->Draw("cross:fill","bbcwide *(cross>60 && cross<80)","colz");
     c->cd(3);
-    t->Draw("cross","bbcwide * (fill<17210)","colz");
+    t->Draw("cross","bbcwide * (fill<17210 && cross<10)","colz");
     c->cd(4);
-     t->Draw("cross","bbcwide * (fill>17210)","colz");
+     t->Draw("cross","bbcwide * (fill>17210 && cross<10)","colz");
     nc++;
   }
   return;
