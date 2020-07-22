@@ -79,14 +79,14 @@ void rcc_draw_lumi_plots(){
 
   //show the SetB parameters we're cutting on.
   if (1){
-    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-    c->Divide(2,2);
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,500);
+    c->Divide(3,1);
     c->cd(1);
     t->Draw("star_bbcwiderun/gl1_bbcwidelive",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(2);
-    t->Draw("star_bbc30run/gl1_bbc30live",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0,"colz");
+    t->Draw("star_bbc30run/gl1_bbc30live",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(3);
-    t->Draw("star_zdcwiderun/gl1_zdcwidelive",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0,"colz");
+    t->Draw("star_zdcwiderun/gl1_zdcwidelive",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(4);
     //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     nc++;
