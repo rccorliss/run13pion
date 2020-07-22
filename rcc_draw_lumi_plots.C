@@ -68,7 +68,7 @@ void rcc_draw_lumi_plots(){
   TCut abortgap="star_cross<111";
   allcuts=allcuts && abortgap;
   TCut crossing1="star_cross==1";
-  allcuts=allcuts+crossing1
+  allcuts=allcuts+crossing1;
   TCut stableratio="star_zdcwidecnt/star_bbcwidecnt<0.20";
   allcuts=allcuts && stableratio;
   TCut minzdccnt="star_zdcwidecnt/star_rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
