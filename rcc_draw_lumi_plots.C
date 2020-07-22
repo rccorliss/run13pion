@@ -99,9 +99,9 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,900);
     c->Divide(2,3);
     c->cd(1);
-    t->Draw("cross:run-386700","bbcwide *(cross>28 && cross<31 && fill>17380 && fill<17410)","colz");
+    t->Draw("bbcwide","((cross==29 || cross==30 || cross==69 || cross==70) && fill>17380 && fill<17420)","colz");
     c->cd(2);
-    t->Draw("cross:run-386700","bbcwide *(cross>68 && cross<71 && fill>17380 && fill<17410)","colz");
+    t->Draw("run-386700","bbcwide *((cross==29 || cross==30 || cross==69 || cross==70) && fill>17380 && fill<17420)","colz");
     c->cd(3);
     t->Draw("cross:run-386700","bbcwide * (fill<17212 && cross<5)","colz");
     c->cd(4);
