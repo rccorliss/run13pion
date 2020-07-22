@@ -81,13 +81,13 @@ void rcc_draw_lumi_plots(){
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,500);
     c->Divide(3,1);
-    c->cd(1);
+    c->cd(1)->SetLogy();
     t->Draw("star_bbcwiderun/gl1_bbcwidelive",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
-    c->cd(2);
+    c->cd(2)->SetLogy();
     t->Draw("star_bbc30run/gl1_bbc30live",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
-    c->cd(3);
+    c->cd(3)->SetLogy();
     t->Draw("star_zdcwiderun/gl1_zdcwidelive",rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
-    c->cd(4);
+    // c->cd(4)->SetLogy();
     //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     nc++;
   }
