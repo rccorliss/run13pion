@@ -39,7 +39,10 @@ void rcc_draw_lumi_plots(){
 
   TCanvas *c;
   int nc=0;
-  
+
+
+  TCut rcc_cross_qa="bbcwide >0.05 && fill!=17443 && fill>17211"; //various cuts on basic bunch and rates
+    
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut allcuts=minclocks;
   TCut live70="clk/rclk>0.70";//require a bunch to be live at least 70% of the time.
@@ -95,7 +98,7 @@ void rcc_draw_lumi_plots(){
   }
 
     //detailed check of those anomalies
-  if (1){
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,900);
     c->Divide(2,3);
     c->cd(1);
@@ -112,6 +115,25 @@ void rcc_draw_lumi_plots(){
     t->Draw("bbcwide:run-386700","(cross>110 && fill>17435 && fill<17450)","colz");
    nc++;
   }
+
+ //display rates vs bunch and fill after cuts designed to clean them.
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+    c->Divide(2,2);
+    c->cd(1);
+    t->Draw("cross:fill>>hnew1(120,17180,17620,120,-0.5,119.5)","log10(rclk)"+rcc_cross_qa,"colz");
+    c->cd(2);
+    t->Draw("cross:fill>>hnew2(120,17180,17620,120,-0.5,119.5)","log10(clk)"+rcc_cross_qa,"colz");
+    c->SetLogz();
+    c->cd(3);
+    t->Draw("cross:fill>>hnew3(120,17180,17620,120,-0.5,119.5)","bbcwide"+rcc_cross_qa,"colz");
+    c->SetLogz();
+    c->cd(4);
+    t->Draw("cross:fill","bbncnt/bbcwidecnt","colz");
+    c->SetLogz();
+    nc++;
+  }
+  
   return;
   
  //show how many live clocks we have in each bunch:
