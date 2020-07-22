@@ -57,18 +57,18 @@ void rcc_draw_lumi_plots(){
   TCut minzdccnt="zdcwidecnt/rclk>0.001";//reject bunches where the zdc trigger isn't acting right.
   allcuts=allcuts && minzdccnt;
 
-  //display rates vs bunch and run
+  //display rates vs bunch and fill
   if (1){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
-    t->Draw("run:cross","log10(rclk)","colz");
+    t->Draw("cross:fill","log10(rclk)","colz");
     c->cd(2);
-    t->Draw("run:cross","log10(clk)","colz");
+    t->Draw("cross:fill","log10(clk)","colz");
     c->cd(3);
-    t->Draw("run:cross","bbcwide","colz");
+    t->Draw("cross:fill","bbcwide","colz");
     c->cd(4);
-    t->Draw("run:cross","bbncnt/bbcwidecnt","colz");
+    t->Draw("cross:fill","bbncnt/bbcwidecnt","colz");
     nc++;
   }
   return;
