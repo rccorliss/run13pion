@@ -42,6 +42,11 @@ void rcc_draw_lumi_plots(){
 
 
   TCut rcc_cross_qa="bbcwide >0.05 && fill!=17443 && fill>17211"; //various cuts on basic bunch and rates
+  TCut rcc_clip_loud_runs="1";
+  int loud_runlist[]={391372,391581,391869,393906,398132,398026,398027,398019,398017,398018,398011,398010,398009,397176,389437,390177,391868,391870,398143,398030,398031,398029,398028,398020,398021,398014,398015,398013,398012,398005,398007,397177,397178};
+  for (int i=0;i<37;i++){
+    rcc_clip_loud_runs=rcc_clip_loud_runs+Form("run!=%d",loud_runlist[i]);
+  }
     
   TCut minclocks="clk>1e6"; //require a bunch to have at least 1e6 live clocks.
   TCut allcuts=minclocks;
@@ -121,12 +126,12 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
-    t->Draw("cross:fill>>hnew1(120,17180,17620,120,-0.5,119.5)","log10(rclk)"*rcc_cross_qa,"colz");
+    t->Draw("cross:fill>>hnew1(120,17180,17620,120,-0.5,119.5)","log10(rclk)"*rcc_cross_qa+rcc_clip_loud_runs,"colz");
     c->cd(2);
-    t->Draw("cross:fill>>hnew2(120,17180,17620,120,-0.5,119.5)","log10(clk)"*rcc_cross_qa,"colz");
+    t->Draw("cross:fill>>hnew2(120,17180,17620,120,-0.5,119.5)","log10(clk)"*rcc_cross_qa+rcc_clip_loud_runs,"colz");
     c->SetLogz();
     c->cd(3);
-    t->Draw("cross:fill>>hnew3(120,17180,17620,120,-0.5,119.5)","bbcwide"*rcc_cross_qa,"colz");
+    t->Draw("cross:fill>>hnew3(120,17180,17620,120,-0.5,119.5)","bbcwide"*rcc_cross_qa+rcc_clip_loud_runs,"colz");
     c->SetLogz();
     c->cd(4);
     t->Draw("cross:fill","bbncnt/bbcwidecnt"*rcc_cross_qa,"colz");
@@ -150,7 +155,7 @@ void rcc_draw_lumi_plots(){
   }
 
    //a better look at the abort gap spectrum after the rcc_cross_qa cuts
-   if (1){
+   if (0){
      c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
     c->Divide(2,2);
     c->cd(1);
@@ -158,9 +163,9 @@ void rcc_draw_lumi_plots(){
     c->cd(2);
     t->Draw("bbcwide","cross>110"+rcc_cross_qa,"colz");
     c->cd(3);
-    t->Draw("run-386700:fill>>hnew(350,17299.5,17649.5,100,2000,12000","cross>110"+rcc_cross_qa,"colz");
+    t->Draw("run-386700:fill>>hnew(350,17299.5,17649.5,100,2000,12000)","cross>110"+rcc_cross_qa,"colz");
     c->cd(4);
-    t->Draw("run-386700:fill>>hnew2(350,17299.5,17649.5,100,2000,12000","cross>110","colz");
+    t->Draw("run-386700:fill>>hnew2(350,17299.5,17649.5,100,2000,12000)","cross>110","colz");
     nc++;
   }
   return;
