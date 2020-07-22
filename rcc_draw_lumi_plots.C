@@ -63,13 +63,17 @@ void rcc_draw_lumi_plots(){
     c->Divide(2,2);
     c->cd(1);
     TH2F *crossbyfill=new TH2F("cbf","cbf",500,17149.5,17649.5,120,-0.5,119.5);
-    t->Draw("cross:fill>>cbf","log10(rclk)","colz");
+    t->Draw("cross:fill","log10(rclk)","colz");
+    c->SetLogz();
     c->cd(2);
-    t->Draw("cross:fill>>cbf","log10(clk)","colz");
+    t->Draw("cross:fill","log10(clk)","colz");
+    c->SetLogz();
     c->cd(3);
-    t->Draw("cross:fill>>cbf","bbcwide","colz");
+    t->Draw("cross:fill","bbcwide","colz");
+    c->SetLogz();
     c->cd(4);
-    t->Draw("cross:fill>>cbf","bbncnt/bbcwidecnt","colz");
+    t->Draw("cross:fill","bbncnt/bbcwidecnt","colz");
+    c->SetLogz();
     nc++;
   }
   return;
