@@ -77,8 +77,8 @@ void rcc_draw_lumi_plots(){
 
    //check some bunch crossing-related anomalies
   if (1){
-    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
-    c->Divide(2,2);
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,900);
+    c->Divide(2,3);
     c->cd(1);
     t->Draw("cross:fill","bbcwide *(cross>20 && cross<40)","colz");
     c->cd(2);
@@ -86,8 +86,12 @@ void rcc_draw_lumi_plots(){
     c->cd(3);
     t->Draw("cross","bbcwide * (fill<17210 && cross<10)","colz");
     c->cd(4);
-     t->Draw("cross","bbcwide * (fill>17210 && cross<10)","colz");
-    nc++;
+    t->Draw("cross","bbcwide * (fill>17210 && cross<10)","colz");
+    c->cd(5);
+    t->Draw("cross:fill","bbcwide *(cross>100 && fill>17430 && fill<17450)","colz");
+    c->cd(6);
+    t->Draw("(cross>110):bbcwide","1","colz");
+   nc++;
   }
   return;
   
