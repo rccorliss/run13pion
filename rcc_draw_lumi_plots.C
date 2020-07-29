@@ -111,12 +111,12 @@ void rcc_draw_lumi_plots(){
     t->Draw(Form("%s>>bbc30cut(2,-0.5,1.5)",bbc30scalerratio.GetTitle()),rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(3)->SetLogy();
     t->Draw(Form("%s>>zdcwidecut(2,-0.5,1.5)",zdcwidescalerratio.GetTitle()),rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
-   c->cd(4)->SetLogy();
-   t->Draw("star_bbcwiderun/gl1_bbcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"colz");
-    c->cd(5)->SetLogy();
-    t->Draw("star_bbc30run/gl1_bbc30live:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"colz");
-    c->cd(6)->SetLogy();
-    t->Draw("star_zdcwiderun/gl1_zdcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"colz");
+    c->cd(4);//->SetLogy();
+   t->Draw("star_bbcwiderun/gl1_bbcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
+   c->cd(5);//->SetLogy();
+    t->Draw("star_bbc30run/gl1_bbc30live:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
+    c->cd(6);//->SetLogy();
+    t->Draw("star_zdcwiderun/gl1_zdcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
     // c->cd(4)->SetLogy();
     //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     nc++;
