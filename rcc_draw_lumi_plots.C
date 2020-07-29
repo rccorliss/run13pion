@@ -106,11 +106,11 @@ void rcc_draw_lumi_plots(){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
     c->Divide(3,2);
     c->cd(1)->SetLogy();
-    t->Draw(bbcwidescalerratio,"star_clkrun"*rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
+    t->Draw(Form("%s>>h3(2,-0.5,1.5)",bbcwidescalerratio.Data()),"star_clkrun"*rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(2)->SetLogy();
-    t->Draw(bbc30scalerratio,rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
+    t->Draw(Form("%s>>h2(2,-0.5,1.5)",bbc30scalerratio.Data()),rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(3)->SetLogy();
-    t->Draw(zdcswidescalerratio,rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
+    t->Draw(Form("%s>>h1(2,-0.5,1.5)",zdcwidescalerratio.Data()),rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
    c->cd(4)->SetLogy();
    t->Draw("star_bbcwiderun/gl1_bbcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"colz");
     c->cd(5)->SetLogy();
