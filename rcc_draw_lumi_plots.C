@@ -1,5 +1,6 @@
 //code to read in bunch by bunch scalers and provide relative luminosity per bunch
-#include <TFileCollection>
+//#include <TFileCollection>
+#include <TCut.h>
 
 void rcc_draw_lumi_plots(){
   //printf("tried to run rcc_gen_lumi directly instead of using the proper function calls.\n");
@@ -39,6 +40,7 @@ void rcc_draw_lumi_plots(){
   printf("t has %d entries\n",t->GetEntries());
   */
 
+  t->Add("unique_db.root");
    t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/unique_db.root");//same number of entries as previous, but syncs with gl1 and starscalers both.
   //one annoying catch:  all variables must be prefixed with "star_", "gl1_", or "gl1p_"
   // t->AddFileInfoList(fc.GetList());
@@ -102,7 +104,9 @@ void rcc_draw_lumi_plots(){
   TCut bbcwidescalerratio="(star_bbcwiderun/gl1_bbcwidelive>0.99 && star_bbcwiderun/gl1_bbcwidelive<1.015)";
   TCut bbc30scalerratio="(star_bbc30run/gl1_bbc30live>0.99 && star_bbc30run/gl1_bbc30live<1.015)";
   TCut zdcwidescalerratio="(star_zdcwiderun/gl1_zdcwidelive>0.99 && star_zdcwiderun/gl1_zdcwidelive<1.015)";
-  if (1){
+  TCut starvsgl1ratios=bbcwidescalerratio+bbc30scalerratio+zdcwidescalerratio;
+  TCut rccCutSetB=starvsgl1ratios;
+  if (0){
     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
     c->Divide(3,2);
     c->cd(1)->SetLogy();
@@ -112,18 +116,164 @@ void rcc_draw_lumi_plots(){
     c->cd(3)->SetLogy();
     t->Draw(Form("%s>>zdcwidecut(2,-0.5,1.5)",zdcwidescalerratio.GetTitle()),rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0","colz");
     c->cd(4);//->SetLogy();
-   t->Draw("star_bbcwiderun/gl1_bbcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
+   t->Draw("star_bbcwiderun/gl1_bbcwidelive:star_clkrun",(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
    c->cd(5);//->SetLogy();
-    t->Draw("star_bbc30run/gl1_bbc30live:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
+    t->Draw("star_bbc30run/gl1_bbc30live:star_clkrun",(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
     c->cd(6);//->SetLogy();
-    t->Draw("star_zdcwiderun/gl1_zdcwidelive:star_clkrun","star_clkrun"*(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
+    t->Draw("star_zdcwiderun/gl1_zdcwidelive:star_clkrun",(rcc_cross_qa+rcc_clip_loud_runs+"star_cross==0"),"");
     // c->cd(4)->SetLogy();
     //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
     nc++;
   }
 
+  //some checks trying to understand what gl1p_ scalers are doing.
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
+    c->Divide(3,2);
+    c->cd(1);//->SetLogy();
+   t->Draw("star_zdc30:log10(gl1p_zdc_narrow)",(rccCutSetB+rccCutSetA),"colz");
+   c->cd(2);//->SetLogy();
+     t->Draw("star_zdcwide:log10(gl1p_zdc_wide)",(rccCutSetB+rccCutSetA),"colz");
+    c->cd(3);//->SetLogy();
+   t->Draw("star_bbc30:log10(gl1p_bbc_30)",(rccCutSetB+rccCutSetA),"colz");
+    c->cd(4);//->SetLogy();
+   t->Draw("log10(star_zdc30/gl1p_zdc_narrow):log10(star_clkrun)",(rccCutSetB+rccCutSetA),"colz");
+   c->cd(5);//->SetLogy();
+    t->Draw("log10(star_zdcwide/gl1p_zdc_wide):log10(star_clkrun)",(rccCutSetB+rccCutSetA),"colz");
+    c->cd(6);//->SetLogy();
+    t->Draw("log10(star_bbc30/gl1p_bbc_30):log10(star_clkrun)",(rccCutSetB+rccCutSetA),"colz");
+    // c->cd(4)->SetLogy();
+    //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    nc++;
+  }
+
+  //plot that shows the way the star and gl1p scalers track each other
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
+    c->Divide(3,2);
+    c->cd(1)->SetLogy();
+    t->Draw("log10(star_zdc30cnt/gl1p_zdc_narrow)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+   c->cd(2)->SetLogy();
+     t->Draw("log10(star_zdcwidecnt/gl1p_zdc_wide)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+    c->cd(3)->SetLogy();
+   t->Draw("log10(star_bbc30cnt/gl1p_bbc_30)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+    c->cd(4);//->SetLogy();
+   t->Draw("log10(star_zdc30cnt):log10(gl1p_zdc_narrow)",(rccCutSetB+rccCutSetA),"colz");
+   c->cd(5);//->SetLogy();
+    t->Draw("log10(star_zdcwidecnt):log10(gl1p_zdc_wide)",(rccCutSetB+rccCutSetA),"colz");
+    c->cd(6);//->SetLogy();
+    t->Draw("log10(star_bbc30cnt):log10(gl1p_bbc_30)",(rccCutSetB+rccCutSetA),"colz");
+    // c->cd(4)->SetLogy();
+    //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    nc++;
+  }
+
+  TCut starvsgl1pzdcwideratio="abs(star_zdcwidecnt/gl1p_zdc_wide-1)<0.001";
+  TCut starvsgl1pzdc30ratio="abs(star_zdc30cnt/gl1p_zdc_narrow-1)<0.001";
+  TCut starvsgl1pbbcratio="abs(star_bbc30cnt/gl1p_bbc_30-1)<0.001";
+  TCut starvsgl1pratios=starvsgl1pzdcwideratio+starvsgl1pzdc30ratio+starvsgl1pbbcratio;
+  rccCutSetB+=starvsgl1pratios;
+  //plots showing the cut applied
+  if (0){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
+    c->Divide(3,2);
+    c->cd(1)->SetLogy();
+    t->Draw("(star_zdc30cnt/gl1p_zdc_narrow)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+   c->cd(2)->SetLogy();
+     t->Draw("(star_zdcwidecnt/gl1p_zdc_wide)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+    c->cd(3)->SetLogy();
+   t->Draw("(star_bbc30cnt/gl1p_bbc_30)","star_clkrun"*(rccCutSetB+rccCutSetA),"colz");
+    c->cd(4);//->SetLogy();
+   t->Draw("log10(star_zdc30cnt):log10(gl1p_zdc_narrow)",(rccCutSetB+rccCutSetA),"colz");
+   c->cd(5);//->SetLogy();
+    t->Draw("log10(star_zdcwidecnt):log10(gl1p_zdc_wide)",(rccCutSetB+rccCutSetA),"colz");
+    c->cd(6);//->SetLogy();
+    t->Draw("log10(star_bbc30cnt):log10(gl1p_bbc_30)",(rccCutSetB+rccCutSetA),"colz");
+    // c->cd(4)->SetLogy();
+    //t->Draw("star_zdc30cnt/gl1_zdc30live",rcc_cross_qa+rcc_clip_loud_runs,"colz");
+    nc++;
+  }
+
+  //to ease redundant cuts, let's define a TEntryList and set it:
+  t->Draw(">>elist", rccCutSetA+rccCutSetB, "entrylist");
+  TEntryList *elist = (TEntryList*)gDirectory->Get("elist");
+  t->SetEntryList(elist);
+
+  TF1 *test=new TF1("testpoly","[0]+[1]*x+[2]*x^2",0.1,0.6);
+  TGraph *g;
+  TLatex tex;
+  float texpos=0.75;
+  float texshift=0;
+  tex.SetTextAlign(12);
+  tex.SetTextSize(0.03);
+  int fiti=0;
+  double pars[4][3];
+  double parerrs[4][3];
+
+  if (1){
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
+    c->Divide(2,2);
+    c->cd(1);//->SetLogy();
+    t->Draw("star_zdscnt/star_clk:star_bbcwide");
+    g=new TGraph(t->GetSelectedRows(),t->GetV2(),t->GetV1());
+    g->Fit(test);
+    
+    for (int i=0;i<3;i++){
+      pars[fiti][i]=test->GetParameter(i);
+      parerrs[fiti][i]=test->GetParError(i);
+    }
+    test->Draw("same");
+    tex.DrawLatex(0.05,0.25,Form("y=(%1.3E #pm %1.3E) + (%1.3E #pm %1.3E)x + (%1.3E #pm %1.3E)x^2",
+				   pars[fiti][0],parerrs[fiti][0],
+				   pars[fiti][1],parerrs[fiti][1],
+				   pars[fiti][2],parerrs[fiti][2]));texpos-=texshift;
+    fiti++;
+
+    c->cd(2);//->SetLogy();
+    t->Draw("star_zdncnt/star_clk:star_bbcwide");
+    g=new TGraph(t->GetSelectedRows(),t->GetV2(),t->GetV1());
+    g->Fit(test);
+    for (int i=0;i<3;i++){
+      pars[fiti][i]=test->GetParameter(i);
+      parerrs[fiti][i]=test->GetParError(i);
+    }
+    test->Draw("same");
+    tex.DrawLatex(0.05,texpos,Form("y=(%1.3E#pm %1.3E) + (%1.3E#pm %1.3E)x + (%1.3E#pm %1.3E)x^2",
+				   pars[fiti][0],parerrs[fiti][0],
+				   pars[fiti][1],parerrs[fiti][1],
+				   pars[fiti][2],parerrs[fiti][2]));texpos-=texshift;
+    fiti++;    c->cd(3);//->SetLogy();
+    t->Draw("star_bbscnt/star_clk:star_bbcwide");
+    g=new TGraph(t->GetSelectedRows(),t->GetV2(),t->GetV1());
+    g->Fit(test);
+    for (int i=0;i<3;i++){
+      pars[fiti][i]=test->GetParameter(i);
+      parerrs[fiti][i]=test->GetParError(i);
+    }
+    test->Draw("same");
+    tex.DrawLatex(0.05,texpos,Form("y=(%1.3E#pm %1.3E) + (%1.3E#pm %1.3E)x + (%1.3E#pm %1.3E)x^2",
+				   pars[fiti][0],parerrs[fiti][0],
+				   pars[fiti][1],parerrs[fiti][1],
+				   pars[fiti][2],parerrs[fiti][2]));texpos-=texshift;
+    fiti++;    c->cd(4);//->SetLogy();
+    t->Draw("star_bbncnt/star_clk:star_bbcwide");
+    g=new TGraph(t->GetSelectedRows(),t->GetV2(),t->GetV1());
+    g->Fit(test);
+    for (int i=0;i<3;i++){
+      pars[fiti][i]=test->GetParameter(i);
+      parerrs[fiti][i]=test->GetParError(i);
+    }
+    test->Draw("same");
+    tex.DrawLatex(0.05,texpos,Form("y=(%1.3E#pm %1.3E) + (%1.3E#pm %1.3E)x + (%1.3E#pm %1.3E)x^2",
+				   pars[fiti][0],parerrs[fiti][0],
+				   pars[fiti][1],parerrs[fiti][1],
+				   pars[fiti][2],parerrs[fiti][2]));texpos-=texshift;
+    fiti++;
+    nc++;
+  }
 
 
+  
   return;
   printf("Caution!  Below this point are old Draw commands that assume we're running with the old starscaler-only files.  The names of variables will not match the combined db file.\n");
   return;
