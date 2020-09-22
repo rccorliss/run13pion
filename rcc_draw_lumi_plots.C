@@ -26,7 +26,7 @@ double global_derive(double x){return globwrap->DoDerive(x);}
 double global_derive_gsl(double x, void *){return global_derive(x);}
 
 
-bool IterateRateCorrection(int length, float *rate_arr, float kn0, float ks0, float *kn_arr, float *ks_arr, float *new_kn0, float *new_ks0, float *new_mu_arr){
+bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0, double *kn_arr, double *ks_arr, double *new_kn0, double *new_ks0, double *new_mu_arr);
 
 
 
@@ -708,15 +708,13 @@ void rcc_draw_lumi_plots(){
      TF1 *rateobs=new TF1("rateobs","-[0]+1-exp(-([1]+1)*x)-exp(-([2]+1)*x)+exp(-([1]+[2]+1)*x)",0,1);
      TF1 *ratederivative=new TF1("ratederivative",
 				 "([1]+1)*exp(-([1]+1)*x)+([2]+1)*exp(-([2]+1)*x)-([1]+[2]+1)*exp(-([1]+[2]+1)*x)",0,1);
-     //have to use global.  sigh.TF1wrapper *ratewrap=new TF1wrapper();
      rateobs->SetTitle("Random Subset of 0=Robs-f(kn,ks,#mu);#mu;'0'");
      globwrap->SetF(rateobs);
      globwrap->SetD(ratederivative);
-     ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_STEFFENSON);
-     ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
-
-     vector<double>zmu[5],bmu[5],zkn,zks,bkn,bks;
-     vector<double>zknc[5],zksc[5],bknc[5],bksc[5];
+     //ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_STEFFENSON);
+     //ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
+     const int nIterations=10;
+     vector<double>zmu[nIterations],bmu[nIterations],zkn,zks,bkn,bks;
      vector<int>fill,run;
      vector<double>zdcr,bbcr;
      vector<int>fillstart,fillend;
@@ -730,7 +728,7 @@ void rcc_draw_lumi_plots(){
      c->Divide(4,2);
 
 
-     
+     //load the arrays we will need for the iterative kn procedure:
      t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide",
 		  ch_kn_bbc,ch_ks_bbc,ch_mu_bbc,
 		  ch_kn_zdc,ch_ks_zdc,ch_mu_zdc),"1","goff");
@@ -742,6 +740,11 @@ void rcc_draw_lumi_plots(){
        bkn.push_back(t->GetVal(2)[i]);
        bks.push_back(t->GetVal(3)[i]);
        bmu[0].push_back(t->GetVal(4)[i]);
+       for (int j=1;j<nIterations;j++){
+	 //the Iteration for kn wants to interact with the corrected mu vectors like arrays, so have to pre-load them with enough elements that they dont' explode:
+	 bmu[j].push_back(0);
+	 zmu[j].push_back(0);
+       }
        zkn.push_back(t->GetVal(5)[i]);
        zks.push_back(t->GetVal(6)[i]);
        zmu[0].push_back(t->GetVal(7)[i]);
@@ -767,10 +770,19 @@ void rcc_draw_lumi_plots(){
      fillend.push_back(length);
      runend.push_back(length);
 
+     const int nFills=fillstart.size();
+     vector<double>zkn0[nFills],zks0[nFills],bkn0[nFills],bks0[nFills];//the extrapolations to zero, one per run (should be one per /fill/, but we can check run by run...)
+
+     //so we can plot evolution of parameters against iteration number:
+     vector<double>dummyindex;
+     for (int i=0;i<nIterations;i++){
+       dummyindex.push_back(i*1.0);
+     }
+
+     
+
      TGraph *gt;
      TF1 *linear=new TF1("lineark","[0]+[1]*x",0,1);
-     float test[]={1,2,3};
-     float test1[]={4,3,2};
 
      c->cd(1);
      gt=new TGraph(fillend[0],&(zmu[0][0]),&(zkn[0]));
@@ -793,46 +805,93 @@ void rcc_draw_lumi_plots(){
       gt->SetTitle("BBC south exclusive 1-2 ratio vs corrected rate (0th order);BBC #mu;BBC ks");
      gt->Draw("*A");
      */
-
-     for (int i=0;i<1 && i<fillstart.size();i++){
+     int testfilli=0;
+     for (int i=0;i<fillstart.size();i++){
+       //just compare to Pedro.
+       if (fill[fillstart[i]]!=17318) continue;
+       printf("found fill 17318 @ i=%d\n",i);
+       testfilli=i;
+       
+       //prime the iteration with a 0th order guess of the extrapolated-to-zero exclusive ratios:
        gt=new TGraph(fillend[i]-fillstart[i],&(zmu[0][fillstart[i]]),&(zkn[fillstart[i]]));
        gt->SetMarkerColor(i%6+2);
        gt->Fit(linear);
-       float zknc0=linear->GetParameter(0);
+       zkn0[i].push_back(linear->GetParameter(0));
        c->cd(1);
        if (!(i%10))gt->Draw("*");
    
        gt=new TGraph(fillend[i]-fillstart[i],&(zmu[0][fillstart[i]]),&(zks[fillstart[i]]));
        gt->SetMarkerColor(i%6+2);
        gt->Fit(linear);
-       float zksc0=linear->GetParameter(0);
+       zks0[i].push_back(linear->GetParameter(0));
        c->cd(2);
        if (!(i%10))gt->Draw("*");
        c->cd(3);
-       //now re-compute all the rates using these corrected kn and ks and the bunch-by-bunch true
-       //aha!
-       for (int k=fillstart[i];k<fillend[i];k++){
-	 printf("k=%d/%d fill=%d, zmu=%f, zknc0=%f, zksc0=%f\n",k, fillend[i], fill[k], zmu[0][k],zknc0,zksc0);
 
-	 globwrap->f->SetParameters(zdcr[k],zknc0,zksc0);
-	 if (k==0) {globwrap->f->DrawCopy();newline.SetLineColor(kBlack);newline.DrawLine(0.0,0.0,1.0,0.0);
-	 } else {if (i%1==0) globwrap->f->DrawCopy("same");}
-	 rf4->SetFunction(gfunc,1);
-	 bool ret=rf4->Solve();
-	 printf("return code=%d\n",ret);
-	 float root=rf4->Root();
-	 zmu[1].push_back(root);
+       //and repeat for the BBC:
+      gt=new TGraph(fillend[i]-fillstart[i],&(bmu[0][fillstart[i]]),&(bkn[fillstart[i]]));
+       gt->Fit(linear);
+       bkn0[i].push_back(linear->GetParameter(0));
+       gt=new TGraph(fillend[i]-fillstart[i],&(bmu[0][fillstart[i]]),&(bks[fillstart[i]]));
+       gt->Fit(linear);
+       bks0[i].push_back(linear->GetParameter(0));
+
+       
+
+       //now iterate:
+       double newks,newkn;//temporary holders to get the new kn0 and ks0 out of the iteration function.
+
+       //iteratively correct the BBC:
+       for (int j=1;j<nIterations;j++){
+	 //bool IterateRateCorrection(int length, double *rate_arr,
+	 //                           double kn0, double ks0, double *kn_arr, double *ks_arr,
+	 //                           double *new_kn0, double *new_ks0, double *new_mu_arr)
+
+	 bool result=IterateRateCorrection(fillend[i]-fillstart[i], &(bbcr[fillstart[i]]),
+					   bkn0[i][j-1], bks0[i][j-1], &(bkn[fillstart[i]]), &(bks[fillstart[i]]),
+					   &newkn,&newks,&(bmu[j][fillstart[i]]));
+	 bkn0[i].push_back(newkn);
+	 bks0[i].push_back(newks);
        }
+
+       //repeat the correction for zdc
+       for (int j=1;j<nIterations;j++){
+	 //bool IterateRateCorrection(int length, double *rate_arr,
+	 //                           double kn0, double ks0, double *kn_arr, double *ks_arr,
+	 //                           double *new_kn0, double *new_ks0, double *new_mu_arr)
+
+	 bool result=IterateRateCorrection(fillend[i]-fillstart[i], &(zdcr[fillstart[i]]),
+					   zkn0[i][j-1], zks0[i][j-1], &(zkn[fillstart[i]]), &(zks[fillstart[i]]),
+					   &newkn,&newks,&(zmu[j][fillstart[i]]));
+	 zkn0[i].push_back(newkn);
+	 zks0[i].push_back(newks);
+       }
+       
      }
     c->cd(4);
-     gt=new TGraph(fillend[0],&(zmu[0][0]),&(zkn[0]));
+    gt=new TGraph(fillend[testfilli]-fillstart[testfilli],
+		  &(zmu[0][fillstart[testfilli]]),&(zkn[fillstart[testfilli]]));
      //gt=new TGraph(3,test,test1);
      gt->SetTitle("ZDC north exclusive 1-2 ratio vs corrected rate (0th order);ZDC #mu;ZDC kn");
      gt->Draw("*A");
-     gt=new TGraph(fillend[0],&(zmu[1][0]),&(zkn[0]));
+     gt=new TGraph(fillend[testfilli]-fillstart[testfilli],&(zmu[1][fillstart[testfilli]]),&(zkn[fillstart[testfilli]]));
      gt->SetMarkerColor(kGreen);
      gt->Draw("*");
 
+
+     c->cd(5);
+     gt=new TGraph(nIterations,&(dummyindex[0]),&(zkn0[testfilli][0]));
+     gt->SetTitle("ZDC north exclusive ratio extrapolated to zero;iteration;ZDC kn(0)");
+     gt->Draw("*A");
+     printf("final order intercept: ZDC kn0=%f\n",zkn0[testfilli][nIterations-1]);
+
+     c->cd(6);
+     gt=new TGraph(nIterations,&(dummyindex[0]),&(zks0[testfilli][0]));
+     gt->SetTitle("ZDC south exclusive ratio extrapolated to zero;iteration;ZDC kn(0)");
+     gt->Draw("*A");
+     printf("final order intercept: ZDC ks0=%f\n",zks0[testfilli][nIterations-1]);
+     
+     /*
      for (int i=0;i<1 && i<fillstart.size();i++){
        gt=new TGraph(fillend[i]-fillstart[i],&(zmu[1][fillstart[i]]),&(zkn[fillstart[i]]));
        gt->SetMarkerColor(kRed);
@@ -841,6 +900,7 @@ void rcc_draw_lumi_plots(){
        printf("fill=%d, zmu=%f, zknc0=%f\n", fill[i], zmu[1][i],linear->GetParameter(0));
 
      }
+     */
 
 
 
@@ -1179,7 +1239,7 @@ void rcc_draw_lumi_plots(){
 }
 
 
-bool IterateRateCorrection(int length, float *rate_arr, float kn0, float ks0, float *kn_arr, float *ks_arr, float *new_kn0, float *new_ks0, float *new_mu_arr){
+bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0, double *kn_arr, double *ks_arr, double *new_kn0, double *new_ks0, double *new_mu_arr){
   //NOTE:  Assumes new_mu_arr has enough memory to hold length*size_of(float)!
   /* for now, assume the globwrap has been set up
     TF1 *rateobs=new TF1("rateobs","-[0]+1-exp(-([1]+1)*x)-exp(-([2]+1)*x)+exp(-([1]+[2]+1)*x)",0,1);
