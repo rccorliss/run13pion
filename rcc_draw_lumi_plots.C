@@ -35,6 +35,15 @@ int DetermineSpinPattern(vector<int> bpat, vector<int> ypat);
 
 int RetrieveSpinPattern(int run, TTree *t=0);
 
+ void CalcAsymAndErr(double *asym, double *asym_err,
+		     double bpol, double bpol_err,
+		     double ypol, double ypol_err,
+		     double unlike_signal, double unlike_signal_err,
+		     double like_signal, double like_signal_err,
+		     double unlike_lumi, double unlike_lumi_err,
+		     double like_lumi, double like_lumi_err);
+
+
 void rcc_draw_lumi_plots(){
   globwrap=new TF1wrapper();
   //printf("tried to run rcc_gen_lumi directly instead of using the proper function calls.\n");
@@ -798,7 +807,7 @@ void rcc_draw_lumi_plots(){
      vector<int>fillstart,fillend;
      vector<int>runstart,runend;
 
-     vector<double> bpol, ypol, clk;//, pedzdcks, pedbbckn, pedbbcks;//pedro's corrected values, I think?
+     vector<double> bpol, bpol_err, ypol, ypol_err, clk;//, pedzdcks, pedbbckn, pedbbcks;//pedro's corrected values, I think?
      vector<double> fillpedzkn,fillpedzks,fillpedbkn,fillpedbks;//the fill-by-fill values of kn and ks.
    
      int length;
@@ -810,7 +819,7 @@ void rcc_draw_lumi_plots(){
 
 
      //load the arrays we will need for the iterative kn procedure:
-     t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide:bpat:ypat:gl1p_bpol:gl1p_ypol:star_clk",
+     t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide:bpat:ypat:gl1p_bpol:gl1p_bpolerr:gl1p_ypol:gl1p_ypolerr:star_clk",
 		  ch_kn_bbc,ch_ks_bbc,ch_mu_bbc,
 		  ch_kn_zdc,ch_ks_zdc,ch_mu_zdc),"1","goff");
      length=t->GetSelectedRows();
@@ -830,8 +839,10 @@ void rcc_draw_lumi_plots(){
        bpat.push_back(t->GetVal(10)[i]);
        ypat.push_back(t->GetVal(11)[i]);
        bpol.push_back(t->GetVal(12)[i]);
-       ypol.push_back(t->GetVal(13)[i]);
-       clk.push_back(t->GetVal(14)[i]);
+       bpol_err.push_back(t->GetVal(13)[i]);
+       ypol.push_back(t->GetVal(14)[i]);
+       ypol_err.push_back(t->GetVal(15)[i]);
+       clk.push_back(t->GetVal(16)[i]);
 
 
        for (int j=1;j<nIterations;j++){
@@ -1059,20 +1070,33 @@ void rcc_draw_lumi_plots(){
      int u_fill; uLumi->Branch("fill",&u_fill);
      int u_run; uLumi->Branch("run",&u_run);
      int u_pat; uLumi->Branch("pat",&u_pat);
-     float u_bpol; uLumi->Branch("bpol",&u_bpol);
-     float u_ypol; uLumi->Branch("ypol",&u_ypol);
+     double u_bpol; uLumi->Branch("bpol",&u_bpol);
+     double u_ypol; uLumi->Branch("ypol",&u_ypol);
+     double u_bpol_err; uLumi->Branch("bpol_err",&u_bpol_err);
+     double u_ypol_err; uLumi->Branch("ypol_err",&u_ypol_err);
 
-     float u_likemuz0; uLumi->Branch("likemuz0",&u_likemuz0);
-     float u_likemuz1; uLumi->Branch("likemuz1",&u_likemuz1);
-     float u_likemub0; uLumi->Branch("likemub0",&u_likemub0);
-     float u_likemub1; uLumi->Branch("likemub1",&u_likemub1);
-     float u_unlikemuz0; uLumi->Branch("unlikemuz0",&u_unlikemuz0);
-     float u_unlikemuz1; uLumi->Branch("unlikemuz1",&u_unlikemuz1);
-     float u_unlikemub0; uLumi->Branch("unlikemub0",&u_unlikemub0);
-     float u_unlikemub1; uLumi->Branch("unlikemub1",&u_unlikemub1);
+     double u_likemuz0; uLumi->Branch("likemuz0",&u_likemuz0);
+     double u_likemuz1; uLumi->Branch("likemuz1",&u_likemuz1);
+     double u_likemub0; uLumi->Branch("likemub0",&u_likemub0);
+     double u_likemub1; uLumi->Branch("likemub1",&u_likemub1);
+     double u_unlikemuz0; uLumi->Branch("unlikemuz0",&u_unlikemuz0);
+     double u_unlikemuz1; uLumi->Branch("unlikemuz1",&u_unlikemuz1);
+     double u_unlikemub0; uLumi->Branch("unlikemub0",&u_unlikemub0);
+     double u_unlikemub1; uLumi->Branch("unlikemub1",&u_unlikemub1);
+     double u_rellumizdc; uLumi->Branch("rellumizdc",&u_rellumizdc);
+     double u_rellumizdc_err; uLumi->Branch("rellumizdc_err",&u_rellumizdc_err);
+     double u_rellumibbc; uLumi->Branch("rellumibbc",&u_rellumibbc);
+     double u_rellumibbc_err; uLumi->Branch("rellumibbc_err",&u_rellumibbc_err);
+     double u_allzdcbbc; uLumi->Branch("allzdcbbc",&u_allzdcbbc);
+     double u_allzdcbbc_err; uLumi->Branch("allzdcbbc_err",&u_allzdcbbc_err);
 
      vector<double> uLumi_mon_run;
      vector<double> uLumi_mon_all;
+     vector<double> uLumi_mon_all_check;
+     vector<double> uLumi_mon_all_check2;
+
+     vector<double> uLumi_mon_run_bar;
+     vector<double> uLumi_mon_all_err;
 
      //loop over the arrays run by run to compose the u_(un)like* stuff:
      for (int i=0;i<nRuns;i++){
@@ -1080,7 +1104,10 @@ void rcc_draw_lumi_plots(){
        u_fill=fill[runstart[i]];
        int filli=0;
        for (filli=0;filli<fillstart.size();filli++){
-	 if (fill[fillstart[filli]]==u_fill) break;
+	 if (fill[fillstart[filli]]==u_fill) {
+	   printf("fill %d, run%d",u_fill,u_run);
+	   break;
+	 }
        }
        
        //run-by-run info:
@@ -1089,6 +1116,8 @@ void rcc_draw_lumi_plots(){
        u_pat=RetrieveSpinPattern(u_run);
        u_bpol=bpol[runstart[i]];
        u_ypol=ypol[runstart[i]];
+       u_bpol_err=bpol_err[runstart[i]];
+       u_ypol_err=ypol_err[runstart[i]];
        if (u_bpol==0 || u_ypol==0) {
 	 printf("run %d has bpol=%f, ypol=%f, skipping\n",u_run,u_bpol,u_ypol);
 	 continue;
@@ -1115,12 +1144,64 @@ void rcc_draw_lumi_plots(){
 	   u_unlikemub1+=clk[j]*bmu[nIterations-1][filli];
 	 }
        }
-       uLumi->Fill();
+       printf("(zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E) ",u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
+
+ 
        uLumi_mon_run.push_back(u_run);
        uLumi_mon_all.push_back(1/(u_bpol*u_ypol)*
 			       (u_likemuz1/u_likemub1-u_unlikemuz1/u_unlikemub1)
 			       /(u_likemuz1/u_likemub1+u_unlikemuz1/u_unlikemub1));
-       printf("run %d: all=%E\n",u_run,uLumi_mon_all[uLumi_mon_all.size()-1]);
+
+       double asym,asym_err;
+       CalcAsymAndErr(&asym, &asym_err,
+		     u_bpol,u_bpol_err,
+		     u_ypol,u_ypol_err,
+		     u_unlikemuz1,sqrt(u_unlikemuz1),
+		     u_likemuz1,sqrt(u_likemuz1),
+		     u_unlikemub1,sqrt(u_unlikemub1),
+		     u_likemub1,sqrt(u_likemub1));
+       uLumi_mon_all_check2.push_back(asym);
+   
+     u_rellumizdc=u_likemuz1/u_unlikemuz1;
+     u_rellumizdc_err=u_rellumizdc*sqrt(1/u_likemuz1+1/u_unlikemuz1);
+      u_rellumibbc=u_likemub1/u_unlikemub1;
+      u_rellumibbc_err=u_rellumibbc*sqrt(1/u_likemub1+1/u_unlikemub1);
+      u_allzdcbbc=asym;
+      u_allzdcbbc_err=asym_err;
+
+      uLumi->Fill();
+       //translated from rcc_calc_all:
+       double tunlike=u_unlikemuz1;
+       double tlike=u_likemuz1;
+       double trellumi=u_likemub1/u_unlikemub1;
+       double trellumi_err=sqrt(trellumi*trellumi*(1/u_likemub1+1/u_unlikemub1));//assumes these are counting.
+       double trelunlike=trellumi*tunlike;
+       double tsum=tlike+trelunlike;
+       double tdiff=tlike-trelunlike;
+       double tpolfactor=1/(u_bpol*u_ypol);
+       double tasym=tpolfactor*(tdiff/tsum);
+
+       double tbpolerrterm=-tasym/u_bpol * u_bpol_err;
+       double typolerrterm=-tasym/u_ypol * u_ypol_err;
+
+       double tlikesumerrterm=tpolfactor*(2*trelunlike)/(tsum*tsum)*sqrt(tlike);//assumes tlike is a counting exercise: sqrt(counts)
+       double tunlikesumerrterm=-tpolfactor*(2*trelunlike*trellumi)/(tsum*tsum)*sqrt(tunlike);//assumes tlike is a counting exercise
+       double trellumierrterm=-tpolfactor*(2*trelunlike*tunlike)/(tsum*tsum)*trellumi_err;
+
+       double err2=(tbpolerrterm*tbpolerrterm
+		    +typolerrterm*typolerrterm
+		    +tlikesumerrterm*tlikesumerrterm
+		    +tunlikesumerrterm*tunlikesumerrterm
+		    +trellumierrterm*trellumierrterm);
+
+       uLumi_mon_all_check.push_back(tasym);
+       uLumi_mon_all_err.push_back(sqrt(err2));
+       uLumi_mon_run_bar.push_back(0);
+
+
+       printf(" all=%2.2E vs tasym=%2.2E vs Get()=%2.2E (zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E)\n",u_run,uLumi_mon_all[uLumi_mon_all.size()-1],tasym, asym,u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
+
+       
      }
      uLumi->SaveAs("uLumi.ttree.root");
      nc++;
@@ -1128,8 +1209,23 @@ void rcc_draw_lumi_plots(){
      //plot the distribution before and after the corrections
 
      c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,400);
-     c->cd();
-      gt=new TGraph(uLumi_mon_run.size(),&(uLumi_mon_run[0]),&(uLumi_mon_all[0]));
+     c->Divide(1,3);
+     c->cd(1);
+     gt=new TGraphErrors(uLumi_mon_run.size(),
+			 &(uLumi_mon_run[0]),&(uLumi_mon_all[0]),
+			 &(uLumi_mon_run_bar[0]),&(uLumi_mon_all_err[0]));
+     gt->SetTitle("Rel Lumi ZDC/BBC asymmetry vs run;run;asym");
+     gt->Draw("A*");
+     c->cd(2);
+     gt=new TGraphErrors(uLumi_mon_run.size(),
+			 &(uLumi_mon_run[0]),&(uLumi_mon_all_check[0]),
+			 &(uLumi_mon_run_bar[0]),&(uLumi_mon_all_err[0]));
+     gt->SetTitle("Rel Lumi ZDC/BBC asymmetry vs run;run;asym");
+     gt->Draw("A*");
+     c->cd(3);
+     gt=new TGraph(uLumi_mon_run.size(),
+		   &(uLumi_mon_all_check[0]),&(uLumi_mon_all[0]));
+     gt->SetTitle("Cross check of asym calculation;asym (chk);asym");
      gt->Draw("A*");
      return;
      
@@ -1721,4 +1817,47 @@ bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0,
    }
    printf("asked for pattern from run %d, but no matching run found.\n",run);
    return -1;
+ }
+
+ void CalcAsymAndErr(double *asym, double *asym_err,
+		     double bpol, double bpol_err,
+		     double ypol, double ypol_err,
+		     double unlike_signal, double unlike_signal_err,
+		     double like_signal, double like_signal_err,
+		     double unlike_lumi, double unlike_lumi_err,
+		     double like_lumi, double like_lumi_err){
+
+   //assumes each term in the signature is uncorrelated.
+		    
+   //translated from rcc_calc_all:
+   double tunlike=unlike_signal;
+   double tlike=like_signal;
+   double trellumi=like_lumi/unlike_lumi;
+   double trelunlike=trellumi*tunlike;
+   double tsum=tlike+trelunlike;
+   double tdiff=tlike-trelunlike;
+   double tpolfactor=1/(bpol*ypol);
+   double tasym=tpolfactor*(tdiff/tsum);
+
+   double trellumi_err=sqrt(trellumi*trellumi*
+			    ((like_lumi_err*like_lumi_err)/(like_lumi*like_lumi)
+			     +(unlike_lumi_err*unlike_lumi_err)/(unlike_lumi*unlike_lumi)
+			     ));
+       
+   double tbpolerrterm=-tasym/bpol * bpol_err;
+   double typolerrterm=-tasym/ypol * ypol_err;
+
+   double tlikesumerrterm=tpolfactor*(2*trelunlike)/(tsum*tsum)*like_signal_err;
+   double tunlikesumerrterm=-tpolfactor*(2*trelunlike*trellumi)/(tsum*tsum)*unlike_signal_err;
+   double trellumierrterm=-tpolfactor*(2*trelunlike*tunlike)/(tsum*tsum)*trellumi_err;
+
+   double err2=(tbpolerrterm*tbpolerrterm
+		+typolerrterm*typolerrterm
+		+tlikesumerrterm*tlikesumerrterm
+		+tunlikesumerrterm*tunlikesumerrterm
+		+trellumierrterm*trellumierrterm);
+
+   *asym=tasym;
+   *asym_err=sqrt(err2);
+   return;
  }
