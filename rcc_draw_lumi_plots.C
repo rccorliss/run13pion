@@ -10,8 +10,9 @@ public:
   TF1wrapper(){};
   void SetF(TF1* fin){f=(TF1*)fin->Clone(); return;};
   void SetD(TF1* din){d=(TF1*)din->Clone(); return;};
-  double DoEval(double x) const{if (x<0) return -2+x;if(x>1) return 1+x;return f->Eval(x);};
-  double DoDerive(double x) const{if (x<0) return 10-x; if(x>1) return 1+x; return d->Eval(x);};
+  double DoEval(double x) const{if (x<0) return f->Eval(0)+x;if(x>1) return 1+x;return f->Eval(x);};//was previously -2+x
+  double DoDerive(double x) const{if (x<0) return d->Eval(0)-x; if(x>1) return 1+x; return d->Eval(x);};//was previously 10-x
+  double operator() (double x) const{return f->Eval(x);};
   ROOT::Math::IBaseFunctionOneDim* Clone() const{
     TF1wrapper *n=new TF1wrapper();
     n->SetF(f);
@@ -27,8 +28,12 @@ double global_derive_gsl(double x, void *){return global_derive(x);}
 
 
 bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0, double *kn_arr, double *ks_arr, double *new_kn0, double *new_ks0, double *new_mu_arr);
+//iteratively correct the true rate calculation using linear fits to the set of kn(s) for each fill
 
+int DetermineSpinPattern(vector<int> bpat, vector<int> ypat);
+//match the spin orientation vectors to the spin pattern label.
 
+int RetrieveSpinPattern(int run, TTree *t=0);
 
 void rcc_draw_lumi_plots(){
   globwrap=new TF1wrapper();
@@ -79,6 +84,79 @@ void rcc_draw_lumi_plots(){
   int nc=0;
   TPad *pad; //placeholder pointer to a pad
 
+
+//plot the spin pattern as a function of run.  If disabled, The rest of this will misbehave.
+  int test_of_spin_pattern=RetrieveSpinPattern(398134,t);
+  printf("spin pattern for 398134=%d\n",test_of_spin_pattern);
+ test_of_spin_pattern=RetrieveSpinPattern(398029,t);
+  printf("spin pattern for 398029=%d\n",test_of_spin_pattern);
+
+
+
+
+  
+  //old code to determine spin patterns etc, now folded into 'RetreiveSpinPattern' messy, I know...
+ if (0){
+   vector<int> spinpat;
+   vector<int> runvec; 
+    c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,300);
+    //c->Divide(3,1);
+    pad=(TPad*)c->cd(1);
+    t->Draw("crossing:star_run:bpat:ypat","1","goff");
+    int nbunches=t->GetSelectedRows();
+    //find the starts to each run:
+    vector<int> runstart;
+    int thisrun, lastrun=0;
+    for (int i=0;i<nbunches;i++){
+      thisrun=t->GetVal(1)[i];
+      if (thisrun!=lastrun){
+	runstart.push_back(i);
+	runvec.push_back(thisrun);
+	lastrun=thisrun;
+      }
+    }
+    int nruns=runstart.size();
+    vector<int> bpattern[nruns], ypattern[nruns];
+    int bp,yp;
+    for (int i=0;i<nruns;i++){
+      for (int j=0;j<24;j++){
+	bp=t->GetVal(2)[runstart[i]+j];
+	yp=t->GetVal(3)[runstart[i]+j];
+	bpattern[i].push_back(bp);
+	ypattern[i].push_back(yp);
+      }
+
+      int patternID=DetermineSpinPattern(bpattern[i],ypattern[i]);
+      if (patternID<0){
+	printf("Pattern not found:\n");
+	if(1){//printf blue pattern
+	  printf("run %d blue pat: ",runvec[i]);
+	  for (int j=0;j<16;j++){
+	    printf("%c",bpattern[i][j]==1?'+':bpattern[i][j]==-1?'-':'X');
+	  }
+	  printf("\n");
+	}
+	if(1){//printf yellow pattern
+	  printf("run %d yell pat: ",runvec[i]);
+	  for (int j=0;j<16;j++){
+	    printf("%c",ypattern[i][j]==1?'+':ypattern[i][j]==-1?'-':'X');
+	  }
+	  printf("\n");
+	}
+      }
+      spinpat.push_back(patternID);
+    }
+    if (1){
+    TGraph *g=new TGraph(spinpat.size(),&(runvec[0]),&(spinpat[0]));
+    g->SetTitle("Reconstructed SpinPattern ID per run;run;pattern #");
+    g->Draw("A*");
+    }
+    
+    nc++;
+ }
+
+
+  
 
   TCut rcc_cross_qa="star_bbcwide >0.05 && star_fill!=17443 && star_fill>17211"; //various cuts on basic bunch and rates
   TCut rcc_clip_loud_runs="1";
@@ -705,9 +783,9 @@ void rcc_draw_lumi_plots(){
 
    
    if (1){
-     TF1 *rateobs=new TF1("rateobs","-[0]+1-exp(-([1]+1)*x)-exp(-([2]+1)*x)+exp(-([1]+[2]+1)*x)",0,1);
+     TF1 *rateobs=new TF1("rateobs","-[0]+1-exp(-([1]+1)*x)-exp(-([2]+1)*x)+exp(-([1]+[2]+1)*x)",-0.01,1);
      TF1 *ratederivative=new TF1("ratederivative",
-				 "([1]+1)*exp(-([1]+1)*x)+([2]+1)*exp(-([2]+1)*x)-([1]+[2]+1)*exp(-([1]+[2]+1)*x)",0,1);
+				 "([1]+1)*exp(-([1]+1)*x)+([2]+1)*exp(-([2]+1)*x)-([1]+[2]+1)*exp(-([1]+[2]+1)*x)",-0.01,1);
      rateobs->SetTitle("Random Subset of 0=Robs-f(kn,ks,#mu);#mu;'0'");
      globwrap->SetF(rateobs);
      globwrap->SetD(ratederivative);
@@ -715,21 +793,24 @@ void rcc_draw_lumi_plots(){
      //ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
      const int nIterations=10;
      vector<double>zmu[nIterations],bmu[nIterations],zkn,zks,bkn,bks;
-     vector<int>fill,run;
+     vector<int>fill,run,bpat,ypat;
      vector<double>zdcr,bbcr;
      vector<int>fillstart,fillend;
      vector<int>runstart,runend;
+
+     vector<double> bpol, ypol, clk;//, pedzdcks, pedbbckn, pedbbcks;//pedro's corrected values, I think?
+     vector<double> fillpedzkn,fillpedzks,fillpedbkn,fillpedbks;//the fill-by-fill values of kn and ks.
    
      int length;
      int tfill=0,trun=0,lastfill=0,lastrun=0;
 
-     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);
+     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1200,800);
      int nplots=4;
      c->Divide(4,2);
 
 
      //load the arrays we will need for the iterative kn procedure:
-     t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide",
+     t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide:bpat:ypat:gl1p_bpol:gl1p_ypol:star_clk",
 		  ch_kn_bbc,ch_ks_bbc,ch_mu_bbc,
 		  ch_kn_zdc,ch_ks_zdc,ch_mu_zdc),"1","goff");
      length=t->GetSelectedRows();
@@ -740,16 +821,25 @@ void rcc_draw_lumi_plots(){
        bkn.push_back(t->GetVal(2)[i]);
        bks.push_back(t->GetVal(3)[i]);
        bmu[0].push_back(t->GetVal(4)[i]);
-       for (int j=1;j<nIterations;j++){
-	 //the Iteration for kn wants to interact with the corrected mu vectors like arrays, so have to pre-load them with enough elements that they dont' explode:
-	 bmu[j].push_back(0);
-	 zmu[j].push_back(0);
-       }
+
        zkn.push_back(t->GetVal(5)[i]);
        zks.push_back(t->GetVal(6)[i]);
        zmu[0].push_back(t->GetVal(7)[i]);
        zdcr.push_back(t->GetVal(8)[i]);
        bbcr.push_back(t->GetVal(9)[i]);
+       bpat.push_back(t->GetVal(10)[i]);
+       ypat.push_back(t->GetVal(11)[i]);
+       bpol.push_back(t->GetVal(12)[i]);
+       ypol.push_back(t->GetVal(13)[i]);
+       clk.push_back(t->GetVal(14)[i]);
+
+
+       for (int j=1;j<nIterations;j++){
+	 //the Iteration for kn wants to interact with the corrected mu vectors like arrays, so have to pre-load them with enough elements that they dont' explode:
+	 bmu[j].push_back(0);
+	 zmu[j].push_back(0);
+       }
+       
 
        //printf("fill %d run=%d\n",fill[i],run[i]);
        if (i==0 ||fill[i]!=fill[i-1]){
@@ -770,6 +860,7 @@ void rcc_draw_lumi_plots(){
      fillend.push_back(length);
      runend.push_back(length);
 
+     const int nRuns=runstart.size();
      const int nFills=fillstart.size();
      vector<double>zkn0[nFills],zks0[nFills],bkn0[nFills],bks0[nFills];//the extrapolations to zero, one per run (should be one per /fill/, but we can check run by run...)
 
@@ -808,7 +899,7 @@ void rcc_draw_lumi_plots(){
      int testfilli=0;
      for (int i=0;i<fillstart.size();i++){
        //just compare to Pedro.
-       if (fill[fillstart[i]]!=17318) continue;
+       //if (fill[fillstart[i]]!=17318) continue;
        printf("found fill 17318 @ i=%d\n",i);
        testfilli=i;
        
@@ -865,6 +956,14 @@ void rcc_draw_lumi_plots(){
 					   &newkn,&newks,&(zmu[j][fillstart[i]]));
 	 zkn0[i].push_back(newkn);
 	 zks0[i].push_back(newks);
+	 if (zmu[j][fillstart[i]]<0.0002){
+	   printf("run %d has a problem in iteration %d\n",run[fillstart[i]],j);
+	   c->cd(3);	   
+	   globwrap->f->Draw();
+	   return;
+	     
+	   assert(false);
+	 }
        }
        
      }
@@ -890,40 +989,188 @@ void rcc_draw_lumi_plots(){
      gt->SetTitle("ZDC south exclusive ratio extrapolated to zero;iteration;ZDC kn(0)");
      gt->Draw("*A");
      printf("final order intercept: ZDC ks0=%f\n",zks0[testfilli][nIterations-1]);
-     
-     /*
-     for (int i=0;i<1 && i<fillstart.size();i++){
-       gt=new TGraph(fillend[i]-fillstart[i],&(zmu[1][fillstart[i]]),&(zkn[fillstart[i]]));
-       gt->SetMarkerColor(kRed);
-       gt->Fit(linear);
-       gt->Draw("*");
-       printf("fill=%d, zmu=%f, zknc0=%f\n", fill[i], zmu[1][i],linear->GetParameter(0));
 
+     //compare to pedro's numbers:?
+     //compare to each other:
+     c->cd(6);
+     gt=new TGraph(zmu[nIterations-1].size(),&(zmu[0][0]),&(zmu[nIterations-1][0]));
+     gt->SetTitle("ZDC underlying rate before and after coorection;before;after");
+     gt->Draw("*A");
+    c->cd(7);
+     gt=new TGraph(bmu[nIterations-1].size(),&(bmu[0][0]),&(bmu[nIterations-1][0]));
+     gt->SetTitle("BBC underlying rate before and after coorection;before;after");
+     gt->Draw("*A");
+   c->cd(8);
+     gt=new TGraph(zmu[nIterations-1].size(),&(zmu[0][0]),&(bmu[0][0]));
+     gt->SetTitle("uncorrected underlying rates ZDC vs BBC;ZDC mu;BBC mu");
+     gt->Draw("*A");
+    c->cd(8);
+     gt=new TGraph(zmu[nIterations-1].size(),&(zmu[nIterations-1][0]),&(bmu[nIterations-1][0]));
+     gt->SetTitle("corrected underlying rates ZDC vs BBC;ZDC mu;BBC mu");
+     gt->Draw("*A");
+
+     vector<double>ratio[2];
+     for (int i=0;i<bmu[nIterations-1].size();i++){
+       ratio[0].push_back(zmu[nIterations-1][i]/zmu[0][i]);
+       ratio[1].push_back(bmu[nIterations-1][i]/bmu[0][i]);
      }
-     */
+   c->cd(6);
+     gt=new TGraph(bmu[nIterations-1].size(),&(zmu[0][0]),&(ratio[0][0]));
+     gt->SetTitle("ratio of corrected to uncorrected ZDC mu;ZDC mu;ratio");
+     gt->Draw("*A");
+        c->cd(7);
+     gt=new TGraph(bmu[nIterations-1].size(),&(bmu[0][0]),&(ratio[1][0]));
+     gt->SetTitle("ratio of corrected to uncorrected BBC mu;BBC mu;ratio");
+     gt->Draw("*A");
 
-
-
-     
-     /*
-       continue;
-     
-       gt=new TGraph(fillend[i]-fillstart[i],&(bmu[0][fillstart[i]]),&(bkn[fillstart[i]]));
-       gt->SetMarkerColor(i%6+2);
-       c->cd(3);
-       if (!(i%10))gt->Draw("*");
-   
-       gt=new TGraph(fillend[i]-fillstart[i],&(bmu[0][fillstart[i]]),&(bks[fillstart[i]]));
-       gt->SetMarkerColor(i%6+2);
-       c->cd(4);
-       if (!(i%10))gt->Draw("*");
-       }
-     */
      nc++;
+
+     //plot the distribution before and after the corrections
+
+     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1000,400);
+     c->Divide(4,1);
+     
+     TH1F *hbeforecor[4];
+     TH1F *haftercor[4];
+     for (int i=0;i<4;i++){
+       hbeforecor[i]=new TH1F(Form("hbeforecorr%d",i),Form("k%d Distribution before correction",i),200,0,5);
+       haftercor[i]=new TH1F(Form("haftercor%d",i),Form("k%d Distribution after correction",i),200,0,5);
+     }
+     for (int i=0;i<fillstart.size();i++){
+       hbeforecor[0]->Fill(bks0[i][0]);
+       haftercor[0]->Fill(bks0[i][nIterations-1]);
+       hbeforecor[1]->Fill(bkn0[i][0]);
+       haftercor[1]->Fill(bkn0[i][nIterations-1]);
+       hbeforecor[2]->Fill(zks0[i][0]);
+       haftercor[2]->Fill(zks0[i][nIterations-1]);
+       hbeforecor[3]->Fill(zkn0[i][0]);
+       haftercor[3]->Fill(zkn0[i][nIterations-1]);
+     }
+     for (int i=0;i<4;i++){
+       c->cd(i+1);
+       hbeforecor[i]->Draw();
+       haftercor[i]->SetLineColor(kRed);
+       haftercor[i]->Draw("same");
+     }
+       
+     //now we can plot the ZDC/BBC asymmetry:
+     //ALL=1/pp*(zbpp-zbpm)/(zbpp+zbpm)
+     TTree *uLumi=new TTree("uLumi","micro luminosity tree");
+     int u_fill; uLumi->Branch("fill",&u_fill);
+     int u_run; uLumi->Branch("run",&u_run);
+     int u_pat; uLumi->Branch("pat",&u_pat);
+     float u_bpol; uLumi->Branch("bpol",&u_bpol);
+     float u_ypol; uLumi->Branch("ypol",&u_ypol);
+
+     float u_likemuz0; uLumi->Branch("likemuz0",&u_likemuz0);
+     float u_likemuz1; uLumi->Branch("likemuz1",&u_likemuz1);
+     float u_likemub0; uLumi->Branch("likemub0",&u_likemub0);
+     float u_likemub1; uLumi->Branch("likemub1",&u_likemub1);
+     float u_unlikemuz0; uLumi->Branch("unlikemuz0",&u_unlikemuz0);
+     float u_unlikemuz1; uLumi->Branch("unlikemuz1",&u_unlikemuz1);
+     float u_unlikemub0; uLumi->Branch("unlikemub0",&u_unlikemub0);
+     float u_unlikemub1; uLumi->Branch("unlikemub1",&u_unlikemub1);
+
+     vector<double> uLumi_mon_run;
+     vector<double> uLumi_mon_all;
+
+     //loop over the arrays run by run to compose the u_(un)like* stuff:
+     for (int i=0;i<nRuns;i++){
+       //find the start of our fill:
+       u_fill=fill[runstart[i]];
+       int filli=0;
+       for (filli=0;filli<fillstart.size();filli++){
+	 if (fill[fillstart[filli]]==u_fill) break;
+       }
+       
+       //run-by-run info:
+       u_run=run[runstart[i]];
+       
+       u_pat=RetrieveSpinPattern(u_run);
+       u_bpol=bpol[runstart[i]];
+       u_ypol=ypol[runstart[i]];
+       if (u_bpol==0 || u_ypol==0) {
+	 printf("run %d has bpol=%f, ypol=%f, skipping\n",u_run,u_bpol,u_ypol);
+	 continue;
+       }
+       u_likemuz0=0;
+       u_likemuz1=0;
+       u_likemub0=0;
+       u_likemub1=0;
+       u_unlikemuz0=0;
+       u_unlikemuz1=0;
+       u_unlikemub0=0;
+       u_unlikemub1=0;
+       for (int j=runstart[i];j<runend[i];j++){
+	 //bunch-by-bunch summation:
+	 if (bpat[j]==ypat[j]){
+	   u_likemuz0+=clk[j]*zmu[0][filli];
+	   u_likemuz1+=clk[j]*zmu[nIterations-1][filli];
+	   u_likemub0+=clk[j]*bmu[0][filli];
+	   u_likemub1+=clk[j]*bmu[nIterations-1][filli];
+	 } else {
+ 	   u_unlikemuz0+=clk[j]*zmu[0][filli];
+	   u_unlikemuz1+=clk[j]*zmu[nIterations-1][filli];
+	   u_unlikemub0+=clk[j]*bmu[0][filli];
+	   u_unlikemub1+=clk[j]*bmu[nIterations-1][filli];
+	 }
+       }
+       uLumi->Fill();
+       uLumi_mon_run.push_back(u_run);
+       uLumi_mon_all.push_back(1/(u_bpol*u_ypol)*
+			       (u_likemuz1/u_likemub1-u_unlikemuz1/u_unlikemub1)
+			       /(u_likemuz1/u_likemub1+u_unlikemuz1/u_unlikemub1));
+       printf("run %d: all=%E\n",u_run,uLumi_mon_all[uLumi_mon_all.size()-1]);
+     }
+     uLumi->SaveAs("uLumi.ttree.root");
+     nc++;
+
+     //plot the distribution before and after the corrections
+
+     c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,400);
+     c->cd();
+      gt=new TGraph(uLumi_mon_run.size(),&(uLumi_mon_run[0]),&(uLumi_mon_all[0]));
+     gt->Draw("A*");
+     return;
+     
+     //available elements:
+     /*
+       fill.push_back(t->GetVal(0)[i]);
+       run.push_back(t->GetVal(1)[i]);
+       bkn.push_back(t->GetVal(2)[i]);
+       bks.push_back(t->GetVal(3)[i]);
+       bmu[0].push_back(t->GetVal(4)[i]);
+
+       zkn.push_back(t->GetVal(5)[i]);
+       zks.push_back(t->GetVal(6)[i]);
+       zmu[0].push_back(t->GetVal(7)[i]);
+       zdcr.push_back(t->GetVal(8)[i]);
+       bbcr.push_back(t->GetVal(9)[i]);
+       bpat.push_back(t->GetVal(10)[i]);
+       ypat.push_back(t->GetVal(11)[i]);
+       pedzdcks.push_back(t->GetVal(12)[i]);
+       pedzdckn.push_back(t->GetVal(13)[i]);
+       pedbbcks.push_back(t->GetVal(14)[i]);
+       pedbbckn.push_back(t->GetVal(15)[i]);
+     */
+
+     //loop over runs and accumulate corrected rate statistics
+     //for (int i=0;i<runstart.size();i++){
+	    
+ 
+     
+
+     
    }
 
 
+   /*
+   
+   TTree *microtree=new TTree("mut","Micro Tree with corrected true rates for good");
+   int mufill, murun, mubunch;
+   int mubspin,mub
 
+   */
 
 
 
@@ -1234,9 +1481,130 @@ void rcc_draw_lumi_plots(){
   //Once this is done, Pkl' is used to plot the same k_ values as before, where we now fit (k(Pkl') and iterate to get Pkl'', and so on, until this converges.  They state that this always converges by ~ 4 iterations.
 
 
-  
+     
   return;
 }
+
+unsigned long ToBitPattern(vector<int> vec, int nbits){
+  //convert a vector to an unsigned long/
+  unsigned long pattern;
+  for (int bit=0;bit<nbits;bit+=2){
+    if ( vec[bit]!=vec[bit+1]) {
+      printf("parity wrong in spin pattern\n");
+      return 0;
+    }
+    if (abs(vec[bit])!=1){
+      printf("spin pattern bit isn't +/-1.\n");
+      return 0;
+    }
+    //make the 'even bits only' object:
+    //note that to make this human-readable, the leftmost bit is the first bit, not the last one
+    pattern+=(vec[bit]==1)<<((nbits-bit)/2-1);
+  }
+  return pattern;
+}
+
+int DetermineSpinPattern(vector<int> bpat, vector<int> ypat){
+  //convert the vector of patterns into the bit string representation:
+  unsigned long bshort=ToBitPattern(bpat,16);
+  unsigned long yshort=ToBitPattern(ypat,16);
+
+  //note that in these printouts, we write the leftmost bit first, not last.
+  if (0){
+    printf("blue pattern=%lu =0b",bshort);
+    for (int i=0;i<8;i++){
+      printf("%d",(bshort&(1<<(7-i)))?1:0);
+    }
+    printf("\n");
+  }
+  if (0){
+    printf("yell pattern=%lu =0b",yshort);
+    for (int i=0;i<8;i++){
+      printf("%d",(yshort&(1<<(7-i)))?1:0);
+    }
+    printf("\n");
+  }
+
+  //define the possible valid patterns
+  //see tables 5 and 6 of AN1125 rev01:
+  //these read left to right, so the lowest bit is actually the largest crossing number.
+  unsigned long base[6];
+  base[0]=0b10101010;//as in P1 or P21 blue
+  base[1]=0b01010101;//as in P2 or P22 blue
+  base[2]=0b11001101;//as in P1 or P2 yellow  
+  base[3]=0b00110010;//as in P3 or P4 yellow
+  base[4]=0b01100110;//as in P21 or P22 yellow, with the initial bin offset by one to match Ross's observations
+  base[5]=0b10011001;//as in P23 or P24 yellow, per the above.
+
+
+   if (0){
+    printf("base[2] pattern=%lu =0b",base[2]);
+    for (int i=0;i<8;i++){
+      printf("%d",(base[2]&(1<<(7-i)))?1:0);
+    }
+    printf("\n");
+  }
+  //define the combinations of patterns that are valid spin patterns:
+    //see tables 5 and 6 of AN1125 rev01:
+
+  //initialize all lookup patterns to 'invalid' (=0):
+  //patlookup[a][b] resolves to the spin pattern ID# for blue=base[a] && yellow=base[b]
+  int patlookup[6][6];
+  for (int i=0;i<6;i++){
+    for (int j=0;j<6;j++){
+      patlookup[i][j]=0;
+    }
+  }
+  //set the valid ones to their proper settings.
+  patlookup[0][2]=1;
+  patlookup[1][2]=2;
+  patlookup[0][3]=3;
+  patlookup[1][3]=4;
+  patlookup[2][0]=5;
+  patlookup[2][1]=6;
+  patlookup[3][0]=7;
+  patlookup[3][1]=8;
+
+  patlookup[0][4]=21;
+  patlookup[1][4]=22;
+  patlookup[0][5]=23;
+  patlookup[1][5]=24;
+  patlookup[4][0]=25;
+  patlookup[4][1]=26;
+  patlookup[5][0]=27;
+  patlookup[5][1]=28;
+  
+
+  //find which pattern we have:
+  int blabel=-1;
+  int ylabel=-1;
+  for (int i=0;i<6;i++){
+    //printf("trying blue base=%lu\n",base[i]);
+    if (bshort==base[i]) {
+      blabel=i;
+      break;
+    }
+  }
+  for (int i=0;i<6;i++){
+    //printf("trying yell base=%lu\n",base[i]);
+    if (yshort==base[i]) {
+      ylabel=i;
+      break;
+    }
+  }
+  if (blabel<0){ 
+    printf("couldn't find a blue spin pattern.  parity is good, but not balanced.\n");
+    return -1;
+  }
+if (ylabel<0) {
+    printf("couldn't find a yellow spin pattern.  parity is good, but not balanced.\n");
+    return -1;
+  }
+  return patlookup[blabel][ylabel];
+}
+  
+
+
 
 
 bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0, double *kn_arr, double *ks_arr, double *new_kn0, double *new_ks0, double *new_mu_arr){
@@ -1252,18 +1620,20 @@ bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0,
 
   
   //for each measured rate in the sample, compute the associated underlying collision rate:     
-  ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_STEFFENSON);
+  //ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_STEFFENSON);
+  ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_BISECTION);
   ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
   for (int i=0;i<length;i++){
     //printf("i=%d/%d, zmu=%f, zknc0=%f, zksc0=%f\n",i, length, zmu[0][k],zknc0,zksc0);
     globwrap->f->SetParameters(rate_arr[i],kn0,ks0);
     //if (i==0) {globwrap->f->DrawCopy();newline.SetLineColor(kBlack);newline.DrawLine(0.0,0.0,1.0,0.0);
     //} else {if (i%1==0) globwrap->f->DrawCopy("same");}
-    rf4->SetFunction(gfunc,1);
-    bool ret=rf4->Solve();
+    // rf4->SetFunction(gfunc,0.5);
+    rf4->SetFunction(gfunc,0,1);//for not using the derivative
+    bool ret=rf4->Solve(300,1E-6);
     //printf("return code=%d\n",ret);
     if (ret!=1) {
-      printf("EEP. return code=%d\n",ret);
+      printf("EEP. return code=%d.  Last guess was %f\n",ret,rf4->Root());
       return ret;
     }
     float root=rf4->Root();
@@ -1284,3 +1654,71 @@ bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0,
 
   return true;;
 }
+
+
+ int RetrieveSpinPattern(int run, TTree *t){
+   static bool firstRun=true;
+   static vector<int> runnum;
+   static vector<int> pattern;
+
+   if (firstRun){
+     firstRun=false;
+     //build the vectors.
+    t->Draw("crossing:star_run:bpat:ypat","1","goff");
+    int nbunches=t->GetSelectedRows();
+    //find the starts to each run:
+    vector<int> runstart;
+    int thisrun, lastrun=0;
+    for (int i=0;i<nbunches;i++){
+      thisrun=t->GetVal(1)[i];
+      if (thisrun!=lastrun){
+	runstart.push_back(i);
+	runnum.push_back(thisrun);
+	lastrun=thisrun;
+      }
+    }
+    int nruns=runstart.size();
+    vector<int> bpattern[nruns], ypattern[nruns];
+    int bp,yp;
+    for (int i=0;i<nruns;i++){
+      for (int j=0;j<24;j++){
+	bp=t->GetVal(2)[runstart[i]+j];
+	yp=t->GetVal(3)[runstart[i]+j];
+	bpattern[i].push_back(bp);
+	ypattern[i].push_back(yp);
+      }
+
+      int patternID=DetermineSpinPattern(bpattern[i],ypattern[i]);
+      if (patternID<0){
+	printf("Pattern not found:\n");
+	if(1){//printf blue pattern
+	  printf("run %d blue pat: ",runnum[i]);
+	  for (int j=0;j<16;j++){
+	    printf("%c",bpattern[i][j]==1?'+':bpattern[i][j]==-1?'-':'X');
+	  }
+	  printf("\n");
+	}
+	if(1){//printf yellow pattern
+	  printf("run %d yell pat: ",runnum[i]);
+	  for (int j=0;j<16;j++){
+	    printf("%c",ypattern[i][j]==1?'+':ypattern[i][j]==-1?'-':'X');
+	  }
+	  printf("\n");
+	}
+      }
+      pattern.push_back(patternID);
+    }
+
+
+
+     
+   }
+
+   if (run<0) return -1;
+
+   for (int i=0;i<runnum.size();i++){
+     if (run==runnum[i]) return pattern[i];
+   }
+   printf("asked for pattern from run %d, but no matching run found.\n",run);
+   return -1;
+ }
