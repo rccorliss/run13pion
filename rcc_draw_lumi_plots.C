@@ -2,6 +2,7 @@
 //#include <TFileCollection>
 #include <TCut.h>
 #include "Math/IFunction.h"
+#include "sanghwa/SpinExample2.C"
 
 class TF1wrapper: public ROOT::Math::IBaseFunctionOneDim
 {
@@ -46,6 +47,7 @@ void CalcAsymAndErr(double *asym, double *asym_err,
 
 void rcc_draw_lumi_plots(){
   globwrap=new TF1wrapper();
+  DefineBasePatterns();//for sanghwa comparison
   //printf("tried to run rcc_gen_lumi directly instead of using the proper function calls.\n");
 
   //plot k_S and k_N vs BBC rate per-crossing, populating this plot with one entry for every crossing in every fill we are considering.
@@ -153,6 +155,7 @@ void rcc_draw_lumi_plots(){
 	  printf("\n");
 	}
       }
+ 
       spinpat.push_back(patternID);
     }
     if (1){
@@ -1628,6 +1631,7 @@ int DetermineSpinPattern(vector<int> bpat, vector<int> ypat){
   //define the possible valid patterns
   //see tables 5 and 6 of AN1125 rev01:
   //these read left to right, so the lowest bit is actually the largest crossing number.
+  //'1'='+' helicity, '0'='-' helicity
   unsigned long base[6];
   base[0]=0b10101010;//as in P1 or P21 blue
   base[1]=0b01010101;//as in P2 or P22 blue
@@ -1760,7 +1764,7 @@ int RetrieveSpinPattern(int run, TTree *t){
   static bool firstRun=true;
   static vector<int> runnum;
   static vector<int> pattern;
-
+  TH2F *crosscheck=new TH2F("crosscheck","comparison of Sanghwa's and Ross's spin pattern lookup;Sanghwa ID;Ross ID",30,-1.5,28.5,30,-1.5,28.5);
   if (firstRun){
     firstRun=false;
     //build the vectors.
@@ -1779,6 +1783,7 @@ int RetrieveSpinPattern(int run, TTree *t){
     }
     int nruns=runstart.size();
     vector<int> bpattern[nruns], ypattern[nruns];
+    vector<int> sanghwab[nruns], sanghway[nruns];
     int bp,yp;
     for (int i=0;i<nruns;i++){
       for (int j=0;j<24;j++){
@@ -1786,8 +1791,12 @@ int RetrieveSpinPattern(int run, TTree *t){
 	yp=t->GetVal(3)[runstart[i]+j];
 	bpattern[i].push_back(bp);
 	ypattern[i].push_back(yp);
+	if (j<16){
+	  sanghwab[i].push_back(bp);
+	  sanghway[i].push_back(yp);
+	}
       }
-
+     int sanghwapatternID=FindPattern(sanghwab[i],sanghway[i]);
       int patternID=DetermineSpinPattern(bpattern[i],ypattern[i]);
       if (patternID<0){
 	printf("Pattern not found:\n");
@@ -1806,13 +1815,15 @@ int RetrieveSpinPattern(int run, TTree *t){
 	  printf("\n");
 	}
       }
+      if (patternID!=sanghwapatternID){
+	printf("run %d mypattern: %d, sanghwa's: %d\n",runnum[i],patternID,sanghwapatternID);
+		assert(false);
+	y }
+	crosscheck->Fill(patternID,sanghwapatternID);
       pattern.push_back(patternID);
+      }
+      crosscheck->Draw("colz");
     }
-
-
-
-     
-  }
 
   if (run<0) return -1;
 
@@ -1865,3 +1876,50 @@ void CalcAsymAndErr(double *asym, double *asym_err,
   *asym_err=sqrt(err2);
   return;
 }
+
+/* not sure why this got duplicated...
+
+void CalcAsymAndErr(double *asym, double *asym_err,
+		    double bpol, double bpol_err,
+		    double ypol, double ypol_err,
+		    double unlike_signal, double unlike_signal_err,
+		    double like_signal, double like_signal_err,
+		    double unlike_lumi, double unlike_lumi_err,
+		    double like_lumi, double like_lumi_err){
+
+  //assumes each term in the signature is uncorrelated.
+		    
+  //translated from rcc_calc_all:
+  double tunlike=unlike_signal;
+  double tlike=like_signal;
+  double trellumi=like_lumi/unlike_lumi;
+  double trelunlike=trellumi*tunlike;
+  double tsum=tlike+trelunlike;
+  double tdiff=tlike-trelunlike;
+  double tpolfactor=1/(bpol*ypol);
+  double tasym=tpolfactor*(tdiff/tsum);
+
+  double trellumi_err=sqrt(trellumi*trellumi*
+			   ((like_lumi_err*like_lumi_err)/(like_lumi*like_lumi)
+			    +(unlike_lumi_err*unlike_lumi_err)/(unlike_lumi*unlike_lumi)
+			    ));
+       
+  double tbpolerrterm=-tasym/bpol * bpol_err;
+  double typolerrterm=-tasym/ypol * ypol_err;
+
+  double tlikesumerrterm=tpolfactor*(2*trelunlike)/(tsum*tsum)*like_signal_err;
+  double tunlikesumerrterm=-tpolfactor*(2*trelunlike*trellumi)/(tsum*tsum)*unlike_signal_err;
+  double trellumierrterm=-tpolfactor*(2*trelunlike*tunlike)/(tsum*tsum)*trellumi_err;
+
+  double err2=(tbpolerrterm*tbpolerrterm
+	       +typolerrterm*typolerrterm
+	       +tlikesumerrterm*tlikesumerrterm
+	       +tunlikesumerrterm*tunlikesumerrterm
+	       +trellumierrterm*trellumierrterm);
+
+  *asym=tasym;
+  *asym_err=sqrt(err2);
+  return;
+}
+
+*/
