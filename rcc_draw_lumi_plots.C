@@ -794,7 +794,7 @@ void rcc_draw_lumi_plots(){
   const char* ch_mu_zdc_corr="(log(1-star_zncorrs-star_zscorrs+star_zdcwidecorrs)-log(1-star_zscorrs)-log(1-star_zncorrs))";
 
    
-  if (0){//do the iterated fits and save the uLumi tree
+  if (1){//do the iterated fits and save the uLumi tree
     TF1 *rateobs=new TF1("rateobs","-[0]+1-exp(-([1]+1)*x)-exp(-([2]+1)*x)+exp(-([1]+[2]+1)*x)",-0.01,1);
     TF1 *ratederivative=new TF1("ratederivative",
 				"([1]+1)*exp(-([1]+1)*x)+([2]+1)*exp(-([2]+1)*x)-([1]+[2]+1)*exp(-([1]+[2]+1)*x)",-0.01,1);
@@ -805,7 +805,7 @@ void rcc_draw_lumi_plots(){
     //ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
     const int nIterations=10;
     vector<double>zmu[nIterations],bmu[nIterations],zkn,zks,bkn,bks;
-    vector<int>fill,run,bpat,ypat;
+    vector<int>fill,run,bpat,ypat,bunch;
     vector<double>zdcr,bbcr;
     vector<int>fillstart,fillend;
     vector<int>runstart,runend;
@@ -822,7 +822,7 @@ void rcc_draw_lumi_plots(){
 
 
     //load the arrays we will need for the iterative kn procedure:
-    t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide:bpat:ypat:gl1p_bpol:gl1p_bpolerr:gl1p_ypol:gl1p_ypolerr:star_clk",
+    t->Draw(Form("star_fill:star_run:%s:%s:%s:%s:%s:%s:star_zdcwide:star_bbcwide:bpat:ypat:gl1p_bpol:gl1p_bpolerr:gl1p_ypol:gl1p_ypolerr:star_clk:crossing",
 		 ch_kn_bbc,ch_ks_bbc,ch_mu_bbc,
 		 ch_kn_zdc,ch_ks_zdc,ch_mu_zdc),"1","goff");
     length=t->GetSelectedRows();
@@ -846,7 +846,7 @@ void rcc_draw_lumi_plots(){
       ypol.push_back(t->GetVal(14)[i]);
       ypol_err.push_back(t->GetVal(15)[i]);
       clk.push_back(t->GetVal(16)[i]);
-
+      bunch.push_back(t->GetVal(17)[i]);
 
       for (int j=1;j<nIterations;j++){
 	//the Iteration for kn wants to interact with the corrected mu vectors like arrays, so have to pre-load them with enough elements that they dont' explode:
@@ -1069,7 +1069,17 @@ void rcc_draw_lumi_plots(){
        
     //now we can plot the ZDC/BBC asymmetry:
     //ALL=1/pp*(zbpp-zbpm)/(zbpp+zbpm)
-    TTree *uLumi=new TTree("uLumi","micro luminosity tree");
+
+    TTree *uLumi;
+
+    bool bunchwise_ulumi=true;
+    int u_bunch; 
+    if (bunchwise_ulumi){
+      uLumi=new TTree("uLumiXL","micro luminosity tree bunch by bunch"); //for bunchwise data
+      uLumi->Branch("bunch",&u_bunch);//for bunchwise data
+    } else{
+      uLumi=new TTree("uLumi","micro luminosity tree");//for runwise data
+    }
     int u_fill; uLumi->Branch("fill",&u_fill);
     int u_run; uLumi->Branch("run",&u_run);
     int u_pat; uLumi->Branch("pat",&u_pat);
@@ -1125,99 +1135,137 @@ void rcc_draw_lumi_plots(){
 	printf("run %d has bpol=%f, ypol=%f, skipping\n",u_run,u_bpol,u_ypol);
 	continue;
       }
-      u_likemuz0=0;
-      u_likemuz1=0;
-      u_likemub0=0;
-      u_likemub1=0;
-      u_unlikemuz0=0;
-      u_unlikemuz1=0;
-      u_unlikemub0=0;
-      u_unlikemub1=0;
-      for (int j=runstart[i];j<runend[i];j++){
-	//bunch-by-bunch summation:
-	if (bpat[j]==ypat[j]){
-	  u_likemuz0+=zmu[0][j]*clk[j];//[filli];//*clk[j];
-	  u_likemuz1+=zmu[nIterations-1][j]*clk[j];
-	  u_likemub0+=bmu[0][j]*clk[j];
-	  u_likemub1+=bmu[nIterations-1][j]*clk[j];
-	} else {
-	  u_unlikemuz0+=zmu[0][j]*clk[j];
-	  u_unlikemuz1+=zmu[nIterations-1][j]*clk[j];
-	  u_unlikemub0+=bmu[0][j]*clk[j];
-	  u_unlikemub1+=bmu[nIterations-1][j]*clk[j];
+
+      if (bunchwise_ulumi){
+	u_rellumizdc=0;
+	u_rellumizdc_err=0;
+	u_rellumibbc=0;
+	u_rellumibbc_err=0;
+	u_allzdcbbc=0;
+	u_allzdcbbc_err=0;
+	for (int j=runstart[i];j<runend[i];j++){
+	  u_bunch=bunch[j];
+	  if (bpat[j]==ypat[j]){
+
+	    u_likemuz0=zmu[0][j]*clk[j];//[filli];//*clk[j];
+	    u_likemuz1=zmu[nIterations-1][j]*clk[j];
+	    u_likemub0=bmu[0][j]*clk[j];
+	    u_likemub1=bmu[nIterations-1][j]*clk[j];
+	    u_unlikemuz0=0;
+	    u_unlikemuz1=0;
+	    u_unlikemub0=0;
+	    u_unlikemub1=0;
+	  } else {
+	    u_likemuz0=0;
+	    u_likemuz1=0;
+	    u_likemub0=0;
+	    u_likemub1=0;
+	    u_unlikemuz0=zmu[0][j]*clk[j];
+	    u_unlikemuz1=zmu[nIterations-1][j]*clk[j];
+	    u_unlikemub0=bmu[0][j]*clk[j];
+	    u_unlikemub1=bmu[nIterations-1][j]*clk[j];
+	  }
+	  uLumi->Fill();
 	}
-      }
-      printf("(zl=%2.2E zu=%2.2E diff=%2.2E) (bl=%2.2E bu=%2.2E diff=%2.2E) ",
-	     u_likemuz1,u_unlikemuz1,u_likemuz1-u_unlikemuz1,
-	     u_likemub1,u_unlikemub1, u_likemub1-u_unlikemub1);
-      // printf("(zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E) ",u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
+      }else{//if not doing
+	u_likemuz0=0;
+	u_likemuz1=0;
+	u_likemub0=0;
+	u_likemub1=0;
+	u_unlikemuz0=0;
+	u_unlikemuz1=0;
+	u_unlikemub0=0;
+	u_unlikemub1=0;
+	for (int j=runstart[i];j<runend[i];j++){
+	  //bunch-by-bunch summation:
+	  if (bpat[j]==ypat[j]){
+	    u_likemuz0+=zmu[0][j]*clk[j];//[filli];//*clk[j];
+	    u_likemuz1+=zmu[nIterations-1][j]*clk[j];
+	    u_likemub0+=bmu[0][j]*clk[j];
+	    u_likemub1+=bmu[nIterations-1][j]*clk[j];
+	  } else {
+	    u_unlikemuz0+=zmu[0][j]*clk[j];
+	    u_unlikemuz1+=zmu[nIterations-1][j]*clk[j];
+	    u_unlikemub0+=bmu[0][j]*clk[j];
+	    u_unlikemub1+=bmu[nIterations-1][j]*clk[j];
+	  }
+	}
+	printf("(zl=%2.2E zu=%2.2E diff=%2.2E) (bl=%2.2E bu=%2.2E diff=%2.2E) ",
+	       u_likemuz1,u_unlikemuz1,u_likemuz1-u_unlikemuz1,
+	       u_likemub1,u_unlikemub1, u_likemub1-u_unlikemub1);
+	// printf("(zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E) ",u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
 
  
-      uLumi_mon_run.push_back(u_run);
-      /*
-	uLumi_mon_all.push_back(1/(u_bpol*u_ypol)*
-	(u_likemuz1/u_likemub1-u_unlikemuz1/u_unlikemub1)
-	/(u_likemuz1/u_likemub1+u_unlikemuz1/u_unlikemub1));
-      */
-      //float qqmuz1,qqmub1,qqmuz0,qqmub0,qpmuz1,qpmub1,qpmuz0,qpmub0;
+	uLumi_mon_run.push_back(u_run);
+      
+	/*
+	  uLumi_mon_all.push_back(1/(u_bpol*u_ypol)*
+	  (u_likemuz1/u_likemub1-u_unlikemuz1/u_unlikemub1)
+	  /(u_likemuz1/u_likemub1+u_unlikemuz1/u_unlikemub1));
+	*/
+	//float qqmuz1,qqmub1,qqmuz0,qqmub0,qpmuz1,qpmub1,qpmuz0,qpmub0;
 	 
-      uLumi_mon_all.push_back(1/((float)u_bpol*(float)u_ypol)*
-			      ((float)u_likemuz1/(float)u_likemub1-(float)u_unlikemuz1/(float)u_unlikemub1)
-			      /((float)u_likemuz1/(float)u_likemub1+(float)u_unlikemuz1/(float)u_unlikemub1));
+	uLumi_mon_all.push_back(1/((float)u_bpol*(float)u_ypol)*
+				((float)u_likemuz1/(float)u_likemub1-(float)u_unlikemuz1/(float)u_unlikemub1)
+				/((float)u_likemuz1/(float)u_likemub1+(float)u_unlikemuz1/(float)u_unlikemub1));
 
-      double asym,asym_err;
-      CalcAsymAndErr(&asym, &asym_err,
-		     u_bpol,u_bpol_err,
-		     u_ypol,u_ypol_err,
-		     u_unlikemuz1,sqrt(u_unlikemuz1),
-		     u_likemuz1,sqrt(u_likemuz1),
-		     u_unlikemub1,sqrt(u_unlikemub1),
-		     u_likemub1,sqrt(u_likemub1));
-      uLumi_mon_all_check2.push_back(asym);
+	double asym,asym_err;
+	CalcAsymAndErr(&asym, &asym_err,
+		       u_bpol,u_bpol_err,
+		       u_ypol,u_ypol_err,
+		       u_unlikemuz1,sqrt(u_unlikemuz1),
+		       u_likemuz1,sqrt(u_likemuz1),
+		       u_unlikemub1,sqrt(u_unlikemub1),
+		       u_likemub1,sqrt(u_likemub1));
+	uLumi_mon_all_check2.push_back(asym);
    
-      u_rellumizdc=u_likemuz1/u_unlikemuz1;
-      u_rellumizdc_err=u_rellumizdc*sqrt(1/u_likemuz1+1/u_unlikemuz1);
-      u_rellumibbc=u_likemub1/u_unlikemub1;
-      u_rellumibbc_err=u_rellumibbc*sqrt(1/u_likemub1+1/u_unlikemub1);
-      u_allzdcbbc=asym;
-      u_allzdcbbc_err=asym_err;
+	u_rellumizdc=u_likemuz1/u_unlikemuz1;
+	u_rellumizdc_err=u_rellumizdc*sqrt(1/u_likemuz1+1/u_unlikemuz1);
+	u_rellumibbc=u_likemub1/u_unlikemub1;
+	u_rellumibbc_err=u_rellumibbc*sqrt(1/u_likemub1+1/u_unlikemub1);
+	u_allzdcbbc=asym;
+	u_allzdcbbc_err=asym_err;
 
-      uLumi->Fill();
-      //translated from rcc_calc_all:
-      double tunlike=u_unlikemuz1;
-      double tlike=u_likemuz1;
-      double trellumi=u_likemub1/u_unlikemub1;
-      double trellumi_err=sqrt(trellumi*trellumi*(1/u_likemub1+1/u_unlikemub1));//assumes these are counting.
-      double trelunlike=trellumi*tunlike;
-      double tsum=tlike+trelunlike;
-      double tdiff=tlike-trelunlike;
-      double tpolfactor=1/(u_bpol*u_ypol);
-      double tasym=tpolfactor*(tdiff/tsum);
+	uLumi->Fill();
+	//translated from rcc_calc_all:
+	double tunlike=u_unlikemuz1;
+	double tlike=u_likemuz1;
+	double trellumi=u_likemub1/u_unlikemub1;
+	double trellumi_err=sqrt(trellumi*trellumi*(1/u_likemub1+1/u_unlikemub1));//assumes these are counting.
+	double trelunlike=trellumi*tunlike;
+	double tsum=tlike+trelunlike;
+	double tdiff=tlike-trelunlike;
+	double tpolfactor=1/(u_bpol*u_ypol);
+	double tasym=tpolfactor*(tdiff/tsum);
 
-      double tbpolerrterm=-tasym/u_bpol * u_bpol_err;
-      double typolerrterm=-tasym/u_ypol * u_ypol_err;
+	double tbpolerrterm=-tasym/u_bpol * u_bpol_err;
+	double typolerrterm=-tasym/u_ypol * u_ypol_err;
 
-      double tlikesumerrterm=tpolfactor*(2*trelunlike)/(tsum*tsum)*sqrt(tlike);//assumes tlike is a counting exercise: sqrt(counts)
-      double tunlikesumerrterm=-tpolfactor*(2*trelunlike*trellumi)/(tsum*tsum)*sqrt(tunlike);//assumes tlike is a counting exercise
-      double trellumierrterm=-tpolfactor*(2*trelunlike*tunlike)/(tsum*tsum)*trellumi_err;
+	double tlikesumerrterm=tpolfactor*(2*trelunlike)/(tsum*tsum)*sqrt(tlike);//assumes tlike is a counting exercise: sqrt(counts)
+	double tunlikesumerrterm=-tpolfactor*(2*trelunlike*trellumi)/(tsum*tsum)*sqrt(tunlike);//assumes tlike is a counting exercise
+	double trellumierrterm=-tpolfactor*(2*trelunlike*tunlike)/(tsum*tsum)*trellumi_err;
 
-      double err2=(tbpolerrterm*tbpolerrterm
-		   +typolerrterm*typolerrterm
-		   +tlikesumerrterm*tlikesumerrterm
-		   +tunlikesumerrterm*tunlikesumerrterm
-		   +trellumierrterm*trellumierrterm);
+	double err2=(tbpolerrterm*tbpolerrterm
+		     +typolerrterm*typolerrterm
+		     +tlikesumerrterm*tlikesumerrterm
+		     +tunlikesumerrterm*tunlikesumerrterm
+		     +trellumierrterm*trellumierrterm);
 
-      uLumi_mon_all_check.push_back(tasym);
-      uLumi_mon_all_err.push_back(sqrt(err2));
-      uLumi_mon_run_bar.push_back(0);
+	uLumi_mon_all_check.push_back(tasym);
+	uLumi_mon_all_err.push_back(sqrt(err2));
+	uLumi_mon_run_bar.push_back(0);
 
 
-      printf(" all=%2.2E vs tasym=%2.2E vs Get()=%2.2E (zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E)\n",uLumi_mon_all[uLumi_mon_all.size()-1],tasym, asym,u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
-      //printf(" all=%2.2E \n",uLumi_mon_all[uLumi_mon_all.size()-1]);
-
-       
+	printf(" all=%2.2E vs tasym=%2.2E vs Get()=%2.2E (zl=%2.2E zu=%2.2E) (bl=%2.2E bu=%2.2E)\n",uLumi_mon_all[uLumi_mon_all.size()-1],tasym, asym,u_likemuz1,u_unlikemuz1,u_likemub1,u_unlikemub1);
+	//printf(" all=%2.2E \n",uLumi_mon_all[uLumi_mon_all.size()-1]);
+      }//end of actual micro lumi loop.
+    } 
+    
+    if (bunchwise_ulumi){
+      uLumi->SaveAs("uLumiXL.ttree.root");
+    } else {
+      uLumi->SaveAs("uLumi.ttree.root");
     }
-    uLumi->SaveAs("uLumi.ttree.root");
     nc++;
 
     //plot the distribution before and after the corrections
@@ -1818,7 +1866,7 @@ int RetrieveSpinPattern(int run, TTree *t){
       if (patternID!=sanghwapatternID){
 	printf("run %d mypattern: %d, sanghwa's: %d\n",runnum[i],patternID,sanghwapatternID);
 		assert(false);
-	y }
+	}
 	crosscheck->Fill(patternID,sanghwapatternID);
       pattern.push_back(patternID);
       }

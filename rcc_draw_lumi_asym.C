@@ -1,6 +1,6 @@
 
 
-TTree *uLumi;
+TTree *uLumi, *uLumiXL;
 TTree *uBunch;
 const int nPats=16;
 const int spinpat[]={1,2,3,4,5,6,7,8,21,22,23,24,25,26,27,28};
@@ -11,9 +11,16 @@ const double pt_limits[] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};//one more tha
 TCanvas *c; int nc=0; //canvas and a running counter of how many canvases I've made
 TGraph *gt;
 TF1 *ft;
+TLegend *leg;
 
 void DrawPionALL();
-TGraphErrors * GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut);
+TGraphErrors * GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm=0);
+TGraphErrors * GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm=0);
+void GenerateRelativeLumiZDC(double *rellumi,double *rellumi_err, TString uBunchCut, TString uLumiCut);
+void CompareEarlyAndLateSpinConfigs();
+
+
+
 void DrawPionALLwithArms();
 void DrawPionALLwithEvenVsOdd();
 void DrawPionALLwithPatternSets();
@@ -37,10 +44,12 @@ void CalcAsymAndErr(double *asym, double *asym_err,
 void rcc_draw_lumi_asym(){
   //a little booster program to plot some stuff generated from lots of calcs in draw_lumi_plots that don't need to be repeaated every time:
   TFile *uLumiFile=TFile::Open("uLumi.ttree.root","READ");
+  TFile *uLumiXLfile=TFile::Open("uLumiXL.ttree.root","READ");
   TFile *uBunchFile=TFile::Open("uBunch.ttree.root","READ");
 
   
   uLumi=(TTree*)uLumiFile->Get("uLumi");
+  uLumiXL=(TTree*)uLumiXLfile->Get("uLumiXL");
   int u_fill; uLumi->SetBranchAddress("fill",&u_fill);
   int u_run; uLumi->SetBranchAddress("run",&u_run);
   int u_pat; uLumi->SetBranchAddress("pat",&u_pat);
@@ -71,12 +80,15 @@ void rcc_draw_lumi_asym(){
   int ub_bunch; uBunch->SetBranchAddress("bunch",&ub_bunch);
   int ub_bspin; uBunch->SetBranchAddress("bspin",&ub_bspin);
   int ub_yspin; uBunch->SetBranchAddress("yspin",&ub_yspin);
+  DrawPionALLwithEvenVsOdd();
 
+  //CompareEarlyAndLateSpinConfigs();
+  return;
+  
   //DrawRelativeLumiZDC();
   //DrawRelativeLumiALL();
   //DrawPionALLwithArms();
   //DrawPionALLwithEvenVsOdd();
-  DrawPionALLwithPatternSets();
   //DrawPionALLwithPatternSetsAndEvenVsOdd();
   TString patset[]={"pat==1||pat==4||pat==21||pat==24",
 		     "pat==2||pat==3||pat==22||pat==23",
@@ -86,6 +98,9 @@ void rcc_draw_lumi_asym(){
 		      "(2,3,22,23)",
 		      "(5,8,25,28)",
 		      "(6,7,26,27)"};
+  if(0){
+    DrawPionALLwithPatternSets(); //draws lots of evens+odds together.
+    //then manually adds them separated:
   c->cd(1);
   for (int i=0;i<4;i++){
     gt=GeneratePionAllTGraph("bunch%2==0",patset[i]);
@@ -99,134 +114,129 @@ void rcc_draw_lumi_asym(){
     gt->SetLineColor(kGreen);
     gt->Draw("L*");
   }
- 
+  }
+
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,700);nc++;
+  c->Divide(1,2);
+  c->cd(1);
+  gt=GeneratePionAllTGraph("fill<17400","fill<17400");
+  gt->SetTitle("MPC Mean Asymmetry, fill<17400;pT(GeV/c);asym (#)");
+  gt->GetHistogram()->SetMaximum(0.2);
+  gt->GetHistogram()->SetMinimum(-0.2);
+  gt->Draw("A*");
+
+   for (int i=0;i<4;i++){
+     gt=GeneratePionAllTGraph("bunch%2==0 && fill<17400",Form("%s && fill<17400",patset[i].Data()));
+    gt->SetMarkerColor(kBlack+i+1);
+   gt->SetLineColor(kBlue);
+    gt->SetTitle(patname[i]+ " evens");
+    gt->Draw("L*");
+    gt=GeneratePionAllTGraph("bunch%2==1&& fill<17400",Form("%s && fill<17400",patset[i].Data()));
+    gt->SetTitle(patname[i]+" odds");
+    gt->SetMarkerColor(kBlack+i+1);
+    gt->SetLineColor(kGreen);
+    gt->Draw("L*");
+  }
+   leg=(c->cd(1))->BuildLegend(0.80,0.25,0.99,0.75);
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+
+   c->cd(2);
+  gt=GeneratePionAllTGraph("fill>17400","fill>17400");
+  gt->SetTitle("MPC Mean Asymmetry, fill>17400;pT(GeV/c);asym (#)");
+  gt->GetHistogram()->SetMaximum(0.2);
+  gt->GetHistogram()->SetMinimum(-0.2);
+  gt->Draw("A*");
+  
+  for (int i=0;i<4;i++){
+    gt=GeneratePionAllTGraph("bunch%2==0&& fill>17400",Form("%s && fill>17400",patset[i].Data()));
+    gt->SetMarkerColor(kBlack+i+1);
+   gt->SetLineColor(kBlue);
+    gt->SetTitle(patname[i]+ " evens");
+    gt->Draw("L*");
+    gt=GeneratePionAllTGraph("bunch%2==1&& fill>17400",Form("%s && fill>17400",patset[i].Data()));
+    gt->SetTitle(patname[i]+" odds");
+    gt->SetMarkerColor(kBlack+i+1);
+    gt->SetLineColor(kGreen);
+    gt->Draw("L*");
+  }
+   leg=(c->cd(2))->BuildLegend(0.80,0.25,0.99,0.75);
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
   return;
 }
 
 
+
+void CompareEarlyAndLateSpinConfigs(){
+    TString patset[]={"pat==21||pat==24",
+		     "pat==22||pat==23",
+ 		     "pat==25||pat==28",
+ 		     "pat==26||pat==27"};
+  TString patname[]={"(21,24)",
+		      "(22,23)",
+		      "(25,28)",
+		      "(26,27)"};
+     TString earlypatset[]={"pat==1||pat==4",
+		     "pat==2||pat==3",
+ 		     "pat==5||pat==8",
+ 		     "pat==6||pat==7"};
+  TString earlypatname[]={"(1,4)",
+		      "(2,3)",
+		      "(5,8)",
+		      "(6,7)"};
+  TGraph *egt,*lgt;
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),1600,500);nc++;
+  c->Divide(4,1);
+
+ gt=egt=GeneratePionAllTGraph("pat<20","pat<20");
+  gt->SetTitle("MPC Asymmetry;pT(GeV/c);asym (#)");
+  gt->GetHistogram()->SetMaximum(0.5);
+  gt->GetHistogram()->SetMinimum(-0.2);
+  gt->Draw("A*"); return;
+  gt=lgt=GeneratePionAllTGraph("pat>20","pat>20");
+  gt->SetMarkerColor(kRed);
+
+
+   for (int i=0;i<4;i++){
+      c->cd(1+i);
+      egt->Draw("A*");
+      c->cd(2);
+      lgt->Draw("L*");
+      return;
+     gt=GeneratePionAllTGraph("bunch%2==0",patset[i]);
+    gt->SetMarkerColor(kBlack);
+   gt->SetLineColor(kBlue);
+    gt->SetTitle(patname[i]+ " evens");
+    gt->Draw("L*");
+     gt=GeneratePionAllTGraph("bunch%2==1",patset[i]);
+    gt->SetTitle(patname[i]+" odds");
+    gt->SetMarkerColor(kBlack);
+    gt->SetLineColor(kGreen);
+    gt->Draw("L*");
+      gt=GeneratePionAllTGraph("bunch%2==0",earlypatset[i]);
+    gt->SetMarkerColor(kRed);
+   gt->SetLineColor(kOrange);
+    gt->SetTitle(earlypatname[i]+ " evens");
+    gt->Draw("L*");
+     gt=GeneratePionAllTGraph("bunch%2==1",earlypatset[i]);
+    gt->SetTitle(earlypatname[i]+" odds");
+    gt->SetMarkerColor(kRed);
+    gt->SetLineColor(kRed);
+    gt->Draw("L*");   
+  
+   leg=(c->cd(1+i))->BuildLegend(0.80,0.25,0.99,0.75);
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set<20");
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(1))->SetLabel("Full set>20");
+   }
+  return;
+}
+
 void DrawPionALL(){
 
-  //get the run-by-run luminosity numbers:
-  vector<double>lumi,lumi_err;
-  vector<int>run,run_err;
-  vector<double>all[nptbins],all_err[nptbins];
-
-  //dividing by patterns later, maybe:
-  vector<double>pat_lumi[nPats];
-  vector<double>pat_lumi_err[nPats];
-  vector<double>pat_run[nPats];
-  vector<double>pat_run_err[nPats];
-  
-  double bpol,ypol,bpol_err,ypol_err;
- 
-
-  uLumi->Draw("run:rellumizdc:rellumizdc_err:bpol:ypol:bpol_err:ypol_err","1","goff");
-  int nRuns=uLumi->GetSelectedRows();
-  for (int i=0;i<nRuns;i++){
-    int thisrun=uLumi->GetVal(0)[i];
-    TFile *yieldfile=NULL;
-    yieldfile=TFile::Open(Form("./yields/%d.MPC.yields.rcc.hist.root",thisrun),"READ");
-    if (yieldfile==NULL || yieldfile->IsZombie()|| !yieldfile->GetNkeys()){
-      printf("couldn't find yields for run %d. skipping.\n",thisrun);
-      continue;
-    }
-    TH2F* hYield=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
-    //TH2F* hYield=(TH2F*)yieldfile->Get("hYieldByBunchAndPtNorth");
-    //TH2F* hYieldS=(TH2F*)yieldfile->Get("hYieldByBunchAndPtSouth");
-    
-    run.push_back(thisrun);
-    run_err.push_back(0);
-    double thisrel=uLumi->GetVal(1)[i];
-    double thisrel_err=uLumi->GetVal(2)[i];
-    lumi.push_back(thisrel);
-    lumi_err.push_back(thisrel_err);
-
-    bpol=uLumi->GetVal(3)[i];
-    ypol=uLumi->GetVal(4)[i];
-    bpol_err=uLumi->GetVal(5)[i];
-    ypol_err=uLumi->GetVal(6)[i];
-    
-
-    //get the bunch data for this run:
-    uBunch->Draw("bunch:bspin:yspin",Form("run==%d",thisrun),"goff");
-    int nBunches=uBunch->GetSelectedRows();
-    int nPi[2][nptbins];
-    for (int j=0;j<nptbins;j++){//zero out our counters for this set.
-      nPi[0][j]=0;//unlike
-      nPi[1][j]=0;//like
-    }
-
-    //sum the pions in each bin for each spin config:
-    for (int j=0;j<nBunches;j++){
-      int bun=uBunch->GetVal(0)[j];
-      int bspin=uBunch->GetVal(1)[j];
-      int yspin=uBunch->GetVal(2)[j];
-      for (int k=0;k<nptbins;k++){
-	int lowbin=hYield->GetXaxis()->FindBin(pt_limits[k]);
-	int highbin=hYield->GetXaxis()->FindBin(pt_limits[k+1]);
-	int bunchbin=hYield->GetYaxis()->FindBin(bun);
-	nPi[bspin==yspin][k]+=hYield->Integral(lowbin,highbin,bunchbin,bunchbin);
-      }
-    }//j nBunches
-
-    //calc the asymmetry for this run:
-    for (int k=0;k<nptbins;k++){
-      double asym, asym_err;
-      CalcAsymAndErr(&asym, &asym_err,
-		     bpol,  bpol_err,
-		     ypol,  ypol_err,
-		     nPi[0][k], sqrt( nPi[0][k]),
-		     nPi[1][k], sqrt( nPi[1][k]),
-		     1, 0,
-		     thisrel, thisrel_err);
-      if (nPi[0][k]+nPi[1][k]>0){
-	all[k].push_back(asym);
-	all_err[k].push_back(asym_err);
-      } else { //if there are no events in this file, that's worrisome, but we can turn off the uncertainty for it:
-	all[k].push_back(0);
-	all_err[k].push_back(1e9);//huge uncertainty so this doesn't impact our result
-	printf("No events in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-      }
-      if (asym_err<0){
-	printf("Negative all_err in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-	return;
-      }
-
-    }
-    yieldfile->Close();
-  }//i nRuns
-  //create the weighted average of the ALLs for each ptbin:
-  vector<double>final_pt;
-  vector<double>final_pt_err;
-  vector<double>final_all;
-  vector<double>final_all_err;
-  for (int k=0;k<nptbins;k++){
-    final_pt.push_back(0.5*(pt_limits[k]+pt_limits[k+1]));//center data point in the bin
-    final_pt_err.push_back(0.5*(pt_limits[k+1]-pt_limits[k]));//and let the error bars span the bin
-    //ALL_ave=Sum(ALL_i/sig_i^2)/Sum(1/sig_i^2)
-    //ALL_ave_err^2=Sum( (1/sig_i^2)^2*sig_i^2)/(Sum(1/sig_i^2))^2
-    //... and simplify:
-    //ALL_ave_err^2=1/(Sum(1/sig_i^2))
-    //1/ALL_ave_err^2=Sum(1/sig_i^2)
-
-    double weightedsum=0;
-    double weight2sum=0;
-    for (int i=0;i<run.size();i++){
-      weightedsum+=all[k][i]/(all_err[k][i]*all_err[k][i]);
-      weight2sum+=1/(all_err[k][i]*all_err[k][i]);
-      //  if (run[i]==389752)       printf("bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-
-      printf("bin%d: r%d: sumsofar=%f, errsum=%f\n",k,run[i],weightedsum,weight2sum);
-    }// i nRuns
-    final_all.push_back(weightedsum/weight2sum);
-    final_all_err.push_back(sqrt(1/weight2sum));
-  }
-
-  //plot our resulting asymmetry!
-  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,600);nc++;
-  gt=new TGraphErrors(final_pt.size(),&(final_pt[0]),&(final_all[0]),&(final_pt_err[0]),&(final_all_err[0]));
+  gt=GeneratePionAllTGraph("1","1");
   gt->SetTitle("MPC North+South Asymmetry;pT;A_LL");
+  //gt->SetMarkerColor(kRed);
   gt->Draw("A*");
+
   return;
 }
 
@@ -301,7 +311,7 @@ void DrawPionALLwithArms(){
       int yspin=uBunch->GetVal(2)[j];
       for (int k=0;k<nptbins;k++){
 	int lowbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k]);
-	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]);
+	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
 	int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
 	nPi[bspin==yspin][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
 	yield[arm][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
@@ -460,120 +470,70 @@ void DrawPionALLwithEvenVsOdd(){
     
     run.push_back(thisrun);
     run_err.push_back(0);
-    double thisrel=uLumi->GetVal(1)[i];
-    double thisrel_err=uLumi->GetVal(2)[i];
-    lumi.push_back(thisrel);
-    lumi_err.push_back(thisrel_err);
-
-    bpol=uLumi->GetVal(3)[i];
-    ypol=uLumi->GetVal(4)[i];
-    bpol_err=uLumi->GetVal(5)[i];
-    ypol_err=uLumi->GetVal(6)[i];
-    
-
     //get the bunch data for this run:
     uBunch->Draw("bunch:bspin:yspin",Form("run==%d",thisrun),"goff");
     int nBunches=uBunch->GetSelectedRows();
     int nPi[2][nptbins];
 
     for (int div=0;div<nDivisions;div++){
-      for (int j=0;j<nptbins;j++){//zero out our counters for this set.
-	nPi[0][j]=0;//unlike
-	nPi[1][j]=0;//like
-      }
-
     //sum the pions in each bin for each spin config:
     for (int j=0;j<nBunches;j++){
       int bun=uBunch->GetVal(0)[j];
       if (div>0 && bun%2!=div%2) continue; //skip ones with the wrong bunch parity.
-      int bspin=uBunch->GetVal(1)[j];
-      int yspin=uBunch->GetVal(2)[j];
       for (int k=0;k<nptbins;k++){
 	int lowbin=hYield[0]->GetXaxis()->FindBin(pt_limits[k]);
 	int highbin=hYield[0]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
 	int bunchbin=hYield[0]->GetYaxis()->FindBin(bun);
-	nPi[bspin==yspin][k]+=hYield[0]->Integral(lowbin,highbin,bunchbin,bunchbin);
 	yield[div][k]+=hYield[0]->Integral(lowbin,highbin,bunchbin,bunchbin);
       }
     }//j nBunches
-
-    //calc the asymmetry for this run:
-    for (int k=0;k<nptbins;k++){
-      double asym, asym_err;
-      CalcAsymAndErr(&asym, &asym_err,
-		     bpol,  bpol_err,
-		     ypol,  ypol_err,
-		     nPi[0][k], sqrt( nPi[0][k]),
-		     nPi[1][k], sqrt( nPi[1][k]),
-		     1, 0,
-		     thisrel, thisrel_err);
-      if (nPi[0][k]+nPi[1][k]>0){
-	all[div][k].push_back(asym);
-	all_err[div][k].push_back(asym_err);
-      } else { //if there are no events in this file, that's worrisome, but we can turn off the uncertainty for it:
-	all[div][k].push_back(0);
-	all_err[div][k].push_back(1e9);//huge uncertainty so this doesn't impact our result
-	printf("No events in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-      }
-      if (asym_err<0){
-	printf("Negative all_err in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-	return;
-      }
-
-    }//k ptbins
     }//div divs
     yieldfile->Close();
   }//i nRuns
   //create the weighted average of the ALLs for each ptbin:
   vector<double>final_pt[nDivisions];
   vector<double>final_pt_err;
-  vector<double>final_all[nDivisions];
-  vector<double>final_all_err[nDivisions];
   for (int k=0;k<nptbins;k++){
     final_pt[0].push_back(0.5*(pt_limits[k]+pt_limits[k+1]));//center data point in the bin
-    final_pt[1].push_back(-0.1+0.5*(pt_limits[k]+pt_limits[k+1]));//center data point in the bin
-    final_pt[2].push_back(0.1+0.5*(pt_limits[k]+pt_limits[k+1]));//center data point in the bin
     final_pt_err.push_back(0.5*(pt_limits[k+1]-pt_limits[k]));//and let the error bars span the bin
-    //ALL_ave=Sum(ALL_i/sig_i^2)/Sum(1/sig_i^2)
-    //ALL_ave_err^2=Sum( (1/sig_i^2)^2*sig_i^2)/(Sum(1/sig_i^2))^2
-    //... and simplify:
-    //ALL_ave_err^2=1/(Sum(1/sig_i^2))
-    //1/ALL_ave_err^2=Sum(1/sig_i^2)
-    for (int div=0;div<nDivisions;div++){
-      double weightedsum=0;
-      double weight2sum=0;
-      for (int i=0;i<run.size();i++){
-	weightedsum+=all[div][k][i]/(all_err[div][k][i]*all_err[div][k][i]);
-	weight2sum+=1/(all_err[div][k][i]*all_err[div][k][i]);
-	//  if (run[i]==389752)       printf("bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
-
-	printf("bin%d: r%d: sumsofar=%f, errsum=%f\n",k,run[i],weightedsum,weight2sum);
-      }// i nRuns
-      final_all[div].push_back(weightedsum/weight2sum);
-      final_all_err[div].push_back(sqrt(1/weight2sum));
-    }//div divs
   }//k ptbins
 
   //plot our resulting asymmetry!
   c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,700);nc++;
   c->Divide(1,2);
   c->cd(1);
-  gt=new TGraphErrors(final_pt[0].size(),&(final_pt[0][0]),&(final_all[0][0]),&(final_pt_err[0]),&(final_all_err[0][0]));
+  gt=GeneratePionAllTGraph("1","1");
   gt->SetTitle("MPC Even+Odd Asymmetry;pT;A_LL");
   gt->GetHistogram()->SetMaximum(0.01);//Yaxis()->SetLimits(1,1.5e8);
   gt->GetHistogram()->SetMinimum(-0.01);//Yaxis()->SetLimits(1,1.5e8);
-
   gt->Draw("A*");
-  gt=new TGraphErrors(final_pt[0].size(),&(final_pt[1][0]),&(final_all[1][0]),&(run_err[0]),&(final_all_err[1][0]));
+  
+  gt=GeneratePionAllTGraph("bunch%2==1","1");
   gt->SetTitle("MPC Odd Asymmetry;pT;A_LL");
   gt->SetLineColor(kRed);
   gt->SetMarkerColor(kRed);
   gt->Draw("*");
-  gt=new TGraphErrors(final_pt[0].size(),&(final_pt[2][0]),&(final_all[2][0]),&(run_err[0]),&(final_all_err[2][0]));
-  gt->SetTitle("MPC Even Asymmetry;pT;A_LL");
+  
+  gt=GeneratePionAllTGraph("bunch%2==0","1");
+ gt->SetTitle("MPC Even Asymmetry;pT;A_LL");
   gt->SetLineColor(kBlue);
   gt->SetMarkerColor(kBlue);
   gt->Draw("*");
+
+    gt=GenerateBunchwisePionAllTGraph("bunch%2==1","1");
+  gt->SetTitle("Bunchwise Odd;pT;A_LL");
+  gt->SetLineColor(kOrange);
+  gt->SetMarkerColor(kOrange);
+  gt->Draw("*");
+  
+  gt=GenerateBunchwisePionAllTGraph("bunch%2==0","1");
+ gt->SetTitle("Bunchwise Even;pT;A_LL");
+  gt->SetLineColor(kGreen);
+  gt->SetMarkerColor(kGreen);
+  gt->Draw("*");
+    leg=(c->cd(1))->BuildLegend(0.80,0.25,0.99,0.75);
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+
   c->cd(2)->SetLogy();
   gt=new TGraphErrors(final_pt[0].size(),&(final_pt[0][0]),&(yield[0][0]),&(final_pt_err[0]),&(run_err[0]));
   gt->SetTitle("MPC Even+Odd Yield;pT;#");
@@ -1182,10 +1142,15 @@ void CalcAsymAndErr(double *asym, double *asym_err,
 }
 
 
-TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut)
+TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm)
 {
   //given a cut we can apply to uBunch (eg a cut on bunch number, fill pattern, etc),
   //generate a tgrapherrors containing the ALL and statistical errors.
+  //arm=0 for both arms, 1=north, 2=south.
+  if (arm<0 || arm>2) {
+    printf("arm (%d) out of bounds.\n",arm);
+    return 0;
+  }
 
   //get the run-by-run luminosity numbers:
   vector<double>lumi,lumi_err;
@@ -1204,6 +1169,7 @@ TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut)
 
   uLumi->Draw("run:rellumizdc:rellumizdc_err:bpol:ypol:bpol_err:ypol_err:pat",uLumiCut,"goff");
   int nRuns=uLumi->GetSelectedRows();
+  printf("lumiCut \"%s\" produces %d runs\n",uLumiCut.Data(),nRuns);
   for (int i=0;i<nRuns;i++){ //loop over all runs that pass our lumi-level cut:
     int thisrun=uLumi->GetVal(0)[i];
     TFile *yieldfile=NULL;
@@ -1235,6 +1201,7 @@ TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut)
     uBunch->Draw("bunch:bspin:yspin",Form("(run==%d)&&(%s)",thisrun,uBunchCut.Data()),"goff");
     int nBunches=uBunch->GetSelectedRows();
     int nPi[2][nptbins];
+    printf("run %d has %d valid bunches\n",thisrun,nBunches);
 
     // for (int div=0;div<nDivisions;div++){
     // thisrel=lumi[lumi.size()-1];
@@ -1252,11 +1219,163 @@ TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut)
       int yspin=uBunch->GetVal(2)[j];
       int index=(bspin==yspin);
       for (int k=0;k<nptbins;k++){
-	int lowbin=hYield[0]->GetXaxis()->FindBin(pt_limits[k]);
-	int highbin=hYield[0]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
-	int bunchbin=hYield[0]->GetYaxis()->FindBin(bun);
-	nPi[index][k]+=hYield[0]->Integral(lowbin,highbin,bunchbin,bunchbin);
-	yield[k]+=hYield[0]->Integral(lowbin,highbin,bunchbin,bunchbin);
+	int lowbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k]);
+	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
+	int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	nPi[index][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
+	yield[k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
+      }
+    }//j nBunches
+
+    //calc the asymmetry for this run:
+    for (int k=0;k<nptbins;k++){
+      double asym, asym_err;
+      CalcAsymAndErr(&asym, &asym_err,
+		     bpol,  bpol_err,
+		     ypol,  ypol_err,
+		     nPi[0][k], sqrt( nPi[0][k]),
+		     nPi[1][k], sqrt( nPi[1][k]),
+		     1, 0,
+		     thisrel, thisrel_err);
+      if (nPi[0][k]+nPi[1][k]>0){
+	all[k].push_back(asym);
+	all_err[k].push_back(asym_err);
+      } else { //if there are no events in this file, that's worrisome, but we can turn off the uncertainty for it:
+	all[k].push_back(0);
+	all_err[k].push_back(1e9);//huge uncertainty so this doesn't impact our result
+	printf("No events in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
+      }
+      if (asym_err<0){
+	printf("Negative all_err in bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
+	return 0;
+      }
+    }//k ptbins
+    yieldfile->Close();
+  }//i nRuns
+  //create the weighted average of the ALLs for each ptbin:
+  vector<double>final_pt;
+  vector<double>final_pt_err;
+  vector<double>final_all;
+  vector<double>final_all_err;
+  for (int k=0;k<nptbins;k++){
+    final_pt.push_back(0.5*(pt_limits[k]+pt_limits[k+1]));//center data point in the bin
+    final_pt_err.push_back(0.5*(pt_limits[k+1]-pt_limits[k]));//and let the error bars span the bin
+    //ALL_ave=Sum(ALL_i/sig_i^2)/Sum(1/sig_i^2)
+    //ALL_ave_err^2=Sum( (1/sig_i^2)^2*sig_i^2)/(Sum(1/sig_i^2))^2
+    //... and simplify:
+    //ALL_ave_err^2=1/(Sum(1/sig_i^2))
+    //1/ALL_ave_err^2=Sum(1/sig_i^2)
+    double weightedsum=0;
+    double weight2sum=0;
+    for (int i=0;i<all[k].size();i++){
+      weightedsum+=all[k][i]/(all_err[k][i]*all_err[k][i]);
+      weight2sum+=1/(all_err[k][i]*all_err[k][i]);
+      //  if (run[i]==389752)       printf("bin%d: r%d: same=%d diff=%d, all=%f, err=%f\n",k,thisrun, nPi[1][k],nPi[0][k],asym,asym_err);
+
+      printf("bin%d: r%d: sumsofar=%f, errsum=%f\n",k,run[i],weightedsum,weight2sum);
+    }// i nRuns
+    final_all.push_back(weightedsum/weight2sum);
+    final_all_err.push_back(sqrt(1/weight2sum));
+  }//k ptbins
+
+
+  return new TGraphErrors(final_pt.size(),&(final_pt[0]),&(final_all[0]),&(final_pt_err[0]),&(final_all_err[0]));
+}
+
+
+
+TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm)
+{
+  //given a cut we can apply to uBunch (eg a cut on bunch number, fill pattern, etc),
+  //generate a tgrapherrors containing the ALL and statistical errors.
+  //arm=0 for both arms, 1=north, 2=south.
+  if (arm<0 || arm>2) {
+    printf("arm (%d) out of bounds.\n",arm);
+    return 0;
+  }
+
+  //get the run-by-run luminosity numbers:
+  vector<double>lumi,lumi_err;
+  vector<int>run;
+  vector<double>run_err;
+  vector<double>all[nptbins],all_err[nptbins];
+  
+  double bpol,ypol,bpol_err,ypol_err;
+  TH2F* hYield[3];
+
+  double yield[nptbins];
+  for (int j=0;j<nptbins;j++){//zero out our yield
+    yield[j]=0;
+  }
+  
+
+  uLumi->Draw("run:rellumizdc:rellumizdc_err:bpol:ypol:bpol_err:ypol_err:pat",uLumiCut,"goff");
+  int nRuns=uLumi->GetSelectedRows();
+  printf("lumiCut \"%s\" produces %d runs\n",uLumiCut.Data(),nRuns);
+  for (int i=0;i<nRuns;i++){ //loop over all runs that pass our lumi-level cut:
+    int thisrun=uLumi->GetVal(0)[i];
+    TFile *yieldfile=NULL;
+    yieldfile=TFile::Open(Form("./yields/%d.MPC.yields.rcc.hist.root",thisrun),"READ");
+    if (yieldfile==NULL || yieldfile->IsZombie()|| !yieldfile->GetNkeys()){
+      printf("couldn't find yields for run %d. skipping.\n",thisrun);
+      continue;
+    }
+    hYield[0]=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
+    hYield[1]=(TH2F*)yieldfile->Get("hYieldByBunchAndPtNorth");
+    hYield[2]=(TH2F*)yieldfile->Get("hYieldByBunchAndPtSouth");
+    
+    run.push_back(thisrun);
+    run_err.push_back(0);
+    double thisrel;
+    double thisrel_err;
+
+    double lumilike=0;
+    double lumiunlike=0;
+    uLumiXL->Draw("likemuz1:unlikemuz1",Form("(run==%d)&&(%s)",thisrun,uBunchCut.Data()),"goff");
+    int nXLbunches=uLumiXL->GetSelectedRows();
+    for (int j=0;j<nXLbunches;j++){
+      lumilike+=uLumiXL->GetVal(0)[j];
+      lumiunlike+=uLumiXL->GetVal(1)[j];
+    }
+    thisrel=lumilike/lumiunlike;
+    thisrel_err=thisrel*sqrt(1/lumilike+1/lumiunlike);
+    lumi.push_back(thisrel);
+    lumi_err.push_back(thisrel_err);
+
+    bpol=uLumi->GetVal(3)[i];
+    ypol=uLumi->GetVal(4)[i];
+    bpol_err=uLumi->GetVal(5)[i];
+    ypol_err=uLumi->GetVal(6)[i];
+    int spinpat=uLumi->GetVal(7)[i];
+    
+
+    //get the bunch data for this run:
+    uBunch->Draw("bunch:bspin:yspin",Form("(run==%d)&&(%s)",thisrun,uBunchCut.Data()),"goff");
+    int nBunches=uBunch->GetSelectedRows();
+    int nPi[2][nptbins];
+    printf("run %d has %d valid bunches\n",thisrun,nBunches);
+
+    // for (int div=0;div<nDivisions;div++){
+    // thisrel=lumi[lumi.size()-1];
+      //this is the line rcc wants to correct where it appears elsewhere:  if (div==2 || div==4) thisrel=1/lumi[lumi.size()-1];
+
+    for (int j=0;j<nptbins;j++){//zero out our counters for this set.
+      nPi[0][j]=0;//unlike
+      nPi[1][j]=0;//like
+    }
+
+    //sum the pions in each valid bunch, divvying into like and unlike configurations:
+    for (int j=0;j<nBunches;j++){
+      int bun=uBunch->GetVal(0)[j];
+      int bspin=uBunch->GetVal(1)[j];
+      int yspin=uBunch->GetVal(2)[j];
+      int index=(bspin==yspin);
+      for (int k=0;k<nptbins;k++){
+	int lowbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k]);
+	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
+	int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	nPi[index][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
+	yield[k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
       }
     }//j nBunches
 
