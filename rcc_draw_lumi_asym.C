@@ -1,5 +1,9 @@
 
 
+//adjusting globally mis-aligned bunch IDs:
+const int MASTER_BUNCH_OFFSET=-5;
+//this value needs to be added to the lumi bunch ID to get the corresponding MPC histogram bunch ID
+
 TTree *uLumi, *uLumiXL;
 TTree *uBunch;
 const int nPats=16;
@@ -7,7 +11,7 @@ const int spinpat[]={1,2,3,4,5,6,7,8,21,22,23,24,25,26,27,28};
 
   const int nptbins=10;
 const double pt_limits[] = {1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};//one more than nptbins, to cover lower and upper bounds
-
+const int goodColor[]={kRed,kGreen,kBlue,kOrange,kCyan,kMagenta};
 TCanvas *c; int nc=0; //canvas and a running counter of how many canvases I've made
 TGraph *gt;
 TF1 *ft;
@@ -15,11 +19,11 @@ TLegend *leg;
 
 void DrawPionALL();
 TGraphErrors * GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm=0);
-TGraphErrors * GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm=0);
+TGraphErrors * GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm=0,TH1F **hYieldRatio=0,TH1F **hLumiRatio=0);
 void GenerateRelativeLumiZDC(double *rellumi,double *rellumi_err, TString uBunchCut, TString uLumiCut);
 void CompareEarlyAndLateSpinConfigs();
 
-
+//void DrawLumiAndYield
 
 void DrawPionALLwithArms();
 void DrawPionALLwithEvenVsOdd();
@@ -80,10 +84,10 @@ void rcc_draw_lumi_asym(){
   int ub_bunch; uBunch->SetBranchAddress("bunch",&ub_bunch);
   int ub_bspin; uBunch->SetBranchAddress("bspin",&ub_bspin);
   int ub_yspin; uBunch->SetBranchAddress("yspin",&ub_yspin);
-  DrawPionALLwithEvenVsOdd();
+  //DrawPionALLwithEvenVsOdd();
 
   //CompareEarlyAndLateSpinConfigs();
-  return;
+  //return;
   
   //DrawRelativeLumiZDC();
   //DrawRelativeLumiALL();
@@ -94,73 +98,156 @@ void rcc_draw_lumi_asym(){
 		     "pat==2||pat==3||pat==22||pat==23",
  		     "pat==5||pat==8||pat==25||pat==28",
  		     "pat==6||pat==7||pat==26||pat==27"};
-  TString patname[]={"(1,4,21,21)",
+  TString patname[]={"(1,4,21,22)",
 		      "(2,3,22,23)",
 		      "(5,8,25,28)",
 		      "(6,7,26,27)"};
+
+
+  TString sangpatset[]={"pat == 1 || pat == 4 || pat == 5 || pat == 8",
+			"pat == 2 || pat == 3 || pat == 6 || pat == 7",
+			"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+			"pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString sangpatname[]={"SOOSSOO",
+			 "OSSOOSS",
+			 "SSOO",
+			 "OOSS"};
+  /* SOOSSOO P1 P4 P5 P8
+     OSSOOSS P2 P3 P6 P7
+     SSOO    P21 P24 P25 P28
+     OOSS    P22 P23 P26 P27
+  */
+
+  
   if(0){
     DrawPionALLwithPatternSets(); //draws lots of evens+odds together.
     //then manually adds them separated:
-  c->cd(1);
-  for (int i=0;i<4;i++){
-    gt=GeneratePionAllTGraph("bunch%2==0",patset[i]);
-    gt->SetMarkerColor(kBlack+i+1);
-   gt->SetLineColor(kBlue);
-    gt->SetTitle(patname[i]+ " evens");
-    gt->Draw("L*");
-    gt=GeneratePionAllTGraph("bunch%2==1",patset[i]);
-    gt->SetTitle(patname[i]+" odds");
-    gt->SetMarkerColor(kBlack+i+1);
-    gt->SetLineColor(kGreen);
-    gt->Draw("L*");
-  }
+    c->cd(1);
+    for (int i=0;i<4;i++){
+      gt=GenerateBunchwisePionAllTGraph("bunch%2==0",patset[i]);
+      gt->SetMarkerColor(goodColor[i%6]);
+      gt->SetLineColor(kBlue);
+      gt->SetTitle(patname[i]+ " evens");
+      gt->Draw("L*");
+      gt=GenerateBunchwisePionAllTGraph("bunch%2==1",patset[i]);
+      gt->SetTitle(patname[i]+" odds");
+      gt->SetMarkerColor(goodColor[i%6]);
+      gt->SetLineColor(kGreen);
+      gt->Draw("L*");
+    }
+      return;
+
   }
 
-  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),800,700);nc++;
-  c->Divide(1,2);
+  c=new TCanvas(Form("c%d",nc),Form("c%d",nc),2000,700);nc++;
+  c->Divide(3,2);
   c->cd(1);
-  gt=GeneratePionAllTGraph("fill<17400","fill<17400");
+  TH1F* hYield;
+  TH1F* hLumi;
+  gt=GenerateBunchwisePionAllTGraph("fill<17400","fill<17400",0,&hYield,&hLumi);
   gt->SetTitle("MPC Mean Asymmetry, fill<17400;pT(GeV/c);asym (#)");
   gt->GetHistogram()->SetMaximum(0.2);
   gt->GetHistogram()->SetMinimum(-0.2);
   gt->Draw("A*");
+  c->cd(2);
+  hYield->Draw();
+  c->cd(3);
+hLumi->Draw();
+  
 
-   for (int i=0;i<4;i++){
-     gt=GeneratePionAllTGraph("bunch%2==0 && fill<17400",Form("%s && fill<17400",patset[i].Data()));
-    gt->SetMarkerColor(kBlack+i+1);
-   gt->SetLineColor(kBlue);
-    gt->SetTitle(patname[i]+ " evens");
+  for (int i=0;i<4;i++){
+    c->cd(1);
+    gt=GenerateBunchwisePionAllTGraph("bunch%2==0 && fill<17400",Form("%s && fill<17400",sangpatset[i].Data()),0,&hYield,&hLumi);
+    gt->SetMarkerColor(goodColor[i%6]);
+    gt->SetLineColor(kBlue);
+    gt->SetTitle(sangpatname[i]+ " evens");
     gt->Draw("L*");
-    gt=GeneratePionAllTGraph("bunch%2==1&& fill<17400",Form("%s && fill<17400",patset[i].Data()));
-    gt->SetTitle(patname[i]+" odds");
-    gt->SetMarkerColor(kBlack+i+1);
+    c->cd(2);
+    hYield->SetTitle(sangpatname[i]+ " evens");
+    hYield->SetLineColor(goodColor[i%6]);
+    hYield->SetLineStyle(kDotted);
+   hYield->Draw("hist,same");
+    c->cd(3);
+    hLumi->SetTitle(sangpatname[i]+ " evens");
+    hLumi->SetLineColor(goodColor[i%6]);
+    hLumi->SetLineStyle(kDotted);
+    hLumi->Draw("hist,same");
+    c->cd(1);
+    gt=GenerateBunchwisePionAllTGraph("bunch%2==1&& fill<17400",Form("%s && fill<17400",sangpatset[i].Data()),0,&hYield,&hLumi);
+    gt->SetTitle(sangpatname[i]+" odds");
+    gt->SetMarkerColor(goodColor[i%6]);
     gt->SetLineColor(kGreen);
     gt->Draw("L*");
+    c->cd(2);
+    hYield->SetTitle(sangpatname[i]+ " odds");
+    hYield->SetLineColor(goodColor[i%6]);
+    hYield->Draw("hist,same");
+    c->cd(3);
+    hLumi->SetTitle(sangpatname[i]+ " odds");
+    hLumi->SetLineColor(goodColor[i%6]);
+    hLumi->Draw("hist,same");
+    
   }
-   leg=(c->cd(1))->BuildLegend(0.80,0.25,0.99,0.75);
-    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+  leg=(c->cd(1))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+  leg=(c->cd(2))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+  leg=(c->cd(3))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
 
-   c->cd(2);
-  gt=GeneratePionAllTGraph("fill>17400","fill>17400");
+  c->cd(4);
+  gt=GenerateBunchwisePionAllTGraph("fill>17400","fill>17400",0,&hYield,&hLumi);
   gt->SetTitle("MPC Mean Asymmetry, fill>17400;pT(GeV/c);asym (#)");
   gt->GetHistogram()->SetMaximum(0.2);
   gt->GetHistogram()->SetMinimum(-0.2);
   gt->Draw("A*");
+  hYield->SetLineColor(kBlack);
+    hLumi->SetLineColor(kBlack);
+    c->cd(5);
+  hYield->Draw();
+  c->cd(6);
+  hLumi->Draw();
   
   for (int i=0;i<4;i++){
-    gt=GeneratePionAllTGraph("bunch%2==0&& fill>17400",Form("%s && fill>17400",patset[i].Data()));
-    gt->SetMarkerColor(kBlack+i+1);
-   gt->SetLineColor(kBlue);
-    gt->SetTitle(patname[i]+ " evens");
+    c->cd(4);
+    gt=GenerateBunchwisePionAllTGraph("bunch%2==0&& fill>17400",Form("%s && fill>17400",sangpatset[i].Data()),0,&hYield,&hLumi);
+    gt->SetMarkerColor(goodColor[i%6]);
+    gt->SetLineColor(kBlue);
+    gt->SetTitle(sangpatname[i]+ " evens");
     gt->Draw("L*");
-    gt=GeneratePionAllTGraph("bunch%2==1&& fill>17400",Form("%s && fill>17400",patset[i].Data()));
-    gt->SetTitle(patname[i]+" odds");
-    gt->SetMarkerColor(kBlack+i+1);
+
+    c->cd(5);
+    hYield->SetTitle(patname[i]+ " evens");
+    hYield->SetLineColor(goodColor[i%6]);
+    hYield->SetLineStyle(kDotted);
+    hYield->Draw("hist,same");
+    c->cd(6);
+    hLumi->SetTitle(sangpatname[i]+ " evens");
+    hLumi->SetLineColor(goodColor[i%6]);
+    hLumi->SetLineStyle(kDotted);
+    hLumi->Draw("hist,same");
+
+    c->cd(4);
+    gt=GenerateBunchwisePionAllTGraph("bunch%2==1&& fill>17400",Form("%s && fill>17400",sangpatset[i].Data()),0,&hYield,&hLumi);
+    gt->SetTitle(sangpatname[i]+" odds");
+    gt->SetMarkerColor(goodColor[i%6]);
     gt->SetLineColor(kGreen);
     gt->Draw("L*");
-  }
-   leg=(c->cd(2))->BuildLegend(0.80,0.25,0.99,0.75);
-    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+ 
+    c->cd(5);
+    hYield->SetTitle(sangpatname[i]+ " odds");
+    hYield->SetLineColor(goodColor[i%6]);
+    hYield->Draw("hist,same");
+    c->cd(6);
+    hLumi->SetTitle(sangpatname[i]+ " odds");
+    hLumi->SetLineColor(goodColor[i%6]);
+    hLumi->Draw("hist,same"); }
+  leg=(c->cd(4))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+ leg=(c->cd(5))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
+ leg=(c->cd(6))->BuildLegend(0.80,0.25,0.99,0.75);
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel("Full set");
   return;
 }
 
@@ -507,6 +594,12 @@ void DrawPionALLwithEvenVsOdd(){
   gt->GetHistogram()->SetMaximum(0.01);//Yaxis()->SetLimits(1,1.5e8);
   gt->GetHistogram()->SetMinimum(-0.01);//Yaxis()->SetLimits(1,1.5e8);
   gt->Draw("A*");
+ 
+  gt=GeneratePionAllTGraph("1","1");
+  gt->SetTitle("Bunchwise Both;pT;A_LL");
+  gt->SetLineColor(kCyan);
+  gt->SetMarkerColor(kCyan);
+  gt->Draw("*");
   
   gt=GeneratePionAllTGraph("bunch%2==1","1");
   gt->SetTitle("MPC Odd Asymmetry;pT;A_LL");
@@ -1221,7 +1314,9 @@ TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm
       for (int k=0;k<nptbins;k++){
 	int lowbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k]);
 	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
-	int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	//in an ideal world:  int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	//to fix alignment error upstream:
+	int bunchbin=hYield[arm]->GetYaxis()->FindBin((bun+MASTER_BUNCH_OFFSET)%120);
 	nPi[index][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
 	yield[k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
       }
@@ -1284,7 +1379,7 @@ TGraphErrors *GeneratePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm
 
 
 
-TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm)
+TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut, int arm,TH1F **hYieldRatio,TH1F **hLumiRatio)
 {
   //given a cut we can apply to uBunch (eg a cut on bunch number, fill pattern, etc),
   //generate a tgrapherrors containing the ALL and statistical errors.
@@ -1293,7 +1388,15 @@ TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut
     printf("arm (%d) out of bounds.\n",arm);
     return 0;
   }
+  bool do_yield=(hYieldRatio!=0);
+  bool do_lumi=(hLumiRatio!=0);
 
+  if (do_yield){
+    *hYieldRatio=new TH1F("hYieldRatio",Form("like/unlike yield for bunchcut=%s",uBunchCut.Data()),100,0.75,1.25);
+  }
+  if (do_lumi){
+    *hLumiRatio=new TH1F("hLumiRatio",Form("like/unlike Lumi for bunchcut=%s",uBunchCut.Data()),100,0.75,1.25);
+  }
   //get the run-by-run luminosity numbers:
   vector<double>lumi,lumi_err;
   vector<int>run;
@@ -1341,7 +1444,9 @@ TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut
     thisrel_err=thisrel*sqrt(1/lumilike+1/lumiunlike);
     lumi.push_back(thisrel);
     lumi_err.push_back(thisrel_err);
-
+    if (do_lumi){
+      (*hLumiRatio)->Fill(thisrel);
+    }
     bpol=uLumi->GetVal(3)[i];
     ypol=uLumi->GetVal(4)[i];
     bpol_err=uLumi->GetVal(5)[i];
@@ -1353,6 +1458,7 @@ TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut
     uBunch->Draw("bunch:bspin:yspin",Form("(run==%d)&&(%s)",thisrun,uBunchCut.Data()),"goff");
     int nBunches=uBunch->GetSelectedRows();
     int nPi[2][nptbins];
+    int nPiTot[2];
     printf("run %d has %d valid bunches\n",thisrun,nBunches);
 
     // for (int div=0;div<nDivisions;div++){
@@ -1362,6 +1468,8 @@ TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut
     for (int j=0;j<nptbins;j++){//zero out our counters for this set.
       nPi[0][j]=0;//unlike
       nPi[1][j]=0;//like
+      nPiTot[0]=0;
+      nPiTot[1]=0;
     }
 
     //sum the pions in each valid bunch, divvying into like and unlike configurations:
@@ -1373,12 +1481,20 @@ TGraphErrors *GenerateBunchwisePionAllTGraph(TString uBunchCut, TString uLumiCut
       for (int k=0;k<nptbins;k++){
 	int lowbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k]);
 	int highbin=hYield[arm]->GetXaxis()->FindBin(pt_limits[k+1]-0.0001);
-	int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	//int bunchbin=hYield[arm]->GetYaxis()->FindBin(bun);
+	int bunchbin=hYield[arm]->GetYaxis()->FindBin((bun+MASTER_BUNCH_OFFSET)%120);
 	nPi[index][k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
 	yield[k]+=hYield[arm]->Integral(lowbin,highbin,bunchbin,bunchbin);
       }
     }//j nBunches
-
+    
+    if (do_yield){
+      for (int j=0;j<nptbins;j++){//sum our counters for this set.
+	nPiTot[0]+= nPi[0][j];
+	nPiTot[1]+= nPi[1][j];
+      }
+      (*hYieldRatio)->Fill(nPiTot[1]*1.0/(1.0*nPiTot[0]));
+    }
     //calc the asymmetry for this run:
     for (int k=0;k<nptbins;k++){
       double asym, asym_err;
