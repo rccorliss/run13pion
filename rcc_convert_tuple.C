@@ -53,7 +53,9 @@ void rcc_convert_tuple(){
   }
 
   double u_zdc;uPiLumi->Branch("zdc",&u_zdc);
+  double u_zdc_err;uPiLumi->Branch("zdc_err",&u_zdc_err);
   double u_bbc;uPiLumi->Branch("bbc",&u_bbc);
+  double u_bbc_err;uPiLumi->Branch("bbc_err",&u_bbc_err);
 
   //check that the uBunch and uLumiXL data matches in terms of spin orientations.
   uLumiXL->Draw("run","bunch==0","goff");
@@ -73,7 +75,7 @@ void rcc_convert_tuple(){
 
   
   for (int i=0;i<nRuns;i++){
-    uLumiXL->Draw("(likemuz1>0):fill:run:pat:bpol:ypol:bpol_err:ypol_err:bunch:likemuz1+unlikemuz1:likemub1+unlikemub1",Form("run==%d",runlist[i]),"goff");
+    uLumiXL->Draw("(likemuz1>0):fill:run:pat:bpol:ypol:bpol_err:ypol_err:bunch:likemuz1+unlikemuz1:likemub1+unlikemub1:likemuz1_err+unlikemuz1_err:likemub1_err+unlikemub1_err",Form("run==%d",runlist[i]),"goff");
     uBunch->Draw("(bspin==yspin):bspin:yspin",Form("run==%d",runlist[i]),"goff");
     int nBunches_L=uLumiXL->GetSelectedRows();
     int nBunches_B=uBunch->GetSelectedRows();
@@ -103,7 +105,6 @@ void rcc_convert_tuple(){
     hYield[2]=(TH2F*)yieldfile->Get("hYieldByBunchAndPtSouth");
 
 
-
     
     for (int j=0;j<nBunches_L;j++){
       int l_parity=uLumiXL->GetVal(0)[j];
@@ -113,8 +114,10 @@ void rcc_convert_tuple(){
       u_yspin=uBunch->GetVal(2)[j];
       u_zdc=uLumiXL->GetVal(9)[j];
       u_bbc=uLumiXL->GetVal(10)[j];
+      u_zdc_err=uLumiXL->GetVal(11)[j];
+      u_bbc_err=uLumiXL->GetVal(12)[j];
       for (int k=0;k<nptbins;k++){
-	int bin=hYield[0]->FindBin(ptcenter[k],(bin+MASTER_BUNCH_OFFSET)%120);
+	int bin=hYield[0]->FindBin(ptcenter[k],(u_bunch+MASTER_BUNCH_OFFSET)%120);
 	u_yield[k]=hYield[0]->GetBinContent(bin);
       }
       uPiLumi->Fill();

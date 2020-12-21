@@ -85,6 +85,7 @@ void rcc_draw_lumi_plots(){
     printf("t has %d entries\n",t->GetEntries());
   */
 
+  //these are the same, just in different places.  THey shouldn't (?!) both be loaded.
   t->Add("unique_db.root");
   t->Add("/phenix/spin2/pmontu/offline/analysis/pmontu/relative_luminosity/SpinDB/unique_db.root");//same number of entries as previous, but syncs with gl1 and starscalers both.
   //one annoying catch:  all variables must be prefixed with "star_", "gl1_", or "gl1p_"
@@ -805,6 +806,7 @@ void rcc_draw_lumi_plots(){
     //ROOT::Math::GradFunctor1D gfunc( &global_eval, &global_derive);
     const int nIterations=10;
     vector<double>zmu[nIterations],bmu[nIterations],zkn,zks,bkn,bks;
+    vector<double>zmu_err[nIterations],bmu_err[nIterations];
     vector<int>fill,run,bpat,ypat,bunch;
     vector<double>zdcr,bbcr;
     vector<int>fillstart,fillend;
@@ -852,6 +854,8 @@ void rcc_draw_lumi_plots(){
 	//the Iteration for kn wants to interact with the corrected mu vectors like arrays, so have to pre-load them with enough elements that they dont' explode:
 	bmu[j].push_back(0);
 	zmu[j].push_back(0);
+	bmu_err[j].push_back(0);
+	zmu_err[j].push_back(0);
       }
        
 
@@ -952,9 +956,12 @@ void rcc_draw_lumi_plots(){
 	//                           double kn0, double ks0, double *kn_arr, double *ks_arr,
 	//                           double *new_kn0, double *new_ks0, double *new_mu_arr)
 
+
+	//this fills bmu[j][fillstart[i]] with the value iterated using the previous j.
 	bool result=IterateRateCorrection(fillend[i]-fillstart[i], &(bbcr[fillstart[i]]),
 					  bkn0[i][j-1], bks0[i][j-1], &(bkn[fillstart[i]]), &(bks[fillstart[i]]),
 					  &newkn,&newks,&(bmu[j][fillstart[i]]));
+	bmu_err[j][fillstart[i]]=0;
 	bkn0[i].push_back(newkn);
 	bks0[i].push_back(newks);
       }
@@ -970,6 +977,8 @@ void rcc_draw_lumi_plots(){
 					  &newkn,&newks,&(zmu[j][fillstart[i]]));
 	zkn0[i].push_back(newkn);
 	zks0[i].push_back(newks);
+	zmu_err[j][fillstart[i]]=0;
+
 	if (zmu[j][fillstart[i]]<0.0002){
 	  printf("run %d has a problem in iteration %d\n",run[fillstart[i]],j);
 	  c->cd(3);	   
@@ -1090,12 +1099,16 @@ void rcc_draw_lumi_plots(){
 
     double u_likemuz0; uLumi->Branch("likemuz0",&u_likemuz0);
     double u_likemuz1; uLumi->Branch("likemuz1",&u_likemuz1);
+    double u_likemuz1_err; uLumi->Branch("likemuz1_err",&u_likemuz1_err);
     double u_likemub0; uLumi->Branch("likemub0",&u_likemub0);
     double u_likemub1; uLumi->Branch("likemub1",&u_likemub1);
+    double u_likemub1_err; uLumi->Branch("likemub1_err",&u_likemub1_err);
     double u_unlikemuz0; uLumi->Branch("unlikemuz0",&u_unlikemuz0);
     double u_unlikemuz1; uLumi->Branch("unlikemuz1",&u_unlikemuz1);
+    double u_unlikemuz1_err; uLumi->Branch("unlikemuz1_err",&u_unlikemuz1_err);
     double u_unlikemub0; uLumi->Branch("unlikemub0",&u_unlikemub0);
     double u_unlikemub1; uLumi->Branch("unlikemub1",&u_unlikemub1);
+    double u_unlikemub1_err; uLumi->Branch("unlikemub1_err",&u_unlikemub1_err);
     double u_rellumizdc; uLumi->Branch("rellumizdc",&u_rellumizdc);
     double u_rellumizdc_err; uLumi->Branch("rellumizdc_err",&u_rellumizdc_err);
     double u_rellumibbc; uLumi->Branch("rellumibbc",&u_rellumibbc);
@@ -1137,6 +1150,7 @@ void rcc_draw_lumi_plots(){
       }
 
       if (bunchwise_ulumi){
+	//note that rellumi has no meaning bunchwise, so we zero them and leave them that way:
 	u_rellumizdc=0;
 	u_rellumizdc_err=0;
 	u_rellumibbc=0;
@@ -1155,6 +1169,14 @@ void rcc_draw_lumi_plots(){
 	    u_unlikemuz1=0;
 	    u_unlikemub0=0;
 	    u_unlikemub1=0;
+	    //rccrcc - here's where the errors are put into the uLumi tuple.
+	    u_likemuz1_err=(zmu_err[nIterations-1][j]*zmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +zmu[nIterations-1][j]*zmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+	    u_likemub1_err=(bmu_err[nIterations-1][j]*bmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +bmu[nIterations-1][j]*bmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+	    u_unlikemuz1_err=0;
+	    u_unlikemub1_err=0;
+	    
 	  } else {
 	    u_likemuz0=0;
 	    u_likemuz1=0;
@@ -1164,10 +1186,23 @@ void rcc_draw_lumi_plots(){
 	    u_unlikemuz1=zmu[nIterations-1][j]*clk[j];
 	    u_unlikemub0=bmu[0][j]*clk[j];
 	    u_unlikemub1=bmu[nIterations-1][j]*clk[j];
+	    u_likemuz1_err=0;
+	    u_likemub1_err=0;
+	    u_unlikemuz1_err=(zmu_err[nIterations-1][j]*zmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +zmu[nIterations-1][j]*zmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+	    u_unlikemub1_err=(bmu_err[nIterations-1][j]*bmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +bmu[nIterations-1][j]*bmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+
+	    
 	  }
+	  u_likemuz1_err=sqrt(u_likemuz1_err);
+	  u_likemub1_err=sqrt(u_likemub1_err);
+	  u_unlikemuz1_err=sqrt(u_unlikemuz1_err);
+	  u_unlikemub1_err=sqrt(u_unlikemub1_err);
+
 	  uLumi->Fill();
 	}
-      }else{//if not doing
+      }else{//if not doing bunchwise
 	u_likemuz0=0;
 	u_likemuz1=0;
 	u_likemub0=0;
@@ -1176,6 +1211,12 @@ void rcc_draw_lumi_plots(){
 	u_unlikemuz1=0;
 	u_unlikemub0=0;
 	u_unlikemub1=0;
+
+	u_likemuz1_err=0;
+	u_likemub1_err=0;
+	u_unlikemuz1_err=0;
+	u_unlikemub1_err=0;
+
 	for (int j=runstart[i];j<runend[i];j++){
 	  //bunch-by-bunch summation:
 	  if (bpat[j]==ypat[j]){
@@ -1183,13 +1224,29 @@ void rcc_draw_lumi_plots(){
 	    u_likemuz1+=zmu[nIterations-1][j]*clk[j];
 	    u_likemub0+=bmu[0][j]*clk[j];
 	    u_likemub1+=bmu[nIterations-1][j]*clk[j];
+	    //sig^2=(dX/dA*sigA)^2+(dX/db*sigB)^2.  sig(clk)=sqrt(clk)
+	    u_likemuz1_err+=(zmu_err[nIterations-1][j]*zmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +zmu[nIterations-1][j]*zmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+	    u_likemub1_err+=(bmu_err[nIterations-1][j]*bmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +bmu[nIterations-1][j]*bmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
 	  } else {
 	    u_unlikemuz0+=zmu[0][j]*clk[j];
 	    u_unlikemuz1+=zmu[nIterations-1][j]*clk[j];
 	    u_unlikemub0+=bmu[0][j]*clk[j];
 	    u_unlikemub1+=bmu[nIterations-1][j]*clk[j];
+	    u_unlikemuz1_err+=(zmu_err[nIterations-1][j]*zmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +zmu[nIterations-1][j]*zmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
+	    u_unlikemub1_err+=(bmu_err[nIterations-1][j]*bmu_err[nIterations-1][j]*clk[j]*clk[j]
+			       +bmu[nIterations-1][j]*bmu[nIterations-1][j]*clk[j]);//squared here, sqrt when done.
 	  }
 	}
+
+	//now that we have finished summing over all bins, we can sqrt the errors (there is correlation through clk between zdc and bbc, but not between unlike and like, since no [j] is both like and unlike at once:
+	u_likemuz1_err=sqrt(u_likemuz1_err);
+	u_likemub1_err=sqrt(u_likemub1_err);
+	u_unlikemuz1_err=sqrt(u_unlikemuz1_err);
+	u_unlikemub1_err=sqrt(u_unlikemub1_err);
+	
 	printf("(zl=%2.2E zu=%2.2E diff=%2.2E) (bl=%2.2E bu=%2.2E diff=%2.2E) ",
 	       u_likemuz1,u_unlikemuz1,u_likemuz1-u_unlikemuz1,
 	       u_likemub1,u_unlikemub1, u_likemub1-u_unlikemub1);
@@ -1213,16 +1270,23 @@ void rcc_draw_lumi_plots(){
 	CalcAsymAndErr(&asym, &asym_err,
 		       u_bpol,u_bpol_err,
 		       u_ypol,u_ypol_err,
-		       u_unlikemuz1,sqrt(u_unlikemuz1),
-		       u_likemuz1,sqrt(u_likemuz1),
-		       u_unlikemub1,sqrt(u_unlikemub1),
-		       u_likemub1,sqrt(u_likemub1));
+		       u_unlikemuz1,u_unlikemuz1_err,//sqrt(u_unlikemuz1),
+		       u_likemuz1,u_likemuz1_err,//sqrt(u_likemuz1),
+		       u_unlikemub1,u_unlikemub1_err,//sqrt(u_unlikemub1),
+		       u_likemub1,u_likemub1_err);//sqrt(u_likemub1));
 	uLumi_mon_all_check2.push_back(asym);
    
 	u_rellumizdc=u_likemuz1/u_unlikemuz1;
-	u_rellumizdc_err=u_rellumizdc*sqrt(1/u_likemuz1+1/u_unlikemuz1);
+	//if likemuz and unlikemuz are simple scalers, then:
+	//u_rellumizdc_err=u_rellumizdc*sqrt(1/u_likemuz1+1/u_unlikemuz1);
+	//if they have other terms (which they do!) assume those are handled earlier and compute full err:
+	u_rellumizdc_err=u_rellumizdc*sqrt((u_likemuz1_err/u_likemuz1)*(u_likemuz1_err/u_likemuz1)
+					   +(u_unlikemuz1_err/u_unlikemuz1)*(u_unlikemuz1_err/u_unlikemuz1));
 	u_rellumibbc=u_likemub1/u_unlikemub1;
-	u_rellumibbc_err=u_rellumibbc*sqrt(1/u_likemub1+1/u_unlikemub1);
+	//	u_rellumibbc_err=u_rellumibbc*sqrt(1/u_likemub1+1/u_unlikemub1);
+	u_rellumibbc_err=u_rellumibbc*sqrt((u_likemub1_err/u_likemub1)*(u_likemub1_err/u_likemub1)
+					   +(u_unlikemub1_err/u_unlikemub1)*(u_unlikemub1_err/u_unlikemub1));
+
 	u_allzdcbbc=asym;
 	u_allzdcbbc_err=asym_err;
 
@@ -1231,7 +1295,8 @@ void rcc_draw_lumi_plots(){
 	double tunlike=u_unlikemuz1;
 	double tlike=u_likemuz1;
 	double trellumi=u_likemub1/u_unlikemub1;
-	double trellumi_err=sqrt(trellumi*trellumi*(1/u_likemub1+1/u_unlikemub1));//assumes these are counting.
+	double trellumi_err=u_rellumibbc_err;//
+	//previously was: sqrt(trellumi*trellumi*(1/u_likemub1+1/u_unlikemub1));//assumes these are counting.
 	double trelunlike=trellumi*tunlike;
 	double tsum=tlike+trelunlike;
 	double tdiff=tlike-trelunlike;
@@ -1318,7 +1383,6 @@ void rcc_draw_lumi_plots(){
 
     
   
-    //eventually, I need to add bunch-by-bunch luminosity counters, but skip for now.
   }
 
 
@@ -1770,7 +1834,6 @@ bool IterateRateCorrection(int length, double *rate_arr, double kn0, double ks0,
      globwrap->SetD(ratederivative);
   */
 
-  
   //for each measured rate in the sample, compute the associated underlying collision rate:     
   //ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_STEFFENSON);
   ROOT::Math::RootFinder *rf4 = new ROOT::Math::RootFinder(ROOT::Math::RootFinder::kGSL_BISECTION);

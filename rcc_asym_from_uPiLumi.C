@@ -14,6 +14,8 @@ float SumArray(double *arr, int n){
 }
 
 void PlotFullAverageAsym();
+void   PlotAsymByRun();
+void   PlotAsymByFill();
 
 
 
@@ -39,7 +41,8 @@ void rcc_asym_from_uPiLumi(){
     ptmid.push_back(0.5*(ptlow[i]+pthigh[i]));
     pterr.push_back(0.5*(ptlow[i]-pthigh[i]));
   }
-
+  
+  //PlotAsymByFill();
   PlotFullAverageAsym();
   return;
 }
@@ -80,9 +83,9 @@ void   PlotFullAverageAsym(){
     int nUnlike=uPiLumi->GetSelectedRows();
     double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
     //naively, the uncertainties in like an unlike are independent (though really they share the global scaler)
-    uPiLumi->Draw("zdc",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");//square of error term
+    uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");//square of error term
     double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
-    uPiLumi->Draw("zdc",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
     rel[i]=(zdcLike/zdcUnlike);
     relErr[i]=rel[i]*sqrt((zdcLikeErr/zdcLike)*(zdcLikeErr/zdcLike)
@@ -159,12 +162,16 @@ void   PlotFullAverageAsym(){
     double bbcLike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
     uPiLumi->Draw("bbc",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     double bbcUnlike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
-    double tasym, tasymerr;
+    uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    double bbcLike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+    uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    double bbcUnlike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+     double tasym, tasymerr;
     CalcAsymAndErr(&tasym,&tasymerr,
 		   bpol[i],bpolErr[i],
 		   ypol[i],ypolErr[i],
-		   bbcUnlike,sqrt(bbcUnlike),
-		   bbcLike,sqrt(bbcLike),
+		   bbcUnlike,bbcUnlike_err,
+		   bbcLike,bbcLike_err,
 		   1,0,
 		   rel[i],relErr[i]);
     setindex.push_back(i*1.0);
@@ -201,6 +208,392 @@ void   PlotFullAverageAsym(){
 
 
 
+void   PlotAsymByRun(){
+  //sums bbc scalers over each run and produces the per-run asym per group
+  int nSets=4;
+  vector<double> likeYield[4];
+  vector<double> unlikeYield[4];
+  vector<double> asym[4],asymErr[4];
+  double rel[4],relErr[4];
+  TString cut[4]={"(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"!(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
+		"!(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
+  TString cutName[4]={"SSOO odd bunch",
+		      "SSOO even bunch",
+		      "OOSS odd bunch",
+		      "OOSS even bunch"};
+
+  //for each set we will have a runlist that may differ (definitely, since runs can't be more than one pattern)
+  vector<double> runlist[nSets],runlisterr;
+  //we will end up with a bbc asymmetry for each run for each group
+    vector<double> bbc_asym[nSets],bbc_asym_err[nSets];
+  //as well as an asymmetry for each pt bin for the same:
+    vector<double> ptbin_asym[nSets][nBins],ptbin_asym_err[nSets][nBins];
+
+  
+  //get the runlist for each group:
+  for (int i=0;i<nSets;i++){
+    int ci=i;
+    if (i==0) ci=1; //to force using the 'evens' definition.
+    if (i==2) ci=3;
+    uPiLumi->Draw("run",Form("(bunch==0 )&&(%s)",cut[ci].Data()),"goff"); 
+    int nRuns=uPiLumi->GetSelectedRows();
+    for (int r=0;r<nRuns;r++){
+      runlist[i].push_back(uPiLumi->GetVal(0)[r]);
+      printf("adding to set %d run %f (%1.2f)\n",i,uPiLumi->GetVal(0)[r],runlist[i][runlist[i].size()-1]);
+      runlisterr.push_back(0.5);
+    }
+  }
+
+
+  //for each set, iterate through its runlist:
+  TString runcut;
+  for (int s=0;s<nSets;s++){
+    for(int r=0;r<runlist[s].size();r++){
+      int run=(runlist[s])[r];
+
+      //build the cut for this run.
+      runcut=Form("(zdc>0)*(run==%d)*(%s)",run,cut[s].Data());
+    
+    //get the polarization for this run:
+      double bpol, bpolErr, ypol,ypolErr;
+      uPiLumi->Draw("bpol:bpol_err:ypol:ypol_err",Form("(%s)",runcut.Data()),"goff");
+      if (uPiLumi->GetSelectedRows()==0) {
+	printf("skipping run=%d : no data.\n",run);
+	continue; //skip if there was no valid bunch for this run!
+      }
+      bpol=(uPiLumi->GetVal(0))[0];
+      bpolErr=(uPiLumi->GetVal(1))[0];
+      ypol=(uPiLumi->GetVal(2))[0];
+      ypolErr=(uPiLumi->GetVal(3))[0];
+
+      //assumption is that each bunch in the run has the same polarization, se we can read the first element of the return.
+
+  
+      //calc the rel lumi
+      uPiLumi->Draw("zdc",Form("(bspin==yspin )*(%s)",runcut.Data()),"goff");
+      int nLike=uPiLumi->GetSelectedRows();
+      double zdcLike=SumArray(uPiLumi->GetVal(0),nLike);
+      uPiLumi->Draw("zdc",Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+      int nUnlike=uPiLumi->GetSelectedRows();
+      double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
+      //naively, the uncertainties in like an unlike are independent (though really they share the global scaler)
+      uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin==yspin)*(%s)",runcut.Data()),"goff");//square of error term
+      double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+      double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      double rel=(zdcLike/zdcUnlike);
+      double relErr=rel*sqrt((zdcLikeErr/zdcLike)*(zdcLikeErr/zdcLike)
+			    +(zdcUnlikeErr/zdcUnlike)*(zdcUnlikeErr/zdcUnlike));
+
+      //get the yields and calc the asym per ptbin:
+      for (int j=0;j<nBins;j++){
+	uPiLumi->Draw(Form("yield%d",j),Form("(bspin==yspin)*(%s)",runcut.Data()),"goff");
+	double likeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());	
+	uPiLumi->Draw(Form("yield%d",j),Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+	double unlikeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+	//calc the asyms:
+	double tasym, tasymerr;
+	if (likeYield+unlikeYield>0){
+	  CalcAsymAndErr(&tasym,&tasymerr,
+			 bpol,bpolErr,
+			 ypol,ypolErr,
+			 unlikeYield,sqrt(unlikeYield),
+			 likeYield,sqrt(likeYield),
+			 1,0,
+			 rel,relErr);
+	}
+	if (likeYield+unlikeYield<1){
+	  printf("run=%d,set=%d,bin=%d has yields %1.2E,%1.2E. Setting large errors.\n",run,s,j,likeYield,unlikeYield);
+	  tasym=0;
+	  tasymerr=1;
+	}
+	ptbin_asym[s][j].push_back(tasym);
+	ptbin_asym_err[s][j].push_back(tasymerr);
+	//printf("set=%d bin=%d: asym=%1.2E + %1.2E\n",s,j,tasym,tasymerr);
+      }
+
+      //get the bbc counts and calc the asym for the bbc:
+      uPiLumi->Draw("bbc",Form("(bspin==yspin )*(%s)",runcut.Data()),"goff");
+      double bbcLike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+      uPiLumi->Draw("bbc",Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+      double bbcUnlike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+      uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin==yspin )*(%s)",runcut.Data()),"goff");
+      double bbcLike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+      double bbcUnlike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      double tasym, tasymerr;
+      CalcAsymAndErr(&tasym,&tasymerr,
+		     bpol,bpolErr,
+		     ypol,ypolErr,
+		     bbcUnlike,bbcUnlike_err,
+		     bbcLike,bbcLike_err,
+		     1,0,
+		     rel,relErr);
+      bbc_asym[s].push_back(tasym);
+      bbc_asym_err[s].push_back(tasymerr);
+      printf("set %d has bbc:l=%E,u=%E ==> asym=%E\n",s,bbcLike,bbcUnlike,tasym);
+     }//loop over runs
+  }//loop over sets
+
+  TCanvas *c;
+  TGraphErrors *g;
+  TLegend *leg;
+ c=new TCanvas("cByRun","cByRun",1600,400);
+  int nPtBinsToDraw=2;
+  int ptBinToDraw[]={1,4};
+  c->Divide(nPtBinsToDraw+1,1);
+
+  //plot the MPC asyms for the selected bins, separated by group
+  for (int i=0;i<nPtBinsToDraw;i++){
+    c->cd(i+1);
+    for (int s=0;s<nSets;s++){
+      g=new TGraphErrors(runlist[s].size(),&((runlist[s])[0]),&((ptbin_asym[s][ptBinToDraw[i]])[0]),&(runlisterr[0]),&((ptbin_asym_err[s][ptBinToDraw[i]])[0]));
+      g->SetLineColor(s+1);
+      g->SetMarkerColor(s+1);
+      //g->SetTitle(cutName[i].Data());
+      if (s==0){
+	g->SetTitle(Form("MPC bin%d asym by spin group;run;asym",ptBinToDraw[i]));
+	g->GetHistogram()->SetMaximum(0.25);
+	g->GetHistogram()->SetMinimum(-0.25);
+	g->Draw("A*");
+      } else{
+	g->SetTitle(cutName[s].Data());
+	g->Draw("*");
+      }
+    }
+    c->cd(i+1)->SetGridy();
+    leg=c->cd(i+1)->BuildLegend();
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+  }
+    //plot the BBC asyms for the selected bins, separated by group
+  c->cd(nPtBinsToDraw+1);
+  for (int s=0;s<nSets;s++){
+    g=new TGraphErrors(runlist[s].size(),&((runlist[s])[0]),&((bbc_asym[s])[0]),&(runlisterr[0]),&((bbc_asym_err[s])[0]));
+
+    //g=new TGraphErrors(1,&(setindex[i]),&(bbcasym[i]),&(bbcasymerr[i]),&(bbcasymerr[i]));
+    g->SetMarkerColor(s+1);
+    if (s==0){
+      g->SetTitle("BBC asym by spin group;run;asym");
+      g->GetHistogram()->SetMaximum(0.02);
+      g->GetHistogram()->SetMinimum(-0.02);
+      g->Draw("A*");
+    } else {
+      g->SetTitle(cutName[s].Data());
+      g->Draw("*");
+    }
+  }
+  c->cd(nPtBinsToDraw+1)->SetGridy();
+  leg=c->cd(nPtBinsToDraw+1)->BuildLegend();
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+
+
+  return;
+  }
+
+
+
+void   PlotAsymByFill(){
+  //sums bbc scalers over each run and produces the per-run asym per group
+  int nSets=4;
+  vector<double> likeYield[4];
+  vector<double> unlikeYield[4];
+  vector<double> asym[4],asymErr[4];
+  double rel[4],relErr[4];
+  TString cut[4]={"(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"!(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
+		"!(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
+  TString cutName[4]={"SSOO odd bunch",
+		      "SSOO even bunch",
+		      "OOSS odd bunch",
+		      "OOSS even bunch"};
+
+  //for each set we will have a runlist that may differ (definitely, since runs can't be more than one pattern)
+  vector<double> filllist[nSets],filllisterr;
+  //we will end up with a bbc asymmetry for each run for each group
+    vector<double> bbc_asym[nSets],bbc_asym_err[nSets];
+  //as well as an asymmetry for each pt bin for the same:
+    vector<double> ptbin_asym[nSets][nBins],ptbin_asym_err[nSets][nBins];
+
+  
+  //get the runlist for each group:
+  for (int i=0;i<nSets;i++){
+    int ci=i;
+    if (i==0) ci=1; //to force using the 'evens' definition.
+    if (i==2) ci=3;
+    uPiLumi->Draw("fill",Form("(bunch==0 )&&(%s)",cut[ci].Data()),"goff"); 
+    int nFills=uPiLumi->GetSelectedRows();
+    for (int r=0;r<nFills;r++){
+      double newfill=uPiLumi->GetVal(0)[r];
+      if (filllist[i].size()>0){
+	if (filllist[i][filllist[i].size()-1]==newfill)
+	  continue; //skip if we've already got this fill in our list.
+      }
+      filllist[i].push_back(uPiLumi->GetVal(0)[r]);
+      printf("adding to set %d fill %f (%1.2f)\n",i,uPiLumi->GetVal(0)[r],filllist[i][filllist[i].size()-1]);
+      filllisterr.push_back(0.5);
+    }
+  }
+
+
+  //for each set, iterate through its filllist:
+  TString fillcut;
+  for (int s=0;s<nSets;s++){
+    for(int r=0;r<filllist[s].size();r++){
+      int fill=(filllist[s])[r];
+
+      //build the cut for this fill.
+      fillcut=Form("(zdc>0)*(fill==%d)*(%s)",fill,cut[s].Data());
+    
+    //get the polarization for this fill:
+      double bpol, bpolErr, ypol,ypolErr;
+      uPiLumi->Draw("bpol:bpol_err:ypol:ypol_err",Form("(%s)",fillcut.Data()),"goff");
+      if (uPiLumi->GetSelectedRows()==0) {
+	printf("skipping fill=%d : no data.\n",fill);
+	continue; //skip if there was no valid bunch for this fill!
+      }
+      bpol=(uPiLumi->GetVal(0))[0];
+      bpolErr=(uPiLumi->GetVal(1))[0];
+      ypol=(uPiLumi->GetVal(2))[0];
+      ypolErr=(uPiLumi->GetVal(3))[0];
+
+      //assumption is that each bunch in the fill has the same polarization, se we can read the first element of the return.
+
+  
+      //calc the rel lumi
+      uPiLumi->Draw("zdc:zdc_err*zdc_err",Form("(bspin==yspin )*(%s)",fillcut.Data()),"goff");
+      int nLike=uPiLumi->GetSelectedRows();
+      double zdcLike=SumArray(uPiLumi->GetVal(0),nLike);
+      double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(1),nLike));
+      uPiLumi->Draw("zdc:zdc_err*zdc_err",Form("(bspin!=yspin )*(%s)",fillcut.Data()),"goff");
+      int nUnlike=uPiLumi->GetSelectedRows();
+      double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
+      double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(1),nUnlike));
+
+      /*
+      uPiLumi->Draw("zdc",Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+      int nUnlike=uPiLumi->GetSelectedRows();
+      double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
+      //naively, the uncertainties in like an unlike are independent (though really they share the global scaler)
+      uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin==yspin)*(%s)",fillcut.Data()),"goff");//square of error term
+      double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+      double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      */
+      double rel=(zdcLike/zdcUnlike);
+      double relErr=rel*sqrt((zdcLikeErr/zdcLike)*(zdcLikeErr/zdcLike)
+			    +(zdcUnlikeErr/zdcUnlike)*(zdcUnlikeErr/zdcUnlike));
+
+      //get the yields and calc the asym per ptbin:
+      for (int j=0;j<nBins;j++){
+	uPiLumi->Draw(Form("yield%d",j),Form("(bspin==yspin)*(%s)",fillcut.Data()),"goff");
+	double likeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());	
+	uPiLumi->Draw(Form("yield%d",j),Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+	double unlikeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+	//calc the asyms:
+	double tasym, tasymerr;
+	if (likeYield+unlikeYield>0){
+	  CalcAsymAndErr(&tasym,&tasymerr,
+			 bpol,bpolErr,
+			 ypol,ypolErr,
+			 unlikeYield,sqrt(unlikeYield),
+			 likeYield,sqrt(likeYield),
+			 1,0,
+			 rel,relErr);
+	}
+	if (likeYield+unlikeYield<1){
+	  printf("fill=%d,set=%d,bin=%d has yields %1.2E,%1.2E. Setting large errors.\n",fill,s,j,likeYield,unlikeYield);
+	  tasym=0;
+	  tasymerr=1;
+	}
+	if (abs(tasym)>1.0){
+	  printf("======> fill=%d,set=%d,bin=%d has asym=%1.2E. yields u=%1.2E (buns=%d), l=%1.2E (buns=%d), pols b=%1.2E, y=%1.2E.\n",
+		 fill,s,j,tasym,likeYield,nLike,unlikeYield,nUnlike,bpol,ypol);
+	}
+	ptbin_asym[s][j].push_back(tasym);
+	ptbin_asym_err[s][j].push_back(tasymerr);
+	//printf("set=%d bin=%d: asym=%1.2E + %1.2E\n",s,j,tasym,tasymerr);
+      }
+
+      //get the bbc counts and calc the asym for the bbc:
+      uPiLumi->Draw("bbc",Form("(bspin==yspin )*(%s)",fillcut.Data()),"goff");
+      double bbcLike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+      uPiLumi->Draw("bbc",Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+      double bbcUnlike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
+      uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin==yspin )*(%s)",fillcut.Data()),"goff");
+      double bbcLike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      uPiLumi->Draw("bbc_err*bbc_err",Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+      double bbcUnlike_err=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
+      double tasym, tasymerr;
+      CalcAsymAndErr(&tasym,&tasymerr,
+		     bpol,bpolErr,
+		     ypol,ypolErr,
+		     bbcUnlike,bbcUnlike_err,
+		     bbcLike,bbcLike_err,
+		     1,0,
+		     rel,relErr);
+      bbc_asym[s].push_back(tasym);
+      bbc_asym_err[s].push_back(tasymerr);
+      printf("fill=%d,set=%d has bbc:l=%E,u=%E ==> asym=%E\n",fill,s,bbcLike,bbcUnlike,tasym);
+     }//loop over fills
+  }//loop over sets
+
+  TCanvas *c;
+  TGraphErrors *g;
+  TLegend *leg;
+ c=new TCanvas("cByFill","cByFill",1600,400);
+  int nPtBinsToDraw=2;
+  int ptBinToDraw[]={1,4};
+  c->Divide(nPtBinsToDraw+1,1);
+
+  //plot the MPC asyms for the selected bins, separated by group
+  for (int i=0;i<nPtBinsToDraw;i++){
+    c->cd(i+1);
+    for (int s=0;s<nSets;s++){
+      g=new TGraphErrors(filllist[s].size(),&((filllist[s])[0]),&((ptbin_asym[s][ptBinToDraw[i]])[0]),&(filllisterr[0]),&((ptbin_asym_err[s][ptBinToDraw[i]])[0]));
+      g->SetLineColor(s+1);
+      g->SetMarkerColor(s+1);
+      //g->SetTitle(cutName[i].Data());
+      if (s==0){
+	g->SetTitle(Form("MPC bin%d asym by spin group;fill;asym",ptBinToDraw[i]));
+	g->GetHistogram()->SetMaximum(0.25);
+	g->GetHistogram()->SetMinimum(-0.25);
+	g->Draw("A*");
+      } else{
+	g->SetTitle(cutName[s].Data());
+	g->Draw("*");
+      }
+    }
+    c->cd(i+1)->SetGridy();
+    leg=c->cd(i+1)->BuildLegend();
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+  }
+    //plot the BBC asyms for the selected bins, separated by group
+  c->cd(nPtBinsToDraw+1);
+  for (int s=0;s<nSets;s++){
+    g=new TGraphErrors(filllist[s].size(),&((filllist[s])[0]),&((bbc_asym[s])[0]),&(filllisterr[0]),&((bbc_asym_err[s])[0]));
+
+    //g=new TGraphErrors(1,&(setindex[i]),&(bbcasym[i]),&(bbcasymerr[i]),&(bbcasymerr[i]));
+    g->SetMarkerColor(s+1);
+    if (s==0){
+      g->SetTitle("BBC asym by spin group;fill;asym");
+      g->GetHistogram()->SetMaximum(0.02);
+      g->GetHistogram()->SetMinimum(-0.02);
+      g->Draw("A*");
+    } else {
+      g->SetTitle(cutName[s].Data());
+      g->Draw("*");
+    }
+  }
+  c->cd(nPtBinsToDraw+1)->SetGridy();
+  leg=c->cd(nPtBinsToDraw+1)->BuildLegend();
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+
+
+  return;
+  }
 
 
 
@@ -243,9 +636,11 @@ void CalcAsymAndErr(double *asym, double *asym_err,
 	       +tlikesumerrterm*tlikesumerrterm
 	       +tunlikesumerrterm*tunlikesumerrterm
 	       +trellumierrterm*trellumierrterm);
-  printf("asym=%1.2E\terror terms: bpol=%1.2E\t ypol=%1.2E\t like=%1.2E\t unlike=%1.2E\trel=%1.2E\n",
+  if (0){
+    //debugging info
+    printf("asym=%1.2E\terror terms: bpol=%1.2E\t ypol=%1.2E\t like=%1.2E\t unlike=%1.2E\trel=%1.2E\n",
 	 tasym,tbpolerrterm,typolerrterm,tlikesumerrterm,tunlikesumerrterm,trellumierrterm);
-
+  }
   *asym=tasym;
   *asym_err=sqrt(err2);
   return;
