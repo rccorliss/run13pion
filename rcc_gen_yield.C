@@ -576,7 +576,12 @@ void InitDB(int n_runnum) {
   printf("loading good bunches list from %s\b",sname);
   ifstream bstatusfile(sname);
   if (!bstatusfile.good())
-    cout << "Error! Can't open bunch status file." << endl;
+    cout << "Error! Can't open bunch status file. All bunches defaulted to GOOD" << endl;
+
+  for (int i=0;i<120;i++){
+    isBunchBad[i]=false;
+  }
+  
   int ibunch = 0;
   int ibunchstatus = 0;
   while (bstatusfile.good()) {
