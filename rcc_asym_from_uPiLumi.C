@@ -49,23 +49,47 @@ void rcc_asym_from_uPiLumi(){
 
 void   PlotFullAverageAsym(){
   //sums yields over all bunches in all runs and produces a single asym from that.
-  int nSets=4;
-  vector<double> likeYield[4];
-  vector<double> unlikeYield[4];
-  vector<double> asym[4],asymErr[4];
-  double rel[4],relErr[4];
-  TString cut[4]={"(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"!(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
-		"!(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
+  int nDivSets=10;
+  int nSets=8;//1*nDivSets;
+  vector<double> likeYield[nSets];
+  vector<double> unlikeYield[nSets];
+  vector<double> asym[nSets],asymErr[nSets];
+  double rel[nSets],relErr[nSets];
+  
+  TString lumiMon="zdc";
+  TString lumiMonErr2=Form("%s_err*%s_err",lumiMon.Data(),lumiMon.Data());
+
+  
+  TString cut[nSets],cutName[nSets];
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		   "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
+  TString divSets[nDivSets];//={"abs(bunch-10)<10","abs(bunch-35)<15","abs(bunch-75)<15","abs(bunch-105)<15"};
+  TString divNames[nDivSets];//={"0<bun<30","30<bun<60","60<bun<90","90<bun<120"};
+  int divSpacing=120/nDivSets;
+  for (int i=0;i<nDivSets;i++){
+    divSets[i]=Form("abs(bunch-%d)<%d",divSpacing/2+divSpacing*i,divSpacing);
+    divNames[i]=Form("%d<bunch<%d",divSpacing*i,divSpacing*(i+1));
+  }
+  for (int i=0;i<nSets;i++){
+    cut[i]=Form("(%s)&&(%s)",divSets[i%nDivSets].Data(),patSets[i/nDivSets+1].Data());
+    cutName[i]=Form("%s %s",patNames[i/nDivSets+1].Data(),divNames[i%nDivSets].Data());
+    printf("Cut %d:  \"%s\": %s\n",i,cutName[i].Data(),cut[i].Data());
+  }
+  /*
+  TString cut[4]={"(bunch%2 && fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"!(bunch%2&& fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
+		"!(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
   TString cutName[4]={"SSOO odd bunch",
 		      "SSOO even bunch",
 		      "OOSS odd bunch",
 		      "OOSS even bunch"};
+  */
 
   
   //get the average polarizations:
-  double bpol[4], bpolErr[4], ypol[4],ypolErr[4];
+  double bpol[nSets], bpolErr[nSets], ypol[nSets],ypolErr[nSets];
   for (int i=0;i<nSets;i++){
     uPiLumi->Draw("bpol:bpol_err:ypol:ypol_err",Form("(zdc>0)*(%s)",cut[i].Data()),"goff");
     bpol[i]=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows())/uPiLumi->GetSelectedRows();
@@ -76,20 +100,22 @@ void   PlotFullAverageAsym(){
   
   //calc the rel lumi
   for (int i=0;i<nSets;i++){
-    uPiLumi->Draw("zdc",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    uPiLumi->Draw(lumiMon.Data(),Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     int nLike=uPiLumi->GetSelectedRows();
     double zdcLike=SumArray(uPiLumi->GetVal(0),nLike);
-    uPiLumi->Draw("zdc",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    uPiLumi->Draw(lumiMon.Data(),Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     int nUnlike=uPiLumi->GetSelectedRows();
     double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
     //naively, the uncertainties in like an unlike are independent (though really they share the global scaler)
-    uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");//square of error term
+    uPiLumi->Draw(lumiMonErr2.Data(),Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");//square of error term
     double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
-    uPiLumi->Draw("zdc_err*zdc_err",Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+    uPiLumi->Draw(lumiMonErr2.Data(),Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
     rel[i]=(zdcLike/zdcUnlike);
     relErr[i]=rel[i]*sqrt((zdcLikeErr/zdcLike)*(zdcLikeErr/zdcLike)
 			  +(zdcUnlikeErr/zdcUnlike)*(zdcUnlikeErr/zdcUnlike));
+    //rel[i]*=1.05;
+    //rel[i]*=1.01;
   }
 
   //calc the yields
@@ -127,11 +153,17 @@ void   PlotFullAverageAsym(){
   TCanvas *c;
   TGraphErrors *g;
   TLegend *leg;
- c=new TCanvas("cComp","cComp",800,400);
- TGraph *g0=new TGraph(asymcomp.size(),&(asymcomp[0]),&(asymerrcomp[0]));
- g0->SetTitle("Asymmetries vs errors;abs(asym);err");
- g0->Draw("A*");
+  if (0){//plot a check of the correlation between asymmetries and errors
+    c=new TCanvas("cComp","cComp",800,400);
+    TGraph *g0=new TGraph(asymcomp.size(),&(asymcomp[0]),&(asymerrcomp[0]));
+    g0->SetTitle("Asymmetries vs errors;abs(asym);err");
+    g0->Draw("A*");
+  }
+
  
+  
+  
+  
   c=new TCanvas("cAsym","cAsym",1600,400);
   c->Divide(2,1);
   c->cd(1);
@@ -141,7 +173,7 @@ void   PlotFullAverageAsym(){
     g->SetMarkerColor(i+1);
     //g->SetTitle(cutName[i].Data());
     if (i==0){
-      g->SetTitle("MPC asym by spin group");
+      g->SetTitle("MPC asym by spin group;pT(GeV);asym");
       g->GetHistogram()->SetMaximum(0.15);
       g->GetHistogram()->SetMinimum(-0.15);
       g->Draw("AC*");
@@ -186,8 +218,8 @@ void   PlotFullAverageAsym(){
     g=new TGraphErrors(1,&(setindex[i]),&(bbcasym[i]),&(bbcasymerr[i]),&(bbcasymerr[i]));
     g->SetMarkerColor(i+1);
     if (i==0){
-    g->SetTitle("BBC asym by spin group");
-      g->GetXaxis()->SetLimits(-0.5,3.5);
+    g->SetTitle("BBC asym by spin group;group;asym");
+      g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
       g->GetHistogram()->SetMaximum(0.002);
       g->GetHistogram()->SetMinimum(-0.002);
       g->Draw("AC*");
@@ -201,6 +233,27 @@ void   PlotFullAverageAsym(){
   leg=c->cd(2)->BuildLegend();
   ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
 
+   if (1){//plot a check of the relative luminosities per selection
+     c=new TCanvas("cRelLumi","cRelLumi",800,400);
+     for (int i=0;i<nSets;i++){
+    g=new TGraphErrors(1,&(setindex[i]),&(rel[i]),&(relErr[i]),&(relErr[i]));
+    g->SetMarkerColor(i+1);
+    if (i==0){
+    g->SetTitle("Relative Lumi spin group;group;asym");
+      g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
+      g->GetHistogram()->SetMaximum(1.5);
+      g->GetHistogram()->SetMinimum(0.5);
+      g->Draw("AC*");
+      //g->SetTitle(cutName[i].Data());
+    } else {
+      g->SetTitle(cutName[i].Data());
+      g->Draw("C*");
+    }
+  }
+  c->cd(1)->SetGridy();
+  leg=c->cd(1)->BuildLegend();
+  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+}
 
   return;
 }
@@ -397,10 +450,11 @@ void   PlotAsymByRun(){
 void   PlotAsymByFill(){
   //sums bbc scalers over each run and produces the per-run asym per group
   int nSets=4;
-  vector<double> likeYield[4];
-  vector<double> unlikeYield[4];
-  vector<double> asym[4],asymErr[4];
-  double rel[4],relErr[4];
+  vector<double> likeYield[nSets];
+  vector<double> unlikeYield[nSets];
+  vector<double> asym[nSets],asymErr[nSets];
+  vector<double> rel_check[nSets],rel_err_check[nSets];
+  double rel[nSets],relErr[nSets];
   TString cut[4]={"(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
 		"!(bunch%2)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
 		"(bunch%2)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
@@ -463,11 +517,11 @@ void   PlotAsymByFill(){
 
   
       //calc the rel lumi
-      uPiLumi->Draw("zdc:zdc_err*zdc_err",Form("(bspin==yspin )*(%s)",fillcut.Data()),"goff");
+      uPiLumi->Draw("bbc:bbc_err*bbc_err",Form("(bspin==yspin )*(%s)",fillcut.Data()),"goff");
       int nLike=uPiLumi->GetSelectedRows();
       double zdcLike=SumArray(uPiLumi->GetVal(0),nLike);
       double zdcLikeErr=sqrt(SumArray(uPiLumi->GetVal(1),nLike));
-      uPiLumi->Draw("zdc:zdc_err*zdc_err",Form("(bspin!=yspin )*(%s)",fillcut.Data()),"goff");
+      uPiLumi->Draw("bbc:bbc_err*bbc_err",Form("(bspin!=yspin )*(%s)",fillcut.Data()),"goff");
       int nUnlike=uPiLumi->GetSelectedRows();
       double zdcUnlike=SumArray(uPiLumi->GetVal(0),nUnlike);
       double zdcUnlikeErr=sqrt(SumArray(uPiLumi->GetVal(1),nUnlike));
@@ -500,8 +554,10 @@ void   PlotAsymByFill(){
 			 ypol,ypolErr,
 			 unlikeYield,sqrt(unlikeYield),
 			 likeYield,sqrt(likeYield),
-			 1,0,
-			 rel,relErr);
+			 zdcLike,zdcLikeErr,
+			 zdcUnlike,zdcUnlikeErr);
+	  //			 1,0,
+	  //			 rel,relErr);
 	}
 	if (likeYield+unlikeYield<1){
 	  printf("fill=%d,set=%d,bin=%d has yields %1.2E,%1.2E. Setting large errors.\n",fill,s,j,likeYield,unlikeYield);
@@ -536,6 +592,8 @@ void   PlotAsymByFill(){
 		     rel,relErr);
       bbc_asym[s].push_back(tasym);
       bbc_asym_err[s].push_back(tasymerr);
+      rel_check[s].push_back(rel);
+      rel_err_check[s].push_back(relErr);
       printf("fill=%d,set=%d has bbc:l=%E,u=%E ==> asym=%E\n",fill,s,bbcLike,bbcUnlike,tasym);
      }//loop over fills
   }//loop over sets
@@ -548,8 +606,31 @@ void   PlotAsymByFill(){
   int ptBinToDraw[]={1,4};
   c->Divide(nPtBinsToDraw+1,1);
 
+  //plot the relative lumi on its own, as a temporary curiosity:
+  if (1){
+    c->cd(1);
+    for (int s=0;s<nSets;s++){
+      g=new TGraphErrors(filllist[s].size(),&((filllist[s])[0]),&((rel_check[s])[0]),&(filllisterr[0]),&((rel_err_check[s])[0]));
+      g->SetLineColor(s+1);
+      g->SetMarkerColor(s+1);
+      //g->SetTitle(cutName[i].Data());
+      if (s==0){
+	g->SetTitle("Relative Lumi (ZDC) vs fill;fill;Like/unlike");
+	g->GetHistogram()->SetMaximum(0.25);
+	g->GetHistogram()->SetMinimum(-0.25);
+	g->Draw("A*");
+      } else{
+	g->SetTitle(cutName[s].Data());
+	g->Draw("*");
+      }
+    }
+    c->cd(1)->SetGridy();
+    leg=c->cd(1)->BuildLegend();
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+  }
+  
   //plot the MPC asyms for the selected bins, separated by group
-  for (int i=0;i<nPtBinsToDraw;i++){
+  for (int i=1;i<nPtBinsToDraw;i++){
     c->cd(i+1);
     for (int s=0;s<nSets;s++){
       g=new TGraphErrors(filllist[s].size(),&((filllist[s])[0]),&((ptbin_asym[s][ptBinToDraw[i]])[0]),&(filllisterr[0]),&((ptbin_asym_err[s][ptBinToDraw[i]])[0]));

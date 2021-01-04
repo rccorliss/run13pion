@@ -117,7 +117,8 @@ void rcc_convert_tuple(){
       u_zdc_err=uLumiXL->GetVal(11)[j];
       u_bbc_err=uLumiXL->GetVal(12)[j];
       for (int k=0;k<nptbins;k++){
-	int bin=hYield[0]->FindBin(ptcenter[k],(u_bunch+MASTER_BUNCH_OFFSET)%120);
+	int shifted_bunch=(120+u_bunch+MASTER_BUNCH_OFFSET)%120;
+	int bin=hYield[0]->FindBin(ptcenter[k],shifted_bunch);
 	u_yield[k]=hYield[0]->GetBinContent(bin);
       }
       uPiLumi->Fill();

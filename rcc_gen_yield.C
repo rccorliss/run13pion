@@ -94,6 +94,9 @@ TFile *treefile;
 TH2F *hYieldByBunchAndPt;
 TH2F *hYieldByBunchAndPtNorth;
 TH2F *hYieldByBunchAndPtSouth;
+TH2F *hTightYieldByBunchAndPt;
+TH2F *hTightYieldByBunchAndPtNorth;
+TH2F *hTightYieldByBunchAndPtSouth;
 TH1F *ptyield[NPTBINS][2];
 TH1F *checkpt;
 TH1F *ptspectrum_raw[2][2];
@@ -188,6 +191,8 @@ void rcc_gen_yield(int runnum,
 
     int corrbunch = (bunch + spin_cont.GetCrossingShift()) %
                     120;
+    if (corrbunch<0) printf("corrected bunch less than zero (b=%d, shift=%d, corr=%d)!\n",bunch,spin_cont.GetCrossingShift(),corrbunch);
+    //the bunch correction is wrong for some reason...
     
     even_or_odd = (corrbunch % 2); // 0 for even, 1 for odd
 
@@ -229,6 +234,7 @@ void rcc_gen_yield(int runnum,
       if (trig & (1 << 4))
 	MPCB[is_north]->Fill(pt[iclus]);
 
+      //check cluster QA cuts:
       if (!PassesClusterCuts(iclus))
         continue;
       rspectrum_clustcuts->Fill(cluster_r);
@@ -236,60 +242,91 @@ void rcc_gen_yield(int runnum,
       ptspectrum_raw[is_north][corrbunch % 2]->Fill(pt[iclus]);
       espectrum_raw[is_north][corrbunch % 2]->Fill(ecore[iclus]);
       
-      if (ecore[iclus] < 15)
+      if (ecore[iclus] <= 15.)
 	continue; // looking for merged clusters
 
       ptspectrum_ecut[is_north][corrbunch % 2]->Fill(pt[iclus]);
       espectrum_ecut[is_north][corrbunch % 2]->Fill(ecore[iclus]);
 
-      if (mult[iclus] <= 2)
-	continue;
-      if (disp[iclus] < 0.0005)
-      	continue;
-      if (chi2core[iclus] > 30.)
-      	continue;
-      if (e8e9[iclus] < 0.2)
-	continue;
+      //old cut definition:
+      // if (mult[iclus] <= 2)
+      //	continue;
+      //if (disp[iclus] < 0.0005)
+      // 	continue;
+      //if (chi2core[iclus] > 30.)
+      //	continue;
+      //if (e8e9[iclus] < 0.2)
+      //	continue;
+
+      bool nominalCut=false;
+      bool tightCut=false;
       
-      if (feecore[iclus] == 66)
-	r_ch_066_post->Fill(cluster_r);
-      if (feecore[iclus] == 468)
-	r_ch_468_post->Fill(cluster_r);
-      rspectrum_candcuts->Fill(cluster_r);
+      if (ecore[iclus]>15. &&
+	  mult[iclus]>2 &&
+	  disp[iclus]>0.0005 &&
+	  chi2core[iclus] < 30. &&
+	  e8e9[iclus]>0.2)
+	nominalCut=true;
 
+      if (ecore[iclus]>30
+	  mult[iclus]>2 &&
+	  disp[iclus]>=0.0005 &&
+	  chi2core[iclus] < 30. &&
+	  e8e9[iclus]>0.25)
+	tightCut=true;
 
-      vtx[is_north][corrbunch % 2]->Fill(zvtx);
+      if (!nominalCut && !tightCut)
+	continue;
 
+      //get bin and core coordinates:
       int ptbin = checkpt->Fill(pt[iclus]);
- 
-       if (ptbin<0){
-	 std::cout << "under/overflow.  not including event." << std::endl;
-	 continue;
-       }
-       
-      pT_arr[is_north][ptbin-1][corrbunch]++;
-      ptyield[ptbin - 1][is_north]->Fill(pt[iclus]);
-      ptspectrum[is_north][corrbunch % 2]->Fill(pt[iclus]);
-      espectrum[is_north][corrbunch % 2]->Fill(ecore[iclus]);
-
+      if (ptbin<0){
+	std::cout << "under/overflow.  not including event." << std::endl;
+	continue;
+      }
       int ix = mpcmap->getGridX(feecore[iclus]);
       int iy = mpcmap->getGridY(feecore[iclus]);
-      toweryields[is_north]->Fill(ix, iy);
-      hYieldByBunchAndPt->Fill(pt[iclus],bunch);
-      if (is_north){
-	hYieldByBunchAndPtNorth->Fill(pt[iclus],bunch);
-      }else{
-	hYieldByBunchAndPtSouth->Fill(pt[iclus],bunch);
-      }
 
-      rccTotGoodClust++;
-      rccGoodClust[rccBinID]++;
-      if (is_north){
-	rccGoodClustN[rccBinID]++;
-      }else{
-	rccGoodClustS[rccBinID]++;
-      }
+      
+      if (nominalCut){
+	if (feecore[iclus] == 66)
+	  r_ch_066_post->Fill(cluster_r);
+	if (feecore[iclus] == 468)
+	  r_ch_468_post->Fill(cluster_r);
+	rspectrum_candcuts->Fill(cluster_r);
+	
+	
+	vtx[is_north][corrbunch % 2]->Fill(zvtx);
+       
+	pT_arr[is_north][ptbin-1][corrbunch]++;
+	ptyield[ptbin - 1][is_north]->Fill(pt[iclus]);
+	ptspectrum[is_north][corrbunch % 2]->Fill(pt[iclus]);
+	espectrum[is_north][corrbunch % 2]->Fill(ecore[iclus]);
 
+	toweryields[is_north]->Fill(ix, iy);
+	hYieldByBunchAndPt->Fill(pt[iclus],corrbunch);
+	if (is_north){
+	  hYieldByBunchAndPtNorth->Fill(pt[iclus],corrbunch);
+	}else{
+	  hYieldByBunchAndPtSouth->Fill(pt[iclus],corrbunch);
+	}
+
+	rccTotGoodClust++;
+	rccGoodClust[rccBinID]++;
+	if (is_north){
+	  rccGoodClustN[rccBinID]++;
+	}else{
+	  rccGoodClustS[rccBinID]++;
+	}
+      }
+      if (tightCut){
+	hTightYieldByBunchAndPt->Fill(pt[iclus],corrbunch);
+	if (is_north){
+	  hTightYieldByBunchAndPtNorth->Fill(pt[iclus],corrbunch);
+	}else{
+	  hTightYieldByBunchAndPtSouth->Fill(pt[iclus],corrbunch);
+	}
+      }
       
     }
   }
@@ -376,7 +413,12 @@ void InitOutput(int runnum, const char* outputdir){
   hYieldByBunchAndPtNorth=new TH2F("hYieldByBunchAndPtNorth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtSouth=new TH2F("hYieldByBunchAndPtSouth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
+  hTightYieldByBunchAndPt=new TH2F("hTightYieldByBunchAndPt","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hTightYieldByBunchAndPtNorth=new TH2F("hTightYieldByBunchAndPtNorth","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hTightYieldByBunchAndPtSouth=new TH2F("hTightYieldByBunchAndPtSouth","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
+
+  
   vtx[0][0] = new TH1D("evenvtxS", "evenvtxS", 600, -300, 300);
   vtx[0][1] = new TH1D("oddvtxS", "oddvtxS", 600, -300, 300);
   vtx[1][0] = new TH1D("evenvtxN", "evenvtxN", 600, -300, 300);
@@ -547,6 +589,9 @@ void InitDB(int n_runnum) {
 }
 
 bool PassesClusterCuts(int iclus) {
+  //checks fiducial cuts on a cluster candidate.
+
+  
   if (!mpcmap->isCrystal(feecore[iclus]))
     return false;
   if (isWarn[feecore[iclus]])
@@ -637,6 +682,9 @@ void End() {
   hYieldByBunchAndPt->Write();
   hYieldByBunchAndPtNorth->Write();
   hYieldByBunchAndPtSouth->Write();
+  hTightYieldByBunchAndPt->Write();
+  hTightYieldByBunchAndPtNorth->Write();
+  hTightYieldByBunchAndPtSouth->Write();
   rccBunchTree->Write();
   rccRunTree->Write();
 
