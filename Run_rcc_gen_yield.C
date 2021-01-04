@@ -19,7 +19,7 @@ void Run_rcc_gen_yield()
   //GenALL(runnum,minbias);
   while (listfile.good()){
     listfile >> filename;
-    printf("loading %d\n",filename);
+    printf("loading %d\n", filename);
     //uncomment the following line to regenerate the yield files:
     //rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/","./yields/");
     rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/16882/data/","./yields2021/");
