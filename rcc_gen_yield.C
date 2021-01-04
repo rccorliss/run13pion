@@ -566,6 +566,22 @@ void InitDB(int n_runnum) {
   rc->set_IntFlag("RUNNUMBER", n_runnum);
   mpcmap = MpcMap::instance();
 
+
+  for (int i=0;i<120;i++){
+    isBunchBad[i]=false;
+  }
+
+  printf("Not loading bunch status from pmontu.  Assuming all bunches good -- will be excluded later.\n");
+  
+  for (int i=0;i<120;i++){
+    isBunchBad[i]=false;
+  }
+
+  return;
+
+  int this_is_not_ever_reached=false;
+  assert(this_is_not_ever_reached);
+  
   // Populate array that tells which bunches to exclude because they fail QA
   // checks
   char sname[200];
@@ -578,9 +594,6 @@ void InitDB(int n_runnum) {
   if (!bstatusfile.good())
     cout << "Error! Can't open bunch status file. All bunches defaulted to GOOD" << endl;
 
-  for (int i=0;i<120;i++){
-    isBunchBad[i]=false;
-  }
   
   int ibunch = 0;
   int ibunchstatus = 0;
