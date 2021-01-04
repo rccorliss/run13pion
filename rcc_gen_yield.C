@@ -268,7 +268,7 @@ void rcc_gen_yield(int runnum,
 	  e8e9[iclus]>0.2)
 	nominalCut=true;
 
-      if (ecore[iclus]>30
+      if (ecore[iclus]>30 &&
 	  mult[iclus]>2 &&
 	  disp[iclus]>=0.0005 &&
 	  chi2core[iclus] < 30. &&
