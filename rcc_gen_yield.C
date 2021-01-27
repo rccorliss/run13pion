@@ -490,7 +490,7 @@ void InitOutput(int runnum, const char* outputdir){
   TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings","abort gap"};
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<4;i++){
-    hRegionMassSpectrum[4]=new TH1F(Form("hRegionMassSpectrum%d",i,j),
+    hRegionMassSpectrum[4]=new TH1F(Form("hRegionMassSpectrum%d",i),
 				   Form("Split Clusters Mass Spectrum in %s",regionname[i].Data()),
 				   200,0,20);//[region]
 
