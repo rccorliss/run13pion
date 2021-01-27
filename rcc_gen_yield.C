@@ -269,7 +269,7 @@ void rcc_gen_yield(int runnum,
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       float clusterE=e8e9[iclus]*ecore[iclus];
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
-	printf("trying pair %d + %d\n",iclus,pairclus);
+	//printf("trying pair %d + %d\n",iclus,pairclus);
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
