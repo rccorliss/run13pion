@@ -269,7 +269,8 @@ void rcc_gen_yield(int runnum,
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       float clusterE=e8e9[iclus]*ecore[iclus];
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
-	bool pair_is_north = (feecore[iclus] < 288) ? 0 : 1;
+	printf("trying pair %d + %d\n",iclus,pairclus);
+	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
 
@@ -396,7 +397,7 @@ void rcc_gen_yield(int runnum,
     }
     if (region!=-1){
 	hRegionClusts[region][1]->Fill(nNominalClusters);
-	hRegionClusts[region][1]->Fill(nTightClusters);
+	hRegionClusts[region][2]->Fill(nTightClusters);
     }
   }
   rootin->Close();
@@ -490,7 +491,7 @@ void InitOutput(int runnum, const char* outputdir){
   TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings","abort gap"};
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<4;i++){
-    hRegionMassSpectrum[4]=new TH1F(Form("hRegionMassSpectrum%d",i),
+    hRegionMassSpectrum[i]=new TH1F(Form("hRegionMassSpectrum%d",i),
 				   Form("Split Clusters Mass Spectrum in %s",regionname[i].Data()),
 				   200,0,20);//[region]
 
