@@ -87,7 +87,86 @@ void LoadTailoredSegments(){
   return;
 }
   
+void LoadFillTailoredSegments(){
+  int nPatSets=1;
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
 
+  int nFillSets=1;
+  TString fillSets[nFillSets];
+  TString fillNames[nFillSets];
+  fillSets[0]="(";
+  //fillSets[0]+="(fill>=17410 && fill<=17415) ||";
+  fillSets[0]+="fill==17417 ||";
+  fillSets[0]+="fill==17429 ||";
+  // fillSets[0]+="(fill>=17431 && fill<=17434) ||";
+  // fillSets[0]+="(fill>=17439 && fill<=17451) ||";
+  fillSets[0]+="fill==17455 ||";
+  fillSets[0]+="(fill>=17474 && fill<=17479) ||";
+  fillSets[0]+="(fill>=17486 && fill<=17488) ||";
+  fillSets[0]+="(fill>=17492 && fill<=17514) ||";
+  fillSets[0]+="fill==17518 ||";
+  fillSets[0]+="(fill>=17520 && fill<=17524) ||";
+  fillSets[0]+="(fill>=17530 && fill<=17533) ||";
+  fillSets[0]+="(fill>=17536 && fill<=17538) ||";
+  fillSets[0]+="(fill>=17544 && fill<=17545) ||";
+  fillSets[0]+="fill==17550 ||";
+  fillSets[0]+="(fill>=17558 && fill<=17561) ||";
+  fillSets[0]+="(fill>=17568 && fill<=17573) ||";
+  fillSets[0]+="(fill>=17579 && fill<=17601)";
+  fillSets[0]+=")";
+  fillNames[0]="No-Gap Fills";
+  vector<TString> divSets[nFillSets];
+  vector<TString> divNames[nFillSets];
+  divSets[0].push_back("bunch<11");
+  divNames[0].push_back("0<=bx<11");
+  if (1){
+    int nAutoDivs=7;
+    for (int i=0;i<nAutoDivs;i++){
+      int lowbound=11+(100/nAutoDivs*i);
+      int highbound=lowbound+(100/nAutoDivs);
+      divSets[0].push_back(Form("bunch>=%d && bunch<%d",lowbound,highbound));
+      divNames[0].push_back(Form("%d<=bx<%d",lowbound,highbound));
+    }
+  }
+  //divSets[0].push_back("bunch>10 && bunch<21");
+  // divNames[0].push_back("11<=bx<21");
+  //divSets[0].push_back("bunch>20 && bunch<110 && !(bunch%2)");
+  //divNames[0].push_back("11<=bx<110 even");
+  //divSets[0].push_back("bunch>20 && bunch<110 && (bunch%2)");
+  //divNames[0].push_back("11<=bx<110 odd");
+  /*
+  int nDivSets=7;
+  TString divSets[nDivSets];
+  TString divNames[nDivSets];
+  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  for (int i=0;i<nDivSets;i++){
+    divSets[i]=Form("%d<=bunch && bunch<%d",divBounds[i],divBounds[i+1]);
+    divNames[i]=Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]);
+  }
+  */
+
+  int cuti=0;
+  for (int i=0;i<nPatSets;i++){
+    for (int j=0;j<nFillSets;j++){
+      for (int k=0;k<divSets[j].size();k++){
+      //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
+      if (cuti>=MAXCUTS){
+	printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
+      }
+      cut[cuti]=Form("(%s)&&(%s)&&(%s)",patSets[i].Data(),fillSets[j].Data(),divSets[j][k].Data());
+      cutName[cuti]=Form("%s %s %s",patNames[i].Data(),fillNames[j].Data(), divNames[j][k].Data());
+      printf("Cut %d:  \"%s\": %s \n",cuti,cutName[cuti].Data(),cut[cuti].Data());
+      cuti++;
+      }
+    }
+  }
+
+    nSets=cuti;
+    printf("total cuts=%d\n",nSets);
+  return;
+}
 
 
 //useful things to get once and get out of the way:
@@ -124,7 +203,7 @@ void   PlotFullAverageAsym(){
 
 
   //fill in the cut and cutname variables (defined globally, because this is messy) with the chosen way to divde the data into sets.
-  LoadTailoredSegments();
+  LoadFillTailoredSegments();
   //LoadEvenlySpacedSegments(10);
 
   
@@ -138,61 +217,6 @@ void   PlotFullAverageAsym(){
   TString lumiMon="zdc";
   TString lumiMonErr2=Form("%s_err*%s_err",lumiMon.Data(),lumiMon.Data());
 
-
-  /*
-  
-  TString cut[nSets],cutName[nSets];
-  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
-		   "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
-  TString patNames[]={"SSOO","OOSS"};
-  TString divSets[nDivSets];//={"abs(bunch-10)<10","abs(bunch-35)<15","abs(bunch-75)<15","abs(bunch-105)<15"};
-  TString divNames[nDivSets];//={"0<bun<30","30<bun<60","60<bun<90","90<bun<120"};
-  int divSpacing=120/nDivSets;
-  for (int i=0;i<nDivSets;i++){
-    divSets[i]=Form("abs(bunch-%d)<%d",divSpacing/2+divSpacing*i,divSpacing);
-    divNames[i]=Form("%d<bunch<%d",divSpacing*i,divSpacing*(i+1));
-  }
-  for (int i=0;i<nSets;i++){
-    cut[i]=Form("(%s)&&(%s)",divSets[i%nDivSets].Data(),patSets[i/nDivSets+1].Data());
-    cutName[i]=Form("%s %s",patNames[i/nDivSets+1].Data(),divNames[i%nDivSets].Data());
-    printf("Cut %d:  \"%s\": %s\n",i,cutName[i].Data(),cut[i].Data());
-  }
-
-  TString cleanBunches="(bunch>20 && bunch<28) || (bunch>40 && bunch<65) || (bunch>80 && bunch<100)";
-  TString dirtyBunches=Form("!(%s",cleanBunches.Data());
-  TString bunchParity[2];
-  TString bunchClean[2];
-  bunchClean[0]=cleanBunches;
-  bunchClean[1]=dirtyBunches;
-  bunchParity[0]="(bunch%2)";
-  bunchParity[1]="!(bunch%2)";
-  for (int i=0;i<nSets;i++){
-    cut[i]=Form("%s&&%s&&%s",bunchParity[i%2],bunchClean[(i/2)%2],patSets[i/4]);
-    cutName[i]=Form("%s %s",patNames[i/nDivSets+1].Data(),divNames[i%nDivSets].Data());
-    printf("Cut %d:  \"%s\": %s\n",i,cutName[i].Data(),cut[i].Data());
-  }
-
-  TString cut[4]={"(bunch%2 && fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"!(bunch%2&& fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
-		"!(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
-  TString cutName[4]={"SSOO odd bunch",
-		      "SSOO even bunch",
-		      "OOSS odd bunch",
-		      "OOSS even bunch"};
-  */
-  /*
-  TString cut[4]={"(bunch%2 && fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"!(bunch%2&& fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
-		"(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
-		"!(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
-  TString cutName[4]={"SSOO odd bunch",
-		      "SSOO even bunch",
-		      "OOSS odd bunch",
-		      "OOSS even bunch"};
-  */
-
-  //nSets=1;
   //get the average polarizations:
   double bpol[nSets], bpolErr[nSets], ypol[nSets],ypolErr[nSets];
   for (int i=0;i<nSets;i++){

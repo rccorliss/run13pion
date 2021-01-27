@@ -24,6 +24,7 @@ const static int MAXCLUSTERS = 100;
 const static int MAXTOWERS = 1000;
 const static int NBUNCHES = 120;
 const static int NPTBINS = 10;
+const static float zpos=220;//cm
 TTree *ttree;
 TTree *t;
 // Input tree event-wide variables
@@ -98,6 +99,7 @@ TH2F *hTightYieldByBunchAndPt;
 TH2F *hTightYieldByBunchAndPtNorth;
 TH2F *hTightYieldByBunchAndPtSouth;
 
+TH1F *hRegionMassSpectrum[4];//[region]
 TH1F *hRegionClusts[4][3];//[region][raw/after loose/after tight]
 TH1F *hRegionClustEcore[4][3];//[region][raw/after loose/after tight]
 TH1F *hRegionClustMult[4][3];//[region][raw/after loose/after tight]
@@ -225,6 +227,9 @@ void rcc_gen_yield(int runnum,
       
       is_north = (feecore[iclus] < 288) ? 0 : 1;
 
+ 
+
+	
       rccTotRawClust++;
       rccRawClust[rccBinID]++;
       if (is_north){
@@ -259,6 +264,33 @@ void rcc_gen_yield(int runnum,
 
       ptspectrum_raw[is_north][corrbunch % 2]->Fill(pt[iclus]);
       espectrum_raw[is_north][corrbunch % 2]->Fill(ecore[iclus]);
+
+
+     //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
+      float clusterE=e8e9[iclus]*ecore[iclus];
+      for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
+	bool pair_is_north = (feecore[iclus] < 288) ? 0 : 1;
+	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
+	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
+
+	float pairE=e8e9[pairclus]*ecore[pairclus];
+	float Egg=pairE+clusterE;
+	float Eggcore=ecore[pairclus]+ecors[iclus];
+	if (Egg<7 || Egg>17) continue; //skip if the energy is low or merged;
+	float xrel=x[iclus]-x[pairclus];
+	float yrel=y[iclus]-y[pairclus];
+	float delr=sqrt(xrel*xrel+yrel*yrel);
+	if (delr<3.5) continue;
+	float alpha=abs(pairE-clusterE)/(pairE+clusterE);
+	if (alpha>0.6) continue; //skip if the energy is too asymmetric
+	//sin of half the opening angle:
+	float sinth2=delr/zpos;//zpos should be the vertex, but I don't have that yet.  strictly speaking, the angle is:
+	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
+
+	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
+	hRegionMassSpectrum[region]->Fill(Mgg);//[region]
+      }
+
       
       if (ecore[iclus] > 15.){
 	//looking for merged clusters
@@ -458,22 +490,26 @@ void InitOutput(int runnum, const char* outputdir){
   TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings","abort gap"};
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<4;i++){
+    hRegionMassSpectrum[4]=new TH1F(Form("hRegionMassSpectrum%d",i,j),
+				   Form("Split Clusters Mass Spectrum in %s",regionname[i].Data()),
+				   200,0,20);//[region]
+
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
 				   Form("nClusters (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   10,-0.5,9.5);//[region][raw/after loose/after tight]
       hRegionClustEcore[i][j]=new TH1F(Form("hRegionClustEcore%d_%d",i,j),
 				   Form("Cluster Core E (%s) in %s",cutname[j].Data(),regionname[i].Data()),
-				   100,0,200);//[region][raw/after loose/after tight]
+				   100,0,300);//[region][raw/after loose/after tight]
       hRegionClustMult[i][j]=new TH1F(Form("hRegionClustMult%d_%d",i,j),
 				   Form("Cluster Multiplicity (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   10,-0.5,9.5);//[region][raw/after loose/after tight]
       hRegionClustDisp[i][j]=new TH1F(Form("hRegionClustDisp%d_%d",i,j),
 				   Form("Cluster Dispersion (%s) in %s",cutname[j].Data(),regionname[i].Data()),
-				       100,0.0,0.005);//[region][raw/after loose/after tight]
+				       100,0.0,0.0001);//[region][raw/after loose/after tight]
       hRegionClustChi2[i][j]=new TH1F(Form("hRegionClustChi2%d_%d",i,j),
 				   Form("Cluster Chi2 (%s) in %s",cutname[j].Data(),regionname[i].Data()),
-				   100,0,100);//[region][raw/after loose/after tight]
+				   100,0,200);//[region][raw/after loose/after tight]
       hRegionClustE8e9[i][j]=new TH1F(Form("hRegionClustE8e9%d_%d",i,j),
 				   Form("e8e9 ratio (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   50,0,1.0);//[region][raw/after loose/after tight]
@@ -776,6 +812,7 @@ void End() {
   rccRunTree->Write();
 
   for (int i=0;i<4;i++){
+    hRegionMassSpectrum[i]->Write();
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]->Write();
       hRegionClustEcore[i][j]->Write();
