@@ -453,22 +453,22 @@ void InitOutput(int runnum, const char* outputdir){
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<3;i++){
     for (int j=0;j<3;j++){
-      hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d"i,j),
+      hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
 				   Form("nClusters (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   10,-0.5,9.5);//[region][raw/after loose/after tight]
-      hRegionClustEcore[i][j]=new TH1F(Form("hRegionClustEcore%d_%d"i,j),
+      hRegionClustEcore[i][j]=new TH1F(Form("hRegionClustEcore%d_%d",i,j),
 				   Form("Cluster Core E (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   100,0,200);//[region][raw/after loose/after tight]
-      hRegionClustMult[i][j]=new TH1F(Form("hRegionClustMult%d_%d"i,j),
+      hRegionClustMult[i][j]=new TH1F(Form("hRegionClustMult%d_%d",i,j),
 				   Form("Cluster Multiplicity (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   10,-0.5,9.5);//[region][raw/after loose/after tight]
-       hRegionClustDisp[i][j]=new TH1F(Form("hRegionClustDisp%d_%d"i,j),
+      hRegionClustDisp[i][j]=new TH1F(Form("hRegionClustDisp%d_%d",i,j),
 				   Form("Cluster Dispersion (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				       100,0.0,0.005);//[region][raw/after loose/after tight]
-       hRegionClustChi2[i][j]=new TH1F(Form("hRegionClustChi2%d_%d"i,j),
+      hRegionClustChi2[i][j]=new TH1F(Form("hRegionClustChi2%d_%d",i,j),
 				   Form("Cluster Chi2 (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   100,0,100);//[region][raw/after loose/after tight]
-       hRegionClustE8e9[i][j]=new TH1F(Form("hRegionClustE8e9%d_%d"i,j),
+      hRegionClustE8e9[i][j]=new TH1F(Form("hRegionClustE8e9%d_%d",i,j),
 				   Form("e8e9 ratio (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				   50,0,1.0);//[region][raw/after loose/after tight]
     }
