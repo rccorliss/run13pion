@@ -97,6 +97,16 @@ TH2F *hYieldByBunchAndPtSouth;
 TH2F *hTightYieldByBunchAndPt;
 TH2F *hTightYieldByBunchAndPtNorth;
 TH2F *hTightYieldByBunchAndPtSouth;
+
+TH1F *hRegionClusts[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustEcore[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustMult[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustDisp[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustChi2[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustE8e9[3][3];//[region][raw/after loose/after tight]
+
+
+
 TH1F *ptyield[NPTBINS][2];
 TH1F *checkpt;
 TH1F *ptspectrum_raw[2][2];
@@ -130,6 +140,7 @@ void InitOutput(int runnum, const char *outputdir);
 void InitDB(int n_runnum);
 void get_entry(int ientry);
 bool PassesClusterCuts(int iclus);
+int GetRegion(int bx);
 void End();
 
 SpinDBContent spin_cont;
@@ -195,6 +206,14 @@ void rcc_gen_yield(int runnum,
     //the bunch correction is wrong for some reason...
     
     even_or_odd = (corrbunch % 2); // 0 for even, 1 for odd
+
+    
+    int region=GetRegion(corrbunch);
+    if (region!=-1){
+      for (int j=0;j<1+nominalCut+tightCut;j++){//assumes tightcut implies nominalcut.
+	hRegionClusts[region][j]->Fill(nclus);
+      }
+    }
 
     for (int iclus = 0; iclus < nclus; iclus++) {
 
@@ -275,6 +294,18 @@ void rcc_gen_yield(int runnum,
 	  e8e9[iclus]>0.25)
 	tightCut=true;
 
+      if (region!=-1){
+	for (int j=0;j<1+nominalCut+tightCut;j++){//assumes tightcut implies nominalcut.
+	  //this is a per-event, not per-cluster variable:  hRegionClusts[region][j]->Fill();
+	  hRegionClustEcore[region][j]->Fill(ecore[iclus]);
+	  hRegionClustMult[region][j]->Fill(mult[iclus]);
+	  hRegionClustDisp[region][j]->Fill(disp[iclus]);
+	  hRegionClustChi2[region][j]->Fill(chi2core[iclus]);
+	  hRegionClustE8e9[region][j]->Fill(e8e9[iclus]);
+	}
+      }
+
+      
       if (!nominalCut && !tightCut)
 	continue;
 
@@ -418,6 +449,34 @@ void InitOutput(int runnum, const char* outputdir){
   hTightYieldByBunchAndPtSouth=new TH2F("hTightYieldByBunchAndPtSouth","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
 
+  TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings"};
+  TString cutname[]={"raw","after loose cut","after tight cut"};
+  for (int i=0;i<3;i++){
+    for (int j=0;j<3;j++){
+      hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d"i,j),
+				   Form("nClusters (%s) in %s",cutname[j],regionname[i]),
+				   10,-0.5,9.5);//[region][raw/after loose/after tight]
+      hRegionClustEcore[i][j]=new TH1F(Form("hRegionClustEcore%d_%d"i,j),
+				   Form("Cluster Core E (%s) in %s",cutname[j],regionname[i]),
+				   100,0,200);//[region][raw/after loose/after tight]
+      hRegionClustMult[i][j]=new TH1F(Form("hRegionClustMult%d_%d"i,j),
+				   Form("Cluster Multiplicity (%s) in %s",cutname[j],regionname[i]),
+				   10,-0.5,9.5);//[region][raw/after loose/after tight]
+       hRegionClustDisp[i][j]=new TH1F(Form("hRegionClustDisp%d_%d"i,j),
+				   Form("Cluster Dispersion (%s) in %s",cutname[j],regionname[i]),
+				       100,0.0,0.005);//[region][raw/after loose/after tight]
+       hRegionClustChi2[i][j]=new TH1F(Form("hRegionClustChi2%d_%d"i,j),
+				   Form("Cluster Chi2 (%s) in %s",cutname[j],regionname[i]),
+				   100,0,100);//[region][raw/after loose/after tight]
+       hRegionClustE8e9[i][j]=new TH1F(Form("hRegionClustE8e9%d_%d"i,j),
+				   Form("e8e9 ratio (%s) in %s",cutname[j],regionname[i]),
+				   50,0,1.0);//[region][raw/after loose/after tight]
+    }
+  }
+
+
+
+  
   
   vtx[0][0] = new TH1D("evenvtxS", "evenvtxS", 600, -300, 300);
   vtx[0][1] = new TH1D("oddvtxS", "oddvtxS", 600, -300, 300);
@@ -567,10 +626,6 @@ void InitDB(int n_runnum) {
   mpcmap = MpcMap::instance();
 
 
-  for (int i=0;i<120;i++){
-    isBunchBad[i]=false;
-  }
-
   printf("Not loading bunch status from pmontu.  Assuming all bunches good -- will be excluded later.\n");
   
   for (int i=0;i<120;i++){
@@ -604,6 +659,14 @@ void InitDB(int n_runnum) {
   }
   printf("good bunches loaded.\n");
   return;
+}
+
+int GetRegion(int bx){
+  if (bx<11) return 0;
+  if (bx>=29 && bx<40) return 1;
+  if (bx>=69 && bx<80) return 1;
+  if (bx>110) return -1;
+  return 2;
 }
 
 bool PassesClusterCuts(int iclus) {
@@ -706,7 +769,20 @@ void End() {
   rccBunchTree->Write();
   rccRunTree->Write();
 
+  for (int i=0;i<3;i++){
+    for (int j=0;j<3;j++){
+      hRegionClusts[i][j]->Write();
+      hRegionClustEcore[i][j]->Write();
+      hRegionClustMult[i][j]->Write();
+      hRegionClustDisp[i][j]->Write();
+       hRegionClustChi2[i][j]->Write();
+      hRegionClustE8e9[i][j]->Write();
+      			
+    }
+  }
 
+
+  
 
   // outsparse->Write();
   // delete outsparse;

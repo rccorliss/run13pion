@@ -18,16 +18,88 @@ void   PlotAsymByRun();
 void   PlotAsymByFill();
 
 
+const int MAXCUTS=100;
+int nSets=0;
+TString cut[MAXCUTS],cutName[MAXCUTS];
+
+void LoadEvenlySpacedSegments(int nSegments){
+  int nPatSets=2;
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
+  int nDivSets=nSegments;
+  TString divSets[nDivSets];//={"abs(bunch-10)<10","abs(bunch-35)<15","abs(bunch-75)<15","abs(bunch-105)<15"};
+  TString divNames[nDivSets];//={"0<bun<30","30<bun<60","60<bun<90","90<bun<120"};
+  int divSpacing=120/nDivSets;
+  for (int i=0;i<nDivSets;i++){
+    divSets[i]=Form("abs(bunch-%d)<%d",divSpacing/2+divSpacing*i,divSpacing);
+    divNames[i]=Form("%d<bunch<%d",divSpacing*i,divSpacing*(i+1));
+  }
+  int cuti=0;
+  for (int i=0;i<nPatSets;i++){
+    for (int j=0;j<nDivSets;j++){
+      //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
+      if (cuti>=MAXCUTS){
+	printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
+      }
+      cut[cuti]=Form("(%s)&&(%s)",patSets[i].Data(),divSets[j].Data());
+      cutName[cuti]=Form("%s %s",patNames[i].Data(),divNames[j].Data());
+      printf("Cut %d:  \"%s\": %s\n",cuti,cutName[cuti].Data(),cut[cuti].Data());
+      cuti++;
+    }
+  }
+  nSets=cuti;
+  printf("total cuts=%d\n",nSets);
+
+  return;
+}
+
+void LoadTailoredSegments(){
+  int nPatSets=2;
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
+  int nDivSets=7;
+  TString divSets[nDivSets];
+  TString divNames[nDivSets];
+  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  for (int i=0;i<nDivSets;i++){
+    divSets[i]=Form("%d<=bunch && bunch<%d",divBounds[i],divBounds[i+1]);
+    divNames[i]=Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]);
+  }
+
+  int cuti=0;
+  for (int i=1;i<nPatSets;i++){
+    for (int j=0;j<nDivSets;j++){
+      //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
+      if (cuti>=MAXCUTS){
+	printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
+      }
+      cut[cuti]=Form("(%s)&&(%s)",patSets[i].Data(),divSets[j].Data());
+      cutName[cuti]=Form("%s %s",patNames[i].Data(),divNames[j].Data());
+      printf("Cut %d:  \"%s\": %s\n",cuti,cutName[cuti].Data(),cut[cuti].Data());
+      cuti++;
+    }
+  }
+
+    nSets=cuti;
+    printf("total cuts=%d\n",nSets);
+  return;
+}
+  
+
+
 
 //useful things to get once and get out of the way:
 TTree *uPiLumi, *uPiLumiBinning; //data and binning data.
+TString yieldName="tightyield";//yield or tightyield.
 
 int nBins; //number of ptbins
 vector<double> ptmid,pterr;//bin centers and distances from center to edge
 
 
 void rcc_asym_from_uPiLumi(){
-  TFile *uPiLumiFile=TFile::Open("uPiLumi.ttree.root","READ");
+  TFile *uPiLumiFile=TFile::Open("uPiLumi2021.ttree.root","READ");
   uPiLumi=(TTree*)uPiLumiFile->Get("uPiLumi");
   uPiLumiBinning=(TTree*)uPiLumiFile->Get("uPiLumiBinning");
 
@@ -49,8 +121,15 @@ void rcc_asym_from_uPiLumi(){
 
 void   PlotFullAverageAsym(){
   //sums yields over all bunches in all runs and produces a single asym from that.
-  int nDivSets=10;
-  int nSets=8;//1*nDivSets;
+
+
+  //fill in the cut and cutname variables (defined globally, because this is messy) with the chosen way to divde the data into sets.
+  LoadTailoredSegments();
+  //LoadEvenlySpacedSegments(10);
+
+  
+  //int nDivSets=10;
+  //int nSets=8;//1*nDivSets;
   vector<double> likeYield[nSets];
   vector<double> unlikeYield[nSets];
   vector<double> asym[nSets],asymErr[nSets];
@@ -59,6 +138,8 @@ void   PlotFullAverageAsym(){
   TString lumiMon="zdc";
   TString lumiMonErr2=Form("%s_err*%s_err",lumiMon.Data(),lumiMon.Data());
 
+
+  /*
   
   TString cut[nSets],cutName[nSets];
   TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
@@ -76,6 +157,30 @@ void   PlotFullAverageAsym(){
     cutName[i]=Form("%s %s",patNames[i/nDivSets+1].Data(),divNames[i%nDivSets].Data());
     printf("Cut %d:  \"%s\": %s\n",i,cutName[i].Data(),cut[i].Data());
   }
+
+  TString cleanBunches="(bunch>20 && bunch<28) || (bunch>40 && bunch<65) || (bunch>80 && bunch<100)";
+  TString dirtyBunches=Form("!(%s",cleanBunches.Data());
+  TString bunchParity[2];
+  TString bunchClean[2];
+  bunchClean[0]=cleanBunches;
+  bunchClean[1]=dirtyBunches;
+  bunchParity[0]="(bunch%2)";
+  bunchParity[1]="!(bunch%2)";
+  for (int i=0;i<nSets;i++){
+    cut[i]=Form("%s&&%s&&%s",bunchParity[i%2],bunchClean[(i/2)%2],patSets[i/4]);
+    cutName[i]=Form("%s %s",patNames[i/nDivSets+1].Data(),divNames[i%nDivSets].Data());
+    printf("Cut %d:  \"%s\": %s\n",i,cutName[i].Data(),cut[i].Data());
+  }
+
+  TString cut[4]={"(bunch%2 && fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"!(bunch%2&& fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
+		"(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)",
+		"!(bunch%2&& fill<17400)&&(pat == 22 || pat == 23 || pat == 26 || pat == 27)"};
+  TString cutName[4]={"SSOO odd bunch",
+		      "SSOO even bunch",
+		      "OOSS odd bunch",
+		      "OOSS even bunch"};
+  */
   /*
   TString cut[4]={"(bunch%2 && fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
 		"!(bunch%2&& fill<17400)&&(pat == 21 || pat == 24 || pat == 25 || pat == 28)",
@@ -87,7 +192,7 @@ void   PlotFullAverageAsym(){
 		      "OOSS even bunch"};
   */
 
-  
+  //nSets=1;
   //get the average polarizations:
   double bpol[nSets], bpolErr[nSets], ypol[nSets],ypolErr[nSets];
   for (int i=0;i<nSets;i++){
@@ -121,10 +226,10 @@ void   PlotFullAverageAsym(){
   //calc the yields
   for (int i=0;i<nSets;i++){
     for (int j=0;j<nBins;j++){
-      uPiLumi->Draw(Form("yield%d",j),Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+      uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
       likeYield[i].push_back(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
       
-      uPiLumi->Draw(Form("yield%d",j),Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
+      uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin!=yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
       unlikeYield[i].push_back(SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows()));
     }
   }
@@ -342,9 +447,9 @@ void   PlotAsymByRun(){
 
       //get the yields and calc the asym per ptbin:
       for (int j=0;j<nBins;j++){
-	uPiLumi->Draw(Form("yield%d",j),Form("(bspin==yspin)*(%s)",runcut.Data()),"goff");
+	uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin==yspin)*(%s)",runcut.Data()),"goff");
 	double likeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());	
-	uPiLumi->Draw(Form("yield%d",j),Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
+	uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin!=yspin)*(%s)",runcut.Data()),"goff");
 	double unlikeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
 	//calc the asyms:
 	double tasym, tasymerr;
@@ -542,9 +647,9 @@ void   PlotAsymByFill(){
 
       //get the yields and calc the asym per ptbin:
       for (int j=0;j<nBins;j++){
-	uPiLumi->Draw(Form("yield%d",j),Form("(bspin==yspin)*(%s)",fillcut.Data()),"goff");
+	uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin==yspin)*(%s)",fillcut.Data()),"goff");
 	double likeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());	
-	uPiLumi->Draw(Form("yield%d",j),Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
+	uPiLumi->Draw(Form("%s%d",yieldName.Data(),j),Form("(bspin!=yspin)*(%s)",fillcut.Data()),"goff");
 	double unlikeYield=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
 	//calc the asyms:
 	double tasym, tasymerr;

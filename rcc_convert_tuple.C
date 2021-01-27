@@ -1,6 +1,7 @@
 
 //adjusting globally mis-aligned bunch IDs:
-const int MASTER_BUNCH_OFFSET=-5;
+const int MASTER_BUNCH_OFFSET=0; //for the old march2020 set it is -5.  for new dec2020 set it is 0.
+
 //this value needs to be added to the lumi bunch ID to get the corresponding MPC histogram bunch ID
 
 void rcc_convert_tuple(){
@@ -11,6 +12,8 @@ void rcc_convert_tuple(){
   TFile *uLumiFile=TFile::Open("uLumi.ttree.root","READ");
   TFile *uLumiXLfile=TFile::Open("uLumiXL.ttree.root","READ");
   TFile *uBunchFile=TFile::Open("uBunch.ttree.root","READ");
+  TString yieldDir="yields2021";
+  TString outputFileBase="uPiLumi2021";//"uPiLumi";
 
   
   // uLumi=(TTree*)uLumiFile->Get("uLumi");
@@ -18,7 +21,7 @@ void rcc_convert_tuple(){
   TTree *uBunch=(TTree*)uBunchFile->Get("uBunch");
   
   //prepare our output tree:
-  TFile *uPiLumiFile=TFile::Open("uPiLumi.ttree.root","RECREATE");
+  TFile *uPiLumiFile=TFile::Open(Form("%s.ttree.root",outputFileBase.Data()),"RECREATE");
   TTree *uPiLumiBinning=new TTree("uPiLumiBinning","bin boundary info for yields in uPiLumi");
   int ubin_bin; uPiLumiBinning->Branch("bin",&ubin_bin);
   float ubin_ptlow; uPiLumiBinning->Branch("ptlow",&ubin_ptlow);
@@ -48,8 +51,10 @@ void rcc_convert_tuple(){
   int u_bspin; uPiLumi->Branch("bspin",&u_bspin);
   int u_yspin; uPiLumi->Branch("yspin",&u_yspin);
   float u_yield[nptbins];
+  float u_tightyield[nptbins];
   for (int i=0;i<nptbins;i++){
     uPiLumi->Branch(Form("yield%d",i),&(u_yield[i]));
+    uPiLumi->Branch(Form("tightyield%d",i),&(u_tightyield[i]));
   }
 
   double u_zdc;uPiLumi->Branch("zdc",&u_zdc);
@@ -95,13 +100,13 @@ void rcc_convert_tuple(){
     
     //load the appropriate histogram, if available:
    TFile *yieldfile=NULL;
-    yieldfile=TFile::Open(Form("./yields/%d.MPC.yields.rcc.hist.root",runlist[i]),"READ");
+   yieldfile=TFile::Open(Form("./%s/%d.MPC.yields.rcc.hist.root",yieldDir.Data(),runlist[i]),"READ");
     if (yieldfile==NULL || yieldfile->IsZombie()|| !yieldfile->GetNkeys()){
       printf("couldn't find yields for run %d. skipping.\n",runlist[i]);
       continue;
     }
     hYield[0]=(TH2F*)yieldfile->Get("hYieldByBunchAndPt");
-    hYield[1]=(TH2F*)yieldfile->Get("hYieldByBunchAndPtNorth");
+    hYield[1]=(TH2F*)yieldfile->Get("hTightYieldByBunchAndPt");
     hYield[2]=(TH2F*)yieldfile->Get("hYieldByBunchAndPtSouth");
 
 
@@ -120,6 +125,7 @@ void rcc_convert_tuple(){
 	int shifted_bunch=(120+u_bunch+MASTER_BUNCH_OFFSET)%120;
 	int bin=hYield[0]->FindBin(ptcenter[k],shifted_bunch);
 	u_yield[k]=hYield[0]->GetBinContent(bin);
+	u_tightyield[k]=hYield[1]->GetBinContent(bin);
       }
       uPiLumi->Fill();
       
