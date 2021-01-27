@@ -98,12 +98,12 @@ TH2F *hTightYieldByBunchAndPt;
 TH2F *hTightYieldByBunchAndPtNorth;
 TH2F *hTightYieldByBunchAndPtSouth;
 
-TH1F *hRegionClusts[3][3];//[region][raw/after loose/after tight]
-TH1F *hRegionClustEcore[3][3];//[region][raw/after loose/after tight]
-TH1F *hRegionClustMult[3][3];//[region][raw/after loose/after tight]
-TH1F *hRegionClustDisp[3][3];//[region][raw/after loose/after tight]
-TH1F *hRegionClustChi2[3][3];//[region][raw/after loose/after tight]
-TH1F *hRegionClustE8e9[3][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClusts[4][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustEcore[4][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustMult[4][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustDisp[4][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustChi2[4][3];//[region][raw/after loose/after tight]
+TH1F *hRegionClustE8e9[4][3];//[region][raw/after loose/after tight]
 
 
 
@@ -210,11 +210,10 @@ void rcc_gen_yield(int runnum,
     
     int region=GetRegion(corrbunch);
     if (region!=-1){
-      for (int j=0;j<1+nominalCut+tightCut;j++){//assumes tightcut implies nominalcut.
-	hRegionClusts[region][j]->Fill(nclus);
-      }
+	hRegionClusts[region][0]->Fill(nclus);
     }
-
+    int nNominalClusters=0;
+    int nTightClusters=0;
     for (int iclus = 0; iclus < nclus; iclus++) {
 
       int rccPtBin=0;
@@ -261,12 +260,11 @@ void rcc_gen_yield(int runnum,
       ptspectrum_raw[is_north][corrbunch % 2]->Fill(pt[iclus]);
       espectrum_raw[is_north][corrbunch % 2]->Fill(ecore[iclus]);
       
-      if (ecore[iclus] <= 15.)
-	continue; // looking for merged clusters
-
-      ptspectrum_ecut[is_north][corrbunch % 2]->Fill(pt[iclus]);
-      espectrum_ecut[is_north][corrbunch % 2]->Fill(ecore[iclus]);
-
+      if (ecore[iclus] > 15.){
+	//looking for merged clusters
+	ptspectrum_ecut[is_north][corrbunch % 2]->Fill(pt[iclus]);
+	espectrum_ecut[is_north][corrbunch % 2]->Fill(ecore[iclus]);
+      }
       //old cut definition:
       // if (mult[iclus] <= 2)
       //	continue;
@@ -284,15 +282,19 @@ void rcc_gen_yield(int runnum,
 	  mult[iclus]>2 &&
 	  disp[iclus]>0.0005 &&
 	  chi2core[iclus] < 30. &&
-	  e8e9[iclus]>0.2)
+	  e8e9[iclus]>0.2){
+	nNominalClusters++;
 	nominalCut=true;
+      }
 
       if (ecore[iclus]>30 &&
 	  mult[iclus]>2 &&
 	  disp[iclus]>=0.0005 &&
 	  chi2core[iclus] < 30. &&
-	  e8e9[iclus]>0.25)
+	  e8e9[iclus]>0.25){
+	nTightClusters++;
 	tightCut=true;
+      }
 
       if (region!=-1){
 	for (int j=0;j<1+nominalCut+tightCut;j++){//assumes tightcut implies nominalcut.
@@ -359,6 +361,10 @@ void rcc_gen_yield(int runnum,
 	}
       }
       
+    }
+    if (region!=-1){
+	hRegionClusts[region][1]->Fill(nNominalClusters);
+	hRegionClusts[region][1]->Fill(nTightClusters);
     }
   }
   rootin->Close();
@@ -449,9 +455,9 @@ void InitOutput(int runnum, const char* outputdir){
   hTightYieldByBunchAndPtSouth=new TH2F("hTightYieldByBunchAndPtSouth","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
 
-  TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings"};
+  TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings","abort gap"};
   TString cutname[]={"raw","after loose cut","after tight cut"};
-  for (int i=0;i<3;i++){
+  for (int i=0;i<4;i++){
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
 				   Form("nClusters (%s) in %s",cutname[j].Data(),regionname[i].Data()),
@@ -665,7 +671,7 @@ int GetRegion(int bx){
   if (bx<11) return 0;
   if (bx>=29 && bx<40) return 1;
   if (bx>=69 && bx<80) return 1;
-  if (bx>110) return -1;
+  if (bx>110) return 3;
   return 2;
 }
 
@@ -769,7 +775,7 @@ void End() {
   rccBunchTree->Write();
   rccRunTree->Write();
 
-  for (int i=0;i<3;i++){
+  for (int i=0;i<4;i++){
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]->Write();
       hRegionClustEcore[i][j]->Write();
