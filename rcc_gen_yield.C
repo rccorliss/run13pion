@@ -495,10 +495,10 @@ void InitOutput(int runnum, const char* outputdir){
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]=new TH1F(Form("hRegionMassSpectrum%d_0",i),
 				   Form("Split Clusters (ecore) Mass Spectrum in %s;GeV/c^2",regionname[i].Data()),
-				   200,0,10);//[region]
+				   300,0,3);//[region]
     hRegionMassSpectrum[i][1]=new TH1F(Form("hRegionMassSpectrum%d_1",i),
 				   Form("Split Clusters (e9) Mass Spectrum in %sGeV/c^2",regionname[i].Data()),
-				   200,0,10);//[region]
+				   300,0,3);//[region]
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
 				   Form("nClusters (%s) in %s",cutname[j].Data(),regionname[i].Data()),
