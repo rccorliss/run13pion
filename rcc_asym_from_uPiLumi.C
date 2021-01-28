@@ -93,7 +93,7 @@ void LoadFillTailoredSegments(){
 		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
   TString patNames[]={"SSOO","OOSS"};
 
-  int nFillSets=1;
+  int nFillSets=2;
   TString fillSets[nFillSets];
   TString fillNames[nFillSets];
   fillSets[0]="(";
@@ -117,11 +117,41 @@ void LoadFillTailoredSegments(){
   fillSets[0]+="(fill>=17579 && fill<=17601)";
   fillSets[0]+=")";
   fillNames[0]="No-Gap Fills";
+
+
+  fillSets[1]="(";
+  fillSets[1]+="(fill>=17217 && fill<=17232) ||";
+  fillSets[1]+="(fill>=17238 && fill<=17240) ||";
+  fillSets[1]+="(fill>=17247 && fill<=17256) ||";
+  fillSets[1]+="(fill>=17263 && fill<=17276) ||";
+  fillSets[1]+="(fill>=17284 && fill<=17297) ||";
+  fillSets[1]+="(fill>=17302 && fill<=17305) ||";
+  fillSets[1]+="(fill>=17308 && fill<=17317) ||";
+  fillSets[1]+="(fill>=17328 && fill<=17333) ||";
+  fillSets[1]+="(fill>=17338 && fill<=17382) ||";
+  fillSets[1]+="(fill>=17391 && fill<=17396) ||";
+  fillSets[1]+="(fill>=17403 && fill<=17407)";
+  fillSets[1]+=")";
+  fillNames[1]="29+69 Fills";
+  
   vector<TString> divSets[nFillSets];
   vector<TString> divNames[nFillSets];
-  divSets[0].push_back("bunch<11");
-  divNames[0].push_back("0<=bx<11");
-  if (1){
+  /*
+  divSets[0].push_back("bunch<11"); divNames[0].push_back("0<=bx<11");
+  divSets[0].push_back("bunch>10 && bunch<28"); divNames[0].push_back("11<=bx<28");
+  divSets[0].push_back("bunch<11"); divNames[0].push_back("0<=bx<11");
+  divSets[0].push_back("bunch<11"); divNames[0].push_back("0<=bx<11");
+  divSets[0].push_back("bunch<11"); divNames[0].push_back("0<=bx<11");
+  TString divSets[nDivSets];
+  TString divNames[nDivSets];
+  */
+  int nDivs=6;
+  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  for (int i=0;i<nDivs;i++){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d",divBounds[i],divBounds[i+1]));
+    divNames[0].push_back(Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]));
+  }
+  if (0){
     int nAutoDivs=7;
     for (int i=0;i<nAutoDivs;i++){
       int lowbound=11+(100/nAutoDivs*i);
@@ -146,17 +176,17 @@ void LoadFillTailoredSegments(){
     divNames[i]=Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]);
   }
   */
-
+   nFillSets=2;
   int cuti=0;
   for (int i=0;i<nPatSets;i++){
-    for (int j=0;j<nFillSets;j++){
-      for (int k=0;k<divSets[j].size();k++){
+    for (int j=1;j<nFillSets;j++){
+      for (int k=0;k<divSets[0].size();k++){
       //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
       if (cuti>=MAXCUTS){
 	printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
       }
-      cut[cuti]=Form("(%s)&&(%s)&&(%s)",patSets[i].Data(),fillSets[j].Data(),divSets[j][k].Data());
-      cutName[cuti]=Form("%s %s %s",patNames[i].Data(),fillNames[j].Data(), divNames[j][k].Data());
+      cut[cuti]=Form("(%s)&&(%s)&&(%s)",patSets[i].Data(),fillSets[j].Data(),divSets[0][k].Data());
+      cutName[cuti]=Form("%s %s %s",patNames[i].Data(),fillNames[j].Data(), divNames[0][k].Data());
       printf("Cut %d:  \"%s\": %s \n",cuti,cutName[cuti].Data(),cut[cuti].Data());
       cuti++;
       }

@@ -99,7 +99,7 @@ TH2F *hTightYieldByBunchAndPt;
 TH2F *hTightYieldByBunchAndPtNorth;
 TH2F *hTightYieldByBunchAndPtSouth;
 
-TH1F *hRegionMassSpectrum[4];//[region]
+TH1F *hRegionMassSpectrum[4][2];//[region][raw/summedenergy]
 TH1F *hRegionClusts[4][3];//[region][raw/after loose/after tight]
 TH1F *hRegionClustEcore[4][3];//[region][raw/after loose/after tight]
 TH1F *hRegionClustMult[4][3];//[region][raw/after loose/after tight]
@@ -289,7 +289,9 @@ void rcc_gen_yield(int runnum,
 	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
 
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
-	hRegionMassSpectrum[region]->Fill(Mgg);//[region]
+	float Mggcore=sqrt(4*ecore[pairclus]*ecore[iclus])*sinth2;
+	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
+	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
       
@@ -491,10 +493,12 @@ void InitOutput(int runnum, const char* outputdir){
   TString regionname[]={"0<=bx<11","(29<=bx<40)||(69<=bx<80)","stable bxings","abort gap"};
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<4;i++){
-    hRegionMassSpectrum[i]=new TH1F(Form("hRegionMassSpectrum%d",i),
-				   Form("Split Clusters Mass Spectrum in %s",regionname[i].Data()),
-				   200,0,20);//[region]
-
+    hRegionMassSpectrum[i][0]=new TH1F(Form("hRegionMassSpectrum%d_0",i),
+				   Form("Split Clusters (ecore) Mass Spectrum in %s",regionname[i].Data()),
+				   200,0,5);//[region]
+    hRegionMassSpectrum[i][1]=new TH1F(Form("hRegionMassSpectrum%d_1",i),
+				   Form("Split Clusters (e9) Mass Spectrum in %s",regionname[i].Data()),
+				   200,0,5);//[region]
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
 				   Form("nClusters (%s) in %s",cutname[j].Data(),regionname[i].Data()),
