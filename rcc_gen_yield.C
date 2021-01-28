@@ -267,14 +267,14 @@ void rcc_gen_yield(int runnum,
 
 
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
-      float clusterE=e8e9[iclus]*ecore[iclus];
+      float clusterE=ecore[iclus]/(1-e8e9[iclus]);
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
 	//printf("trying pair %d + %d\n",iclus,pairclus);
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
 
-	float pairE=e8e9[pairclus]*ecore[pairclus];
+	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
 	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
 	if (Egg<7 || Egg>17) continue; //skip if the energy is low or merged;
@@ -285,7 +285,7 @@ void rcc_gen_yield(int runnum,
 	float alpha=abs(pairE-clusterE)/(pairE+clusterE);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	//sin of half the opening angle:
-	float sinth2=delr/zpos;//zpos should be the vertex, but I don't have that yet.  strictly speaking, the angle is:
+	float sinth2=delr/2./zpos;//zpos should be the vertex, but I don't have that yet.  strictly speaking, the angle is:
 	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
 
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
@@ -494,10 +494,10 @@ void InitOutput(int runnum, const char* outputdir){
   TString cutname[]={"raw","after loose cut","after tight cut"};
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]=new TH1F(Form("hRegionMassSpectrum%d_0",i),
-				   Form("Split Clusters (ecore) Mass Spectrum in %s",regionname[i].Data()),
+				   Form("Split Clusters (ecore) Mass Spectrum in %s;GeV/c^2",regionname[i].Data()),
 				   200,0,10);//[region]
     hRegionMassSpectrum[i][1]=new TH1F(Form("hRegionMassSpectrum%d_1",i),
-				   Form("Split Clusters (e9) Mass Spectrum in %s",regionname[i].Data()),
+				   Form("Split Clusters (e9) Mass Spectrum in %sGeV/c^2",regionname[i].Data()),
 				   200,0,10);//[region]
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]=new TH1F(Form("hRegionClusts%d_%d",i,j),
