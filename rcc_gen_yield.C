@@ -817,7 +817,8 @@ void End() {
   rccRunTree->Write();
 
   for (int i=0;i<4;i++){
-    hRegionMassSpectrum[i]->Write();
+    hRegionMassSpectrum[i][0]->Write();
+    hRegionMassSpectrum[i][1]->Write();
     for (int j=0;j<3;j++){
       hRegionClusts[i][j]->Write();
       hRegionClustEcore[i][j]->Write();
