@@ -146,7 +146,8 @@ void LoadFillTailoredSegments(){
   TString divNames[nDivSets];
   */
   int nDivs=6;
-  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  //old bounds:  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  int divBounds[]={0,14,28,41,68,81,110,120};//lower bound is included, upper bound is excluded.
   for (int i=0;i<nDivs;i++){
     divSets[0].push_back(Form("%d<=bunch && bunch<%d",divBounds[i],divBounds[i+1]));
     divNames[0].push_back(Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]));
@@ -176,10 +177,10 @@ void LoadFillTailoredSegments(){
     divNames[i]=Form("%d<=bunch<%d",divBounds[i],divBounds[i+1]);
   }
   */
-   nFillSets=2;
+   nFillSets=1;
   int cuti=0;
   for (int i=0;i<nPatSets;i++){
-    for (int j=1;j<nFillSets;j++){
+    for (int j=0;j<nFillSets;j++){
       for (int k=0;k<divSets[0].size();k++){
       //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
       if (cuti>=MAXCUTS){

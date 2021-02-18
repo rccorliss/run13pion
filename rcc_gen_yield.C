@@ -60,6 +60,11 @@ TTree *rccRunTree;
 int rccRun, rccFill, rccNeve, rccTotRawClust, rccTotGoodClust, rccNbins, rccNbounds;
 const Float_t rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 TTree *rccBunchTree;
+TTree *rccClusterTree;
+int rccBunch, rccIx, rccIy, rccFecore,rccMult;
+float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
+bool rccNorth;
+
 //contains nEvenBunchEve,nOddBunchEve,nBunchEve
 //(iDet=0 ==> north, 1==> south, 2==>both
 //to make sure I have the implicit ordering correctly, doing this out long-hand:
@@ -165,6 +170,20 @@ void rcc_gen_yield(int runnum,
   ttree = (TTree *)rootin->Get("T");
 
   InitInTree();
+  fillSets[1]="(";
+  fillSets[1]+="(fill>=17217 && fill<=17232) ||";
+  fillSets[1]+="(fill>=17238 && fill<=17240) ||";
+  fillSets[1]+="(fill>=17247 && fill<=17256) ||";
+  fillSets[1]+="(fill>=17263 && fill<=17276) ||";
+  fillSets[1]+="(fill>=17284 && fill<=17297) ||";
+  fillSets[1]+="(fill>=17302 && fill<=17305) ||";
+  fillSets[1]+="(fill>=17308 && fill<=17317) ||";
+  fillSets[1]+="(fill>=17328 && fill<=17333) ||";
+  fillSets[1]+="(fill>=17338 && fill<=17382) ||";
+  fillSets[1]+="(fill>=17391 && fill<=17396) ||";
+  fillSets[1]+="(fill>=17403 && fill<=17407)";
+  fillSets[1]+=")";
+  fillNames[1]="29+69 Fills";
   InitOutput(runnum, outputdir);
   InitDB(runnum);
   InitWarn(runnum);
@@ -294,6 +313,8 @@ void rcc_gen_yield(int runnum,
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
+
+      
       
       if (ecore[iclus] > 15.){
 	//looking for merged clusters
@@ -342,6 +363,30 @@ void rcc_gen_yield(int runnum,
 	}
       }
 
+
+      int ix = mpcmap->getGridX(feecore[iclus]);
+      int iy = mpcmap->getGridY(feecore[iclus]);
+
+      //assign bunch tree variables:
+       rccBunch=corrbunch;
+      rccIx=ix;
+      rccIy=iy;
+	rccFeecore=ecore[iclus];
+      rccMult=mult[iclus];
+      rccX=x[iclus];
+      rccY=y[iclus];
+      rccVtx=zvtx;
+      rccEcore=ecore[iclus];
+      rccE9=ecore[iclus]/(1-e8e9[iclus]);
+      rccE8=rccE9*e8e9[iclus];
+      rccDisp=disp[iclus];
+      rccChi=chi2core[iclus];
+      rccNorthh=is_north;
+
+      if (ecore[iclus]>10.){
+	rccClusterTree->Fill();
+      }
+      
       
       if (!nominalCut && !tightCut)
 	continue;
@@ -352,9 +397,7 @@ void rcc_gen_yield(int runnum,
 	std::cout << "under/overflow.  not including event." << std::endl;
 	continue;
       }
-      int ix = mpcmap->getGridX(feecore[iclus]);
-      int iy = mpcmap->getGridY(feecore[iclus]);
-
+  
       
       if (nominalCut){
 	if (feecore[iclus] == 66)
@@ -407,6 +450,7 @@ void rcc_gen_yield(int runnum,
 
   //fill our one-liner run variables:
   rccRunTree->Fill();
+  //rccClusterTree->Fill();
   
   //fill our 120-line bunch variables:
   for (int b=0;b<120;b++){
@@ -473,8 +517,27 @@ void InitOutput(int runnum, const char* outputdir){
   rccBunchTree->Branch("nRawByPtS",rccRawClustPtrS,Form("nRawByPtS[%d]/F",NPTBINS));
   rccBunchTree->Branch("nPiByPtS",rccGoodClustPtrS,Form("nPiByPtS[%d]/F",NPTBINS));
 
+  rccClusterTree=new TTree("cTree","per-cluster info");
+  rccClusterTree->Branch("fill",&rccFill);
+  rccClusterTree->Branch("run",&rccRun);
+  rccClusterTree->Branch("bunch",&rccBunch);
+  rccClusterTree->Branch("ix",&rccIx);
+  rccClusterTree->Branch("iy",&rccIy);
+  rccClusterTree->Branch("x",&rccX);
+  rccClusterTree->Branch("y",&rccY);
+  rccClusterTree->Branch("vtx",&rccVtx);
+  rccClusterTree->Branch("ecore",&rccEcore);
+  rccClusterTree->Branch("feecore",&rccFecore);
+  rccClusterTree->Branch("e8",&rccE8);
+  rccClusterTree->Branch("e9",&rccE9);
+  rccClusterTree->Branch("mult",&rccMult);
+  rccClusterTree->Branch("disp",&rccDisp);
+  rccClusterTree->Branch("chi2core",&rccChi);
+  rccClusterTree->Branch("north",&rccNorth);
 
-  
+ 
+
+
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
   Double_t sparsebinsmin[4] = {-.5, -.5, -.5, 1.0};
@@ -773,7 +836,7 @@ void InitOverflows() {
   TString tdcfilename="/direct/phenix+u/cmckinn4/run11/analysis/Calibrations/"
                        "MpcCal_Run11.overflow";
   printf("loading overflow mpc calibration from %s\n",tdcfilename.Data());
-  ifstream tdcoverfile(tdcfilename.Data());
+  ifstream tdcoverfile(tdcfilename.Data());//is this still applicable in run13?  the electronics changed!
   int och;
   float oflow, error;
   while (tdcoverfile.good()) {
@@ -815,6 +878,7 @@ void End() {
   hTightYieldByBunchAndPtSouth->Write();
   rccBunchTree->Write();
   rccRunTree->Write();
+  rcClusterTree->Write();
 
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]->Write();
