@@ -373,7 +373,7 @@ void rcc_gen_yield(int runnum,
        rccBunch=corrbunch;
       rccIx=ix;
       rccIy=iy;
-	rccFeecore=ecore[iclus];
+      rccFeecore=feecore[iclus];
       rccMult=mult[iclus];
       rccX=x[iclus];
       rccY=y[iclus];
@@ -381,6 +381,7 @@ void rcc_gen_yield(int runnum,
       rccEcore=ecore[iclus];
       rccE9=ecore[iclus]/(1-e8e9[iclus]);
       rccE8=rccE9*e8e9[iclus];
+      //rccE8e9=e8e9[iclus];
       rccDisp=disp[iclus];
       rccChi=chi2core[iclus];
       rccNorth=is_north;
