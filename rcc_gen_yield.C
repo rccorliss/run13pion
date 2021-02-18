@@ -61,7 +61,7 @@ int rccRun, rccFill, rccNeve, rccTotRawClust, rccTotGoodClust, rccNbins, rccNbou
 const Float_t rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 TTree *rccBunchTree;
 TTree *rccClusterTree;
-int rccBunch, rccIx, rccIy, rccFecore,rccMult;
+int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
@@ -170,6 +170,7 @@ void rcc_gen_yield(int runnum,
   ttree = (TTree *)rootin->Get("T");
 
   InitInTree();
+  /*
   fillSets[1]="(";
   fillSets[1]+="(fill>=17217 && fill<=17232) ||";
   fillSets[1]+="(fill>=17238 && fill<=17240) ||";
@@ -184,6 +185,7 @@ void rcc_gen_yield(int runnum,
   fillSets[1]+="(fill>=17403 && fill<=17407)";
   fillSets[1]+=")";
   fillNames[1]="29+69 Fills";
+  */
   InitOutput(runnum, outputdir);
   InitDB(runnum);
   InitWarn(runnum);
@@ -381,7 +383,7 @@ void rcc_gen_yield(int runnum,
       rccE8=rccE9*e8e9[iclus];
       rccDisp=disp[iclus];
       rccChi=chi2core[iclus];
-      rccNorthh=is_north;
+      rccNorth=is_north;
 
       if (ecore[iclus]>10.){
 	rccClusterTree->Fill();
@@ -527,7 +529,7 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("y",&rccY);
   rccClusterTree->Branch("vtx",&rccVtx);
   rccClusterTree->Branch("ecore",&rccEcore);
-  rccClusterTree->Branch("feecore",&rccFecore);
+  rccClusterTree->Branch("feecore",&rccFeecore);
   rccClusterTree->Branch("e8",&rccE8);
   rccClusterTree->Branch("e9",&rccE9);
   rccClusterTree->Branch("mult",&rccMult);
