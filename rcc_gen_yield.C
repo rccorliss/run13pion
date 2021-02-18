@@ -878,7 +878,7 @@ void End() {
   hTightYieldByBunchAndPtSouth->Write();
   rccBunchTree->Write();
   rccRunTree->Write();
-  rcClusterTree->Write();
+  rccClusterTree->Write();
 
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]->Write();
