@@ -297,7 +297,7 @@ void rcc_gen_yield(int runnum,
       TLorentzVector cluster4, pair4;
       //scale these coordinate to the known pt:
       float pttemp=clusterVec.Perp();
-      clusterVec=clusterVec*pt[iclus];
+      clusterVec=clusterVec*pt[iclus]/pttemp;
       cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
 
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -307,7 +307,7 @@ void rcc_gen_yield(int runnum,
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
       TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]);
       pttemp=pairVec.Perp();
-      pairVec=pairVec*pt[iclus];
+      pairVec=pairVec*pt[iclus]/pttemp;
       pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
  
       TLorentzVector sum4=pair4+cluster4;
