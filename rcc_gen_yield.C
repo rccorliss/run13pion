@@ -294,7 +294,11 @@ void rcc_gen_yield(int runnum,
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       float clusterE=ecore[iclus]/(1-e8e9[iclus]);
       TVector3 clusterVec(x[iclus],y[iclus],z[iclus]);
-      TLorentzVector cluster4(clusterVec,clusterVec.Mag());//e=p, hence massless
+      TLorentzVector cluster4, pair4;
+      //scale these coordinate to the known pt:
+      float pttemp=clusterVec.Perp();
+      clusterVec=clusterVec*pt[iclus];
+      cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
 
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
 	//printf("trying pair %d + %d\n",iclus,pairclus);
@@ -302,8 +306,10 @@ void rcc_gen_yield(int runnum,
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
       TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]);
-      TLorentzVector pair4(pairVec,pairVec.Mag());//e=p, hence massless
-
+      pttemp=pairVec.Perp();
+      pairVec=pairVec*pt[iclus];
+      pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
+ 
       TLorentzVector sum4=pair4+cluster4;
 	
 	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
