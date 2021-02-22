@@ -61,6 +61,7 @@ int rccRun, rccFill, rccNeve, rccTotRawClust, rccTotGoodClust, rccNbins, rccNbou
 const Float_t rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 TTree *rccBunchTree;
 TTree *rccClusterTree;
+TTree *splitClusterTree;
 int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
@@ -289,12 +290,19 @@ void rcc_gen_yield(int runnum,
 
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       float clusterE=ecore[iclus]/(1-e8e9[iclus]);
+      TVector3 clusterVec(x[iclus],y[iclus],z[iclus]);
+      TLorentzVector cluster4(clusterVec,clusterVec.Mag());//e=p, hence massless
+
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
 	//printf("trying pair %d + %d\n",iclus,pairclus);
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
+      TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]);
+      TLorentzVector pair4(pairVec,pairVec.Mag());//e=p, hence massless
 
+      TLorentzVector sum4=pair4+cluster4;
+	
 	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
 	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
@@ -311,6 +319,11 @@ void rcc_gen_yield(int runnum,
 
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
 	float Mggcore=sqrt(4*ecore[pairclus]*ecore[iclus])*sinth2;
+	splitClusterMgg=Mgg;
+	splitClusterMggcore=Mggcore;
+	splitClusterMvec=sum4.M();
+	splitClusterPt=sum4.Pt();
+	splitClusterTree->Fill();
 	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
@@ -538,8 +551,11 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("chi2core",&rccChi);
   rccClusterTree->Branch("north",&rccNorth);
 
- 
-
+  splitClusterTree=new TTree("piTree","pion clusters");
+  rccClusterTree->Branch("M9",&splitClusterMgg);
+  rccClusterTree->Branch("Mcore",&splitClusterMggcore);
+  rccClusterTree->Branch("Mvec",&splitClusterMvec);
+  rccClusterTree->Branch("pT",&splitClusterPt);
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
@@ -882,7 +898,7 @@ void End() {
   rccBunchTree->Write();
   rccRunTree->Write();
   rccClusterTree->Write();
-
+  splitClusterTree->Write();
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]->Write();
     hRegionMassSpectrum[i][1]->Write();
