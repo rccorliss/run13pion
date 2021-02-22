@@ -555,10 +555,10 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("north",&rccNorth);
 
   splitClusterTree=new TTree("piTree","pion clusters");
-  rccClusterTree->Branch("M9",&splitClusterMgg);
-  rccClusterTree->Branch("Mcore",&splitClusterMggcore);
-  rccClusterTree->Branch("Mvec",&splitClusterMvec);
-  rccClusterTree->Branch("pT",&splitClusterPt);
+  splitClusterTree->Branch("M9",&splitClusterMgg);
+  splitClusterTree->Branch("Mcore",&splitClusterMggcore);
+  splitClusterTree->Branch("Mvec",&splitClusterMvec);
+  splitClusterTree->Branch("pT",&splitClusterPt);
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
