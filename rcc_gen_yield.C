@@ -66,6 +66,9 @@ int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
+float splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
+
+
 //contains nEvenBunchEve,nOddBunchEve,nBunchEve
 //(iDet=0 ==> north, 1==> south, 2==>both
 //to make sure I have the implicit ordering correctly, doing this out long-hand:
