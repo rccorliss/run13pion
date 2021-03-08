@@ -87,6 +87,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
 
   
   indexDisplayName.push_back(fillNames[0]);
+  indexCut.push_back("1");
   indexCut.push_back(fillSets[0]);
   indexList.push_back(0);
     indexDisplayName.push_back(fillNames[1]);
@@ -131,6 +132,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
     uLumi->Draw("run:fill",indexCut[i],"goff");
     // uLumi->Draw("run",Form("%s==%d",indexName,thisIndex),"goff");
     int nRuns=uLumi->GetSelectedRows();
+    printf("requiring cut %s.  First Run =%d\n",indexCut[i].Data(),(int)(uLumi->GetVal(0)[0]));
     for (int j=0;j<nRuns && j<100;j++){
       int thisRun=uLumi->GetVal(0)[j];
       int thisFill=uLumi->GetVal(1)[j];

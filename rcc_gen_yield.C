@@ -288,6 +288,11 @@ void rcc_gen_yield(int runnum,
       if (!PassesClusterCuts(iclus))
         continue;
       rspectrum_clustcuts->Fill(cluster_r);
+      if (feecore[iclus]==306){
+	printf ("wtf\n");
+	assert(false);
+	return;
+      }
 
       ptspectrum_raw[is_north][corrbunch % 2]->Fill(pt[iclus]);
       espectrum_raw[is_north][corrbunch % 2]->Fill(ecore[iclus]);
