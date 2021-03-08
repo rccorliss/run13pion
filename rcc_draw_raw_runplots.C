@@ -133,7 +133,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
     // uLumi->Draw("run",Form("%s==%d",indexName,thisIndex),"goff");
     int nRuns=uLumi->GetSelectedRows();
     printf("requiring cut %s.  First Run =%d\n",indexCut[i].Data(),(int)(uLumi->GetVal(0)[0]));
-    for (int j=0;j<nRuns && j<10;j++){
+    for (int j=0;j<nRuns && j<20;j++){
       int thisRun=uLumi->GetVal(0)[j];
       int thisFill=uLumi->GetVal(1)[j];
       
