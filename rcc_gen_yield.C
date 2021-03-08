@@ -220,10 +220,12 @@ void rcc_gen_yield(int runnum,
 
   int is_north, even_or_odd, spin_pattern;
   double cluster_r;
+
+  int nOverflows=0;
   int nentries = ttree->GetEntries();
   cout << "Number of entries: " << nentries << endl;
   for (int ievent = 0; ievent < nentries; ievent++) {
-    if (ievent % 10000 == 0)
+    if (ievent % 100000 == 0)
       cout << "event: " << ievent << endl;
     get_entry(ievent);
 
@@ -420,7 +422,8 @@ void rcc_gen_yield(int runnum,
       //get bin and core coordinates:
       int ptbin = checkpt->Fill(pt[iclus]);
       if (ptbin<0){
-	std::cout << "under/overflow.  not including event." << std::endl;
+	//std::cout << "under/overflow.  not including event." << std::endl;
+	nOverflows++;
 	continue;
       }
   
@@ -488,6 +491,7 @@ void rcc_gen_yield(int runnum,
     rccGoodClustPtrS=rccGoodClustS+(b*NPTBINS);
     rccBunchTree->Fill();
   }
+  printf("done.  %d overflows in this run.\n",nOverflows);
   
   End();//write and close output files.
 }
