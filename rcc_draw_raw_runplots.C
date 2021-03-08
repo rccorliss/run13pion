@@ -10,33 +10,10 @@ void rcc_draw_raw_runplots(){
 
 
   char yieldDirectory[100];
-  sprintf(yieldDirectory,"yields2021_2021.02.17");
+  sprintf(yieldDirectory,"yields2021.03.08");
 
   TFile *scratch=TFile::Open("scratch.hist.root","RECREATE");
 
-  //define what plots you want to see in stacks which we will draw:
-  int nHistSets=6;
-  
-  vector<TString> histName[nHistSets];
-  vector<TH1F*> histSet[nHistSets];
-  vector<TString> regionName;
-  regionName.push_back("0<=bx<11");
-  regionName.push_back("(29<=bx<40)||(69<=bx<80)");
-  regionName.push_back("stable bxings");
-  regionName.push_back("abort gap");
-  int nRegions=4;
-  for (int i=0;i<nRegions;i++){
-    //for now, all regions, just the raw plots.
-    histName[0].push_back(Form("hRegionClusts%d_0",i));
-    histName[1].push_back(Form("hRegionClustEcore%d_0",i));
-    histName[2].push_back(Form("hRegionClustMult%d_0",i));
-    histName[3].push_back(Form("hRegionClustDisp%d_0",i));
-    histName[4].push_back(Form("hRegionClustChi2%d_0",i));
-    histName[5].push_back(Form("hRegionClustE8e9%d_0",i));
- 
-  }
-  
-  
   TFile *uLumiFile=TFile::Open("uLumi.ttree.root","READ");
   TFile *uLumiXLfile=TFile::Open("uLumiXL.ttree.root","READ");
   TFile *uBunchFile=TFile::Open("uBunch.ttree.root","READ");
@@ -121,7 +98,12 @@ indexDisplayName.push_back(Form(%d,newIndex));
   //  printf("i=%d, index=%d\n",i,indexList[i]);
   //}
 
-
+  float highThresh=1000;
+  int maxfee;
+  TH1F *hHotFee=new TH1F("hHotFee","Most Frequent cluster core feeID per run;fee",600,-0.5,599.5);
+  TH1F *hHotFeeHigh=new TH1F("hHotFeeHigh",Form("Most Frequent feeID with clusterE>%f MeV per run;fee",highThresh),600,-0.5,599.5);
+  TH2F *hHotFeeFill=new TH2F("hHotFeeFill","Most Frequent cluster core feeID vs Fill;fill;fee",500,17210,17710,600,-0.5,599.5);
+  TH2F *hHotFeeHighFill=new TH2F("hHotFeeHighFill",Form("Most Frequent feeID with clusterE>%f MeV  vs Fill;fill;fee",highThresh),500,17210,17710,600,-0.5,599.5);
 
   
   bool isFirstFile=true;
@@ -149,7 +131,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
     uLumi->Draw("run:fill",indexCut[i],"goff");
     // uLumi->Draw("run",Form("%s==%d",indexName,thisIndex),"goff");
     int nRuns=uLumi->GetSelectedRows();
-    for (int j=0;j<nRuns && j<4;j++){
+    for (int j=0;j<nRuns && j<100;j++){
       int thisRun=uLumi->GetVal(0)[j];
       int thisFill=uLumi->GetVal(1)[j];
       
@@ -161,7 +143,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
       printf("found yields for run %d\n",thisRun);
       TTree *cTree=(TTree*)runfile->Get("cTree");
       TTree *piTree=(TTree*)runfile->Get("piTree");
-      ctitle>cd();
+      ctitle->cd();
       ctitle->Clear();
       tex.SetTextSize(0.25);
       tex.DrawLatex(0.1,0.5,Form("Run=%d Fill=%d",thisRun,thisFill));
@@ -175,28 +157,41 @@ indexDisplayName.push_back(Form(%d,newIndex));
       c->cd(4);
       cTree->Draw("x:y","!north","colz");
       c->cd(5);
-      cTree->Draw("ix:iy","north && ecore>1000","colz");
+      cTree->Draw("ix:iy",Form("north && ecore>%f",highThresh),"colz");
       c->cd(6);
-      cTree->Draw("ix:iy","!north && ecore>1000","colz");
+      cTree->Draw("ix:iy",Form("!north && ecore>%f",highThresh),"colz");
        c->cd(7);
-      cTree->Draw("x:y","north && ecore>1000","colz");
+      cTree->Draw("x:y",Form("north && ecore>%f",highThresh),"colz");
       c->cd(8);
-      cTree->Draw("x:y","!north && ecore>1000","colz");
+      cTree->Draw("x:y",Form("!north && ecore>%f",highThresh),"colz");
      c->cd(9);
       cTree->Draw("feecore:ecore","1","colz");
      c->cd(10);
       cTree->Draw("feecore");
       htemp=(TH1F*)(c->cd(10)->GetPrimitive("htemp"));
       tex.SetTextSize(0.08);
-     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxBin=%1.1f",htemp->GetBinLowEdge(htemp->GetMaximumBin())));
+      maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee=%d",maxfee));
+      hHotFee->Fill(maxfee);
+      hHotFeeFill->Fill(thisFill,maxfee);
       
      c->cd(11);
      cTree->Draw("feecore","ecore>1000");
      htemp=(TH1F*)(c->cd(11)->GetPrimitive("htemp"));
-      tex.SetTextSize(0.08);
-     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxBin=%1.1f",htemp->GetBinLowEdge(htemp->GetMaximumBin())));
-        runfile->Close();
+     maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee=%d",maxfee));
+     hHotFeeHigh->Fill(maxfee);
+     hHotFeeHighFill->Fill(thisFill,maxfee);
+     c->cd(12);
+     piTree->Draw("M9:pT","1","colz");
+    c->cd(13);
+     piTree->Draw("M9:fee","pT<5","colz");
+    c->cd(14);
+     piTree->Draw("M9:fee","pT>5","colz");
+     runfile->Close();
       //           histSet[0][0]->DrawNormalized("hist"); return;
+	c->cd(12);
+	
 
       if (isFirstPage){
 	cbase->Print(Form("%s(",outputfilename),"pdf");
@@ -209,6 +204,16 @@ indexDisplayName.push_back(Form(%d,newIndex));
 
   }
   cbase->Clear();
-   	cbase->Print(Form("%s)",outputfilename),"pdf");
+  cbase->Divide(2,2);
+  cbase->cd(1);
+  hHotFee->Draw();
+  cbase->cd(2);
+  hHotFeeFill->Draw("colz");
+  cbase->cd(3);
+  hHotFeeHigh->Draw();
+  cbase->cd(4);
+  hHotFeeHighFill->Draw("colz");
+  
+  cbase->Print(Form("%s)",outputfilename),"pdf");
 	return;
 }

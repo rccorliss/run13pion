@@ -849,8 +849,11 @@ void InitWarn(int runnum) {
     isWarn[ich] = false;
   }
   printf("seeking warnmap\n");
+  /* pedro's original warnmap:
   TString warnfile = "/phenix/spin2/pmontu/offline/packages/mpc/calibrations/"
                      "pi0cal_fast/macros/iterative/db_update/final_warnmap.txt";
+  */
+  TString warnfile="./rcc_run13warnmap_mod.txt";
   printf("loading warnmap from %s\n",warnfile.Data());
   ifstream warnmap(warnfile.Data());
   int wch;
