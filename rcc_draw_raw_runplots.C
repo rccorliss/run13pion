@@ -100,7 +100,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
   //}
 
   float highThresh=1000;
-  int maxfee;
+  int maxfee, maxfeelow,maxfeehigh;
   TH1F *hHotFee=new TH1F("hHotFee","Most Frequent cluster core feeID per run;fee",600,-0.5,599.5);
   TH1F *hHotFeeHigh=new TH1F("hHotFeeHigh",Form("Most Frequent feeID with clusterE>%f MeV per run;fee",highThresh),600,-0.5,599.5);
   TH2F *hHotFeeFill=new TH2F("hHotFeeFill","Most Frequent cluster core feeID vs Fill;fill;fee",500,17210,17710,600,-0.5,599.5);
@@ -133,7 +133,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
     // uLumi->Draw("run",Form("%s==%d",indexName,thisIndex),"goff");
     int nRuns=uLumi->GetSelectedRows();
     printf("requiring cut %s.  First Run =%d\n",indexCut[i].Data(),(int)(uLumi->GetVal(0)[0]));
-    for (int j=0;j<nRuns && j<100;j++){
+    for (int j=0;j<nRuns && j<10;j++){
       int thisRun=uLumi->GetVal(0)[j];
       int thisFill=uLumi->GetVal(1)[j];
       
@@ -172,28 +172,41 @@ indexDisplayName.push_back(Form(%d,newIndex));
       cTree->Draw("feecore");
       htemp=(TH1F*)(c->cd(10)->GetPrimitive("htemp"));
       tex.SetTextSize(0.08);
+      maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
+      tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow,maxfeehigh));
+     c->cd(11);
+     cTree->Draw("feecore",Form("feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
+      htemp=(TH1F*)(c->cd(11)->GetPrimitive("htemp"));
+      tex.SetTextSize(0.08);
       maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
-      tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee=%d",maxfee));
+      tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
       hHotFee->Fill(maxfee);
       hHotFeeFill->Fill(thisFill,maxfee);
       
-     c->cd(11);
+     c->cd(12);
      cTree->Draw("feecore","ecore>1000");
-     htemp=(TH1F*)(c->cd(11)->GetPrimitive("htemp"));
-     maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
-     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee=%d",maxfee));
+     htemp=(TH1F*)(c->cd(12)->GetPrimitive("htemp"));
+     maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+     maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
+     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow, maxfeehigh));
+
+     c->cd(13);
+     cTree->Draw("feecore",Form("ecore>1000 && feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
+     htemp=(TH1F*)(c->cd(13)->GetPrimitive("htemp"));
+      maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
      hHotFeeHigh->Fill(maxfee);
      hHotFeeHighFill->Fill(thisFill,maxfee);
-     c->cd(12);
+     c->cd(14);
      piTree->Draw("M9:pT","1","colz");
-    c->cd(13);
+    c->cd(15);
      piTree->Draw("M9:fee","pT<5","colz");
-    c->cd(14);
+    c->cd(16);
      piTree->Draw("M9:fee","pT>5","colz");
      runfile->Close();
       //           histSet[0][0]->DrawNormalized("hist"); return;
-	c->cd(12);
-	
+
 
       if (isFirstPage){
 	cbase->Print(Form("%s(",outputfilename),"pdf");
