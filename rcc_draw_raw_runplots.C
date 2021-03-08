@@ -106,10 +106,11 @@ indexDisplayName.push_back(Form(%d,newIndex));
   TH2F *hHotFeeFill=new TH2F("hHotFeeFill","Most Frequent cluster core feeID vs Fill;fill;fee",500,17210,17710,600,-0.5,599.5);
   TH2F *hHotFeeHighFill=new TH2F("hHotFeeHighFill",Form("Most Frequent feeID with clusterE>%f MeV  vs Fill;fill;fee",highThresh),500,17210,17710,600,-0.5,599.5);
 
-  TH1F *hMassLow=new TH1F("hMassLow","Pion Mass pT<1GeV;mass [GeV]",100,0,2);
-  TH1F *hMassHigh=new TH1F("hMassHigh","Pion Mass pT>1GeV;mass [GeV]",100,0,2);
-  hMassLow->Fill(-1);
-  hMassHigh->Fill(-1);
+  int nPtSlices=4;
+  TH1F *hMassWindow[nPtSlices];
+  for (int i=0;i<nPtSlices;i++){
+    hMassWindow[i]=new TH1F(Form("hMassWindow%d",i),Form("Pion Mass %d<pT<%dGeV;mass [GeV]",i,i+1),100,0,2);
+  }
   
   bool isFirstFile=true;
   bool isFirstPage=true;
@@ -173,54 +174,90 @@ indexDisplayName.push_back(Form(%d,newIndex));
       cTree->Draw("x:y",Form("north && ecore>%f",highThresh),"colz");
       c->cd(8);
       cTree->Draw("x:y",Form("!north && ecore>%f",highThresh),"colz");
-     c->cd(9);
-      cTree->Draw("feecore:ecore","1","colz");
-     c->cd(10);
+     int pane=9;
+     // c->cd(pane);
+     // cTree->Draw("feecore:ecore","1","colz");
+     // pane++;
+     c->cd(pane);
       cTree->Draw("feecore");
-      htemp=(TH1F*)(c->cd(10)->GetPrimitive("htemp"));
+      htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
       tex.SetTextSize(0.08);
       maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
       maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
       tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow,maxfeehigh));
-     c->cd(11);
-     cTree->Draw("feecore",Form("feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
-      htemp=(TH1F*)(c->cd(11)->GetPrimitive("htemp"));
+      pane++;
+     c->cd(pane);
+      cTree->Draw("feecore",Form("feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
+      htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
       tex.SetTextSize(0.08);
       maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
       tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
       hHotFee->Fill(maxfee);
       hHotFeeFill->Fill(thisFill,maxfee);
-      
-     c->cd(12);
-     cTree->Draw("feecore","ecore>1000");
-     htemp=(TH1F*)(c->cd(12)->GetPrimitive("htemp"));
+       pane++;
+     c->cd(pane);
+      cTree->Draw("feecore","ecore>1000");
+     htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
      maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
      maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
      tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow, maxfeehigh));
-
-     c->cd(13);
+      pane++;
+     c->cd(pane);
      cTree->Draw("feecore",Form("ecore>1000 && feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
-     htemp=(TH1F*)(c->cd(13)->GetPrimitive("htemp"));
+     htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
       maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
       tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
      hHotFeeHigh->Fill(maxfee);
      hHotFeeHighFill->Fill(thisFill,maxfee);
-     c->cd(14);
-     piTree->Draw("Mcore:pT","1","colz");
-     c->cd(15);
-     piTree->Draw("Mcore:fee","pT<5","colz");
-     c->cd(16);
-     piTree->Draw("Mcore:fee","pT>5","colz");
-     c->cd(17);
-     piTree->Draw("Mcore","pT<1");
-     piTree->Draw("Mcore>>hjunk(100,0,2)","pT<1","goff");
-     htemp=(TH1F*)(gDirectory->Get("hjunk"));
-     hMassLow->Add(htemp);
-     c->cd(18);
-     piTree->Draw("Mcore","pT>1");
-     piTree->Draw("Mcore>>hjunk(100,0,2)","pT>1","goff");
-     htemp=(TH1F*)(gDirectory->Get("hjunk"));
-     hMassHigh->Add(htemp);
+      pane++;
+      c->cd(pane);
+      cTree->Draw("feecore", "feecore<288");
+      htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
+      tex.SetTextSize(0.08);
+      maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
+      tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow,maxfeehigh));
+      pane++;
+     c->cd(pane);
+      cTree->Draw("feecore",Form("feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
+      htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
+      tex.SetTextSize(0.08);
+      maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
+      hHotFee->Fill(maxfee);
+      hHotFeeFill->Fill(thisFill,maxfee);
+       pane++;
+     c->cd(pane);
+      cTree->Draw("feecore","ecore>1000 && feecore<288");
+     htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
+     maxfeelow=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+     maxfeehigh=htemp->GetBinLowEdge(htemp->GetMaximumBin()+1);
+     tex.DrawLatex(0.1,htemp->GetMaximum()*0.9,Form("MaxFee between %d and %d",maxfeelow, maxfeehigh));
+      pane++;
+     c->cd(pane);
+     cTree->Draw("feecore",Form("ecore>1000 && feecore>=%d && feecore<%d",maxfeelow,maxfeehigh));
+     htemp=(TH1F*)(c->cd(pane)->GetPrimitive("htemp"));
+      maxfee=htemp->GetBinLowEdge(htemp->GetMaximumBin());
+      tex.DrawLatex(htemp->GetBinLowEdge(1),htemp->GetMaximum()*0.9,Form("MaxFee= %d",maxfee));
+     hHotFeeHigh->Fill(maxfee);
+     hHotFeeHighFill->Fill(thisFill,maxfee);
+      pane++;
+     c->cd(pane);
+      piTree->Draw("Mcore:pT","1","colz");
+      pane++;
+     c->cd(pane);
+      piTree->Draw("Mcore:fee","pT<5","colz");
+      pane++;
+     c->cd(pane);
+      piTree->Draw("Mcore:fee","pT>5","colz");
+
+     for (int k=0;k<nPtSlices;k++){
+       c->cd(17+k);
+       piTree->Draw("Mcore",Form("%d<pT && pT<%d",k,k+1));
+       piTree->Draw("Mcore>>hjunk(100,0,2)",Form("%d<pT && pT<%d",k,k+1),"goff");
+       htemp=(TH1F*)(gDirectory->Get("hjunk"));
+       hMassWindow[k]->Add(htemp);
+     }
      runfile->Close();
       //           histSet[0][0]->DrawNormalized("hist"); return;
 
@@ -236,7 +273,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
 
   }
   cbase->Clear();
-  cbase->Divide(2,3);
+  cbase->Divide(2,4);
   cbase->cd(1);
   hHotFee->Draw();
   cbase->cd(2);
@@ -245,10 +282,10 @@ indexDisplayName.push_back(Form(%d,newIndex));
   hHotFeeHigh->Draw();
   cbase->cd(4);
   hHotFeeHighFill->Draw("colz");
-  cbase->cd(5);
-  hMassLow->Draw();
-  cbase->cd(6);
-  hMassHigh->Draw();
+  for (int k=0;k<nPtSlices;k++){
+    cbase->cd(5+k);
+    hMassWindow[k]->Draw();
+  }
   
   
   cbase->Print(Form("%s)",outputfilename),"pdf");
