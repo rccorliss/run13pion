@@ -106,6 +106,10 @@ indexDisplayName.push_back(Form(%d,newIndex));
   TH2F *hHotFeeFill=new TH2F("hHotFeeFill","Most Frequent cluster core feeID vs Fill;fill;fee",500,17210,17710,600,-0.5,599.5);
   TH2F *hHotFeeHighFill=new TH2F("hHotFeeHighFill",Form("Most Frequent feeID with clusterE>%f MeV  vs Fill;fill;fee",highThresh),500,17210,17710,600,-0.5,599.5);
 
+  TH1F *hMassLow=new TH1F("hMassLow","Pion Mass pT<1GeV;mass [GeV]",100,0,2);
+  TH1F *hMassHigh=new TH1F("hMassHigh","Pion Mass pT>1GeV;mass [GeV]",100,0,2);
+  hMassLow->Fill(-1);
+  hMassHigh->Fill(-1);
   
   bool isFirstFile=true;
   bool isFirstPage=true;
@@ -122,6 +126,9 @@ indexDisplayName.push_back(Form(%d,newIndex));
   ctitle->Draw();
   c->Draw();
 
+
+  int nRunsMax=10;
+
   for (int i=0;i<nIndices && i<1;i++){
     //int ipad=indicesDrawn%6+1;
 
@@ -133,7 +140,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
     // uLumi->Draw("run",Form("%s==%d",indexName,thisIndex),"goff");
     int nRuns=uLumi->GetSelectedRows();
     printf("requiring cut %s.  First Run =%d\n",indexCut[i].Data(),(int)(uLumi->GetVal(0)[0]));
-    for (int j=0;j<nRuns && j<20;j++){
+    for (int j=0;j<nRuns && j<nRunsMax;j++){
       int thisRun=uLumi->GetVal(0)[j];
       int thisFill=uLumi->GetVal(1)[j];
       
@@ -199,11 +206,21 @@ indexDisplayName.push_back(Form(%d,newIndex));
      hHotFeeHigh->Fill(maxfee);
      hHotFeeHighFill->Fill(thisFill,maxfee);
      c->cd(14);
-     piTree->Draw("M9:pT","1","colz");
-    c->cd(15);
-     piTree->Draw("M9:fee","pT<5","colz");
-    c->cd(16);
-     piTree->Draw("M9:fee","pT>5","colz");
+     piTree->Draw("Mcore:pT","1","colz");
+     c->cd(15);
+     piTree->Draw("Mcore:fee","pT<5","colz");
+     c->cd(16);
+     piTree->Draw("Mcore:fee","pT>5","colz");
+     c->cd(17);
+     piTree->Draw("Mcore","pT<1");
+     piTree->Draw("Mcore>>hjunk(100,0,2)","pT<1","goff");
+     htemp=(TH1F*)(gDirectory->Get("hjunk"));
+     hMassLow->Add(htemp);
+     c->cd(18);
+     piTree->Draw("Mcore","pT>1");
+     piTree->Draw("Mcore>>hjunk(100,0,2)","pT>1","goff");
+     htemp=(TH1F*)(gDirectory->Get("hjunk"));
+     hMassHigh->Add(htemp);
      runfile->Close();
       //           histSet[0][0]->DrawNormalized("hist"); return;
 
@@ -219,7 +236,7 @@ indexDisplayName.push_back(Form(%d,newIndex));
 
   }
   cbase->Clear();
-  cbase->Divide(2,2);
+  cbase->Divide(2,3);
   cbase->cd(1);
   hHotFee->Draw();
   cbase->cd(2);
@@ -228,6 +245,11 @@ indexDisplayName.push_back(Form(%d,newIndex));
   hHotFeeHigh->Draw();
   cbase->cd(4);
   hHotFeeHighFill->Draw("colz");
+  cbase->cd(5);
+  hMassLow->Draw();
+  cbase->cd(6);
+  hMassHigh->Draw();
+  
   
   cbase->Print(Form("%s)",outputfilename),"pdf");
 	return;
