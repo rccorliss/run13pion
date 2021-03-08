@@ -67,7 +67,7 @@ float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
 float splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
-
+int splitClusterFee;
 
 //contains nEvenBunchEve,nOddBunchEve,nBunchEve
 //(iDet=0 ==> north, 1==> south, 2==>both
@@ -332,6 +332,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterMggcore=Mggcore;
 	splitClusterMvec=sum4.M();
 	splitClusterPt=sum4.Pt();
+	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
 	splitClusterTree->Fill();
 	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
@@ -565,6 +566,7 @@ void InitOutput(int runnum, const char* outputdir){
   splitClusterTree->Branch("Mcore",&splitClusterMggcore);
   splitClusterTree->Branch("Mvec",&splitClusterMvec);
   splitClusterTree->Branch("pT",&splitClusterPt);
+  splitClusterTree->Branch("fee",&splitClusterFee);
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
@@ -599,7 +601,7 @@ void InitOutput(int runnum, const char* outputdir){
 				   100,0,300);//[region][raw/after loose/after tight]
       hRegionClustMult[i][j]=new TH1F(Form("hRegionClustMult%d_%d",i,j),
 				   Form("Cluster Multiplicity (%s) in %s",cutname[j].Data(),regionname[i].Data()),
-				   10,-0.5,9.5);//[region][raw/after loose/after tight]
+				   30,-0.5,29.5);//[region][raw/after loose/after tight]
       hRegionClustDisp[i][j]=new TH1F(Form("hRegionClustDisp%d_%d",i,j),
 				   Form("Cluster Dispersion (%s) in %s",cutname[j].Data(),regionname[i].Data()),
 				       100,0.0,0.0001);//[region][raw/after loose/after tight]
