@@ -297,7 +297,7 @@ void rcc_gen_yield(int runnum,
 
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       float clusterE=ecore[iclus]/(1-e8e9[iclus]);
-      TVector3 clusterVec(x[iclus],y[iclus],z[iclus]);
+      TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
       TLorentzVector cluster4, pair4;
       //scale these coordinate to the known pt:
       float pttemp=clusterVec.Perp();//the current transverse pT using just the cluster coords
@@ -309,7 +309,7 @@ void rcc_gen_yield(int runnum,
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
-      TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]);
+      TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
       pttemp=pairVec.Perp();
       pairVec=pairVec*(pt[pairclus]/pttemp);
       pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
@@ -325,10 +325,11 @@ void rcc_gen_yield(int runnum,
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
 	if (delr<7) continue;
-	float alpha=abs(pairE-clusterE)/(pairE+clusterE);
+	float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
+	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
 	//sin of half the opening angle:
-	float sinth2=delr/2./zpos;//zpos should be the vertex, but I don't have that yet.  strictly speaking, the angle is:
+	float sinth2=delr/2./fabs(z[pairclus]-zvtx);//strictly speaking, the angle is:
 	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
 
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
