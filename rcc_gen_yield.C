@@ -317,11 +317,11 @@ void rcc_gen_yield(int runnum,
 	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
 	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
-	if (Egg<7 || Egg>17) continue; //skip if the energy is low or merged;
+	if (Egg<6 || Egg>17) continue; //skip if the energy is low or merged;
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
-	if (delr<3.5) continue;
+	if (delr<7) continue;
 	float alpha=abs(pairE-clusterE)/(pairE+clusterE);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	//sin of half the opening angle:
