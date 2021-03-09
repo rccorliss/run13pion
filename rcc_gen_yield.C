@@ -67,6 +67,8 @@ float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
 float splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
+float splitClusterAlpha, splitClusterDel;
+
 int splitClusterFee;
 
 //contains nEvenBunchEve,nOddBunchEve,nBunchEve
@@ -298,8 +300,8 @@ void rcc_gen_yield(int runnum,
       TVector3 clusterVec(x[iclus],y[iclus],z[iclus]);
       TLorentzVector cluster4, pair4;
       //scale these coordinate to the known pt:
-      float pttemp=clusterVec.Perp();
-      clusterVec=clusterVec*(pt[iclus]/pttemp);
+      float pttemp=clusterVec.Perp();//the current transverse pT using just the cluster coords
+      clusterVec=clusterVec*(pt[iclus]/pttemp);//divide by that pT, multiply by the real one.
       cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
 
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -309,7 +311,7 @@ void rcc_gen_yield(int runnum,
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
       TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]);
       pttemp=pairVec.Perp();
-      pairVec=pairVec*(pt[iclus]/pttemp);
+      pairVec=pairVec*(pt[pairclus]/pttemp);
       pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
  
       TLorentzVector sum4=pair4+cluster4;
@@ -317,7 +319,8 @@ void rcc_gen_yield(int runnum,
 	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
 	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
-	if (Egg<6 || Egg>17) continue; //skip if the energy is low or merged;
+	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
+	if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
@@ -331,6 +334,8 @@ void rcc_gen_yield(int runnum,
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
 	float Mggcore=sqrt(4*ecore[pairclus]*ecore[iclus])*sinth2;
 	splitClusterMgg=Mgg;
+	splitClusterAlpha=alpha;
+	splitClusterDel=delr;
 	splitClusterMggcore=Mggcore;
 	splitClusterMvec=sum4.M();
 	splitClusterPt=sum4.Pt();
@@ -571,6 +576,9 @@ void InitOutput(int runnum, const char* outputdir){
   splitClusterTree->Branch("Mvec",&splitClusterMvec);
   splitClusterTree->Branch("pT",&splitClusterPt);
   splitClusterTree->Branch("fee",&splitClusterFee);
+  splitClusterTree->Branch("alpha", &splitClusterAlpha);
+  splitClusterTree->Branch("delr",&splitClusterDel);
+
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
