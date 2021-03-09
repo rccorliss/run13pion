@@ -20,7 +20,7 @@
 
 using namespace std;
 
-const static bool FILL_CLUSTER_TREE=true;
+const static bool FILL_CLUSTER_TREE=false;
 const static bool FILL_SPLIT_PION_TREE=false;
 
 const static int MAXCLUSTERS = 100;
