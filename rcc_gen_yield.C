@@ -324,7 +324,7 @@ void rcc_gen_yield(int runnum,
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
-	if (delr<7) continue;
+	//if (delr<7) continue;
 	float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
@@ -342,6 +342,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterPt=sum4.Pt();
 	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
 	splitClusterTree->Fill();
+	if (Mggcore<0.05 || Mggcore>1.5) continue; //don't save ultra-low or high mass candidates.
 	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
