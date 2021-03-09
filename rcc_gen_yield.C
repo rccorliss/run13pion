@@ -20,6 +20,9 @@
 
 using namespace std;
 
+const static bool FILL_CLUSTER_TREE=true;
+const static bool FILL_SPLIT_PION_TREE=false;
+
 const static int MAXCLUSTERS = 100;
 const static int MAXTOWERS = 1000;
 const static int NBUNCHES = 120;
@@ -341,7 +344,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterMvec=sum4.M();
 	splitClusterPt=sum4.Pt();
 	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
-	splitClusterTree->Fill();
+	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
 	if (Mggcore<0.05 || Mggcore>1.5) continue; //don't save ultra-low or high mass candidates.
 	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
@@ -418,7 +421,7 @@ void rcc_gen_yield(int runnum,
       rccChi=chi2core[iclus];
       rccNorth=is_north;
 
-      if (ecore[iclus]>10.){
+      if (ecore[iclus]>10. && FILL_CLUSTER_TREE){
 	rccClusterTree->Fill();
       }
       
