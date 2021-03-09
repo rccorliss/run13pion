@@ -22,8 +22,8 @@ void Run_rcc_gen_yield()
     printf("loading %d\n", filename);
     //uncomment the following line to regenerate the yield files:
     //rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/15944/data/","./yields/");
-    //rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/16882/data/","./yields2021/");
-    rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/16882/data/","./yields2021_invM/");
+    rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/16882/data/","./yields2021/");
+    //rcc_gen_yield(filename,"/phenix/spin/phnxsp01/rosscorliss/taxi/Run13pp510MPC/16882/data/","./yields2021_invM/");
     //rcc_calc_all(filename,"./yields2021/","./asyms/");
       
    
