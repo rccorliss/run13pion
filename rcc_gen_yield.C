@@ -303,8 +303,8 @@ void rcc_gen_yield(int runnum,
       TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
       TLorentzVector cluster4, pair4;
       //scale these coordinate to the known pt:
-      float pttemp=clusterVec.Perp();//the current transverse pT using just the cluster coords
-      clusterVec=clusterVec*(pt[iclus]/pttemp);//divide by that pT, multiply by the real one.
+      float pttemp=clusterVec.Perp();//the transverse component of the the cluster coords
+      clusterVec=clusterVec*(pt[iclus]/pttemp);//divide by that fake-pT, multiply by the real one.
       cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
 
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -331,6 +331,7 @@ void rcc_gen_yield(int runnum,
 	float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
+	//that can only be negative if pairE or clusterE is negative...
 	//sin of half the opening angle:
 	float sinth2=delr/2./fabs(z[pairclus]-zvtx);//strictly speaking, the angle is:
 	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
@@ -412,6 +413,7 @@ void rcc_gen_yield(int runnum,
       rccMult=mult[iclus];
       rccX=x[iclus];
       rccY=y[iclus];
+      rccZ=z[iclus];
       rccVtx=zvtx;
       rccEcore=ecore[iclus];
       rccE9=ecore[iclus]/(1-e8e9[iclus]);
@@ -565,6 +567,7 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("iy",&rccIy);
   rccClusterTree->Branch("x",&rccX);
   rccClusterTree->Branch("y",&rccY);
+  rccClusterTree->Branch("z",&rccZ);
   rccClusterTree->Branch("vtx",&rccVtx);
   rccClusterTree->Branch("ecore",&rccEcore);
   rccClusterTree->Branch("feecore",&rccFeecore);
@@ -841,7 +844,7 @@ bool PassesClusterCuts(int iclus) {
     return false; // lower than low edge of lowest bin
   // Clusterness cuts
 
-  // Overflow cuts
+  // Overflow cuts ('dispersion')
   if (disp[iclus] > 4)
     return false; // no chi2 cut since we're looking for overlapping clusters
 
