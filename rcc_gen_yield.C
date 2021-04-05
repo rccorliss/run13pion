@@ -66,7 +66,7 @@ TTree *rccBunchTree;
 TTree *rccClusterTree;
 TTree *splitClusterTree;
 int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
-float rccX, rccY, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
+float rccX, rccY, rccZ, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
 float splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
