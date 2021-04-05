@@ -21,7 +21,7 @@
 using namespace std;
 
 const static bool FILL_CLUSTER_TREE=false;
-const static bool FILL_SPLIT_PION_TREE=false;
+const static bool FILL_SPLIT_PION_TREE=true;
 
 const static int MAXCLUSTERS = 100;
 const static int MAXTOWERS = 1000;
