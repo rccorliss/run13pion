@@ -22,7 +22,7 @@ using namespace std;
 
 struct beauClus{
   float e,px,py,pz;
-}
+};
 
 const static bool FILL_CLUSTER_TREE=false;
 const static bool FILL_SPLIT_PION_TREE=true;
@@ -336,7 +336,7 @@ void rcc_gen_yield(int runnum,
       phb.pz=phb.e*pairVec(2)/pairVec.Mag();
       TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
 
-      TLorentzVector beauVtot=beauVa+beauVb;
+      TLorentzVector vtot=beauVa+beauVb;
       float beauMass=sqrt((vtot)*(vtot));
 
       
