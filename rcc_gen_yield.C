@@ -81,7 +81,7 @@ float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, 
 float splitClusterAlpha, splitClusterDel;
 int splitClusterNclus;
 
-const int nMixingBuffers=20;
+const int nMixingBuffers=40;
 vector<beauClus>rccBuffer_clus[2][nMixingBuffers];
 bool rccBuffer_fresh[nMixingBuffers];
 
@@ -264,7 +264,7 @@ void rcc_gen_yield(int runnum,
 
     //1) select our buffer for mixing consecutive events
     bool doMixEvents=false;
-    int buffer_index=(zvtx+150.)/15.;
+    int buffer_index=(zvtx+300.)/15.;
     bool readBuffer=false;
     bool writeBuffer=false;
     printf("buffer_index=%d\n",buffer_index);
@@ -274,9 +274,9 @@ void rcc_gen_yield(int runnum,
       writeBuffer=!rccBuffer_fresh[buffer_index];
       rccBuffer_fresh[buffer_index]=!rccBuffer_fresh[buffer_index];//switch which buffer we've been writing to.  the last event written to the fresh buffer will now
       //clear the contents of the write buffer
-      printf("about to try to clear the buffer...\n");
+      //printf("about to try to clear the buffer...\n");
       rccBuffer_clus[writeBuffer][buffer_index].clear();
-      printf("successfullycleared the buffer.\n");
+      //printf("successfullycleared the buffer.\n");
 
     }
  
@@ -399,13 +399,13 @@ void rcc_gen_yield(int runnum,
       //      bool old_i=ievent%2;
       //      old_zvtx=rccBuffer_zvtx[old_i];
       //add this cluster to the new buffer:
-      printf("about to try to add a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+      if (doMixEvents){//zvtx is in the mixable range
+	//printf("about to try to add a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
 
-       rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
-       printf("successfully added a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+	rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
+	//printf("successfully added a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
 
-      if (doMixEvents){//close enough to mix events together.
-	printf("about to try to mix events from the  the buffer[%d][%d]...\n",(int)readBuffer,buffer_index);
+	//printf("about to try to mix events from the  the buffer[%d][%d]...\n",(int)readBuffer,buffer_index);
      	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
 	  beauClus phb=rccBuffer_clus[readBuffer][buffer_index].at(prevclus);
 	  bool prev_is_north = phb.isNorth;
