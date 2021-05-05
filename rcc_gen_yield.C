@@ -262,7 +262,7 @@ void rcc_gen_yield(int runnum,
 
     //1) select our buffer for mixing consecutive events
     bool old_i=ievent%2;
-    old_zvtx=rccBuffer_zvtx[old_i];
+    float old_zvtx=rccBuffer_zvtx[old_i];
     rccBuffer_zvtx[!old_i]=zvtx;
     //clear the new buffer so we can fill it as we go.
     rccBuffer_clus[!old_i].clear();
@@ -387,37 +387,32 @@ void rcc_gen_yield(int runnum,
       rccBuffer_clus[!old_i].push_back(pha);
       if (abs(zvtx-old_zvtx)<20){//close enough to mix events together.
       	for (int prevclus = 0; prevclus < rccBuffer_clus[old_i].size();prevclus++){
-	  beauClus phb=rccBuffer_clus[old_i].At(prevclus);
+	  beauClus phb=rccBuffer_clus[old_i].at(prevclus);
 	  bool prev_is_north = phb.isNorth;
-	if phb.isNorth!=is_north) continue; //skip if they're in different arms;
-	TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
-	TLorentzVector vtot=beauVa+beauVb;
-	float beauMass=sqrt((vtot)*(vtot));
-	float Eggcore=phb.e+pha.e;
-	if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
-	float xrel=pha.x-phb.x;
-	float yrel=pha.y-phb.y;
-	float delr=sqrt(xrel*xrel+yrel*yrel);
-	//if (delr<7) continue;
-	float alpha=fabs(phb.e-pha.e)/(phb.e+pha.e);
-	if (alpha>0.6) continue; //skip if the energy is too asymmetric
-	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
-	//that can only be negative if pairE or clusterE is negative...
-	//sin of half the opening angle:
-	splitClusterEtot=Eggcore;
-	splitClusterAlpha=alpha;
-	splitClusterDel=delr;
-	splitClusterMbeau=beauMass;
-	splitClusterPt=vtot.Pt();
-	splitClusterFee=(phb.e>pha.e)?feecore[iclus]:feecore[pairclus];
-	if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
-
-      }
-      //float previoussEventVertex;
-      //std::vector<beauClus>previousEventCluster;
-      */
-    // }
-      
+	  if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
+	  TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+	  TLorentzVector vtot=beauVa+beauVb;
+	  float beauMass=sqrt((vtot)*(vtot));
+	  float Eggcore=phb.e+pha.e;
+	  if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	  float xrel=pha.x-phb.x;
+	  float yrel=pha.y-phb.y;
+	  float delr=sqrt(xrel*xrel+yrel*yrel);
+	  //if (delr<7) continue;
+	  float alpha=fabs(phb.e-pha.e)/(phb.e+pha.e);
+	  if (alpha>0.6) continue; //skip if the energy is too asymmetric
+	  if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
+	  //that can only be negative if pairE or clusterE is negative...
+	  //sin of half the opening angle:
+	  splitClusterEtot=Eggcore;
+	  splitClusterAlpha=alpha;
+	  splitClusterDel=delr;
+	  splitClusterMbeau=beauMass;
+	  splitClusterPt=vtot.Pt();
+	  splitClusterFee=(phb.e>pha.e)?feecore[iclus]:feecore[pairclus];
+	  if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
+	}
+      }      
       
       if (ecore[iclus] > 15.){
 	//looking for merged clusters
