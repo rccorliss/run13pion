@@ -345,7 +345,7 @@ void rcc_gen_yield(int runnum,
 	float delr=sqrt(xrel*xrel+yrel*yrel);
 	//if (delr<7) continue;
 	//float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
-	float alpha=fabs(phb.e-ecore[iclus])/phb.e+ecore[iclus]);
+	float alpha=fabs(phb.e-ecore[iclus])/(phb.e+ecore[iclus]);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
 	//that can only be negative if pairE or clusterE is negative...
@@ -359,9 +359,9 @@ void rcc_gen_yield(int runnum,
 	splitClusterNclus=nclus;
 	splitClusterFee=(pha.e>phb.e)?feecore[iclus]:feecore[pairclus];
 	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
-	if (Mggcore<0.05 || Mggcore>1.5) continue; //don't save ultra-low or high mass candidates.
-	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
-	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
+	if (beauMass<0.05 || beauMass>1.5) continue; //don't save ultra-low or high mass candidates.
+	hRegionMassSpectrum[region][0]->Fill(beaMass);//[region]
+	//hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
     //previousEventVertex=0;//for tonight.
