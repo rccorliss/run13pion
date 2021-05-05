@@ -22,6 +22,7 @@ using namespace std;
 
 struct beauClus{
   float e,px,py,pz;
+  bool isNorth;
 };
 
 const static bool FILL_CLUSTER_TREE=false;
@@ -75,6 +76,10 @@ bool rccNorth;
 
 float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
 float splitClusterAlpha, splitClusterDel;
+int splitClusterNclus;
+
+//float previousEventVertex;
+//std::vector<beauClus>previousEventCluster;
 
 int splitClusterFee;
 
@@ -303,14 +308,9 @@ void rcc_gen_yield(int runnum,
 
 
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
-      float clusterE=ecore[iclus]/(1-e8e9[iclus]);
+      //seems like this isn't the canonical way, as much as it made sense to me:
+      //float clusterE=ecore[iclus]/(1-e8e9[iclus]);
       TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
-      TLorentzVector cluster4, pair4;
-      //scale these coordinate to the known pt:
-      float pttemp=clusterVec.Perp();//the transverse component of the the cluster coords
-      clusterVec=clusterVec*(pt[iclus]/pttemp);//divide by that fake-pT, multiply by the real one.
-      cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
-
       //calculation ~imported from the old mpc code, to check my implementation
       beauClus pha;//short for photon 'a'.
       pha.e=ecore[iclus];
@@ -325,10 +325,6 @@ void rcc_gen_yield(int runnum,
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
 	TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
-	pttemp=pairVec.Perp();
-	pairVec=pairVec*(pt[pairclus]/pttemp);
-	pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
-
 	beauClus phb;//short for photon 'a'.
 	phb.e=ecore[pairclus];
 	phb.px=phb.e*pairVec(0)/pairVec.Mag();
@@ -339,11 +335,7 @@ void rcc_gen_yield(int runnum,
       TLorentzVector vtot=beauVa+beauVb;
       float beauMass=sqrt((vtot)*(vtot));
 
-      
-      TLorentzVector sum4=pair4+cluster4;
 	
-	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
-	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
 	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
 	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
@@ -352,32 +344,74 @@ void rcc_gen_yield(int runnum,
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
 	//if (delr<7) continue;
-	float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
+	//float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
+	float alpha=fabs(phb.e-ecore[iclus])/phb.e+ecore[iclus]);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
 	//that can only be negative if pairE or clusterE is negative...
-	//sin of half the opening angle:
-	float sinth2=delr/2./fabs(z[pairclus]-zvtx);//strictly speaking, the angle is:
-	//sin(atan((delr/2)/zpos)), but even with very large separations of 40cm, this is nearly correct.
 
-	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
-	float Mggcore=sqrt(4*ecore[pairclus]*ecore[iclus])*sinth2;
-	//not filled anymore.  splitClusterMgg=Mgg;
 	splitClusterEtot=Eggcore;
 	splitClusterAlpha=alpha;
 	splitClusterDel=delr;
-	splitClusterMggcore=Mggcore;
 	//not filled.  splitClusterMvec=sum4.M();
 	splitClusterMbeau=beauMass;
-	splitClusterPt=sum4.Pt();
-	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
+	splitClusterPt=vtot.Pt();
+	splitClusterNclus=nclus;
+	splitClusterFee=(pha.e>phb.e)?feecore[iclus]:feecore[pairclus];
 	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
 	if (Mggcore<0.05 || Mggcore>1.5) continue; //don't save ultra-low or high mass candidates.
 	hRegionMassSpectrum[region][0]->Fill(Mggcore);//[region]
 	hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
+    //previousEventVertex=0;//for tonight.
+    // if (abs(zvtx-previousEventVertex)<20){//too tired to finish this.  some notes:
+	//would be easier to have a pair of these vector<beauClus> so that I can fill one as I go, and flipflop between them?
+	//want to look at how many clusters I'm dealing with.  Could I restrict to only looking at low-lumi runs, to see if the combinatorics are manageable there?  Or even just events that happen to be two clusters?
+	//don't forget to restore the normal cluster cuts at some point.
+	//don't forget to clear currentClus before we start filling it
+	
+	//close enough, let's build combinatoric clusters.
+	/*prevClus=&(previousEventCluster[ievent%2]);
+	currentClus=&(previousEventCluster[ievent%2]);
 
+	for (int prevclus = 0; prevclus < prevClus->size();prevclus++){
+	//printf("trying pair %d + %d\n",iclus,pairclus);
+	  beauClus phb=prevClus->At(prevclus);
+	  bool prev_is_north = phb.isNorth;
+	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
+	TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+	TLorentzVector vtot=beauVa+beauVb;
+	float beauMass=sqrt((vtot)*(vtot));
+
+	float Eggcore=phb.e+ecore[iclus];
+	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
+	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
+	if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	float xrel=x[iclus]-x[pairclus];
+	float yrel=y[iclus]-y[pairclus];
+	float delr=sqrt(xrel*xrel+yrel*yrel);
+	//if (delr<7) continue;
+	float alpha=fabs(phb.e-ecore[iclus])/phb.e+ecore[iclus]);
+	if (alpha>0.6) continue; //skip if the energy is too asymmetric
+	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
+	//that can only be negative if pairE or clusterE is negative...
+	//sin of half the opening angle:
+	splitClusterEtot=Eggcore;
+	splitClusterAlpha=alpha;
+	splitClusterDel=delr;
+	splitClusterMggcore=Mggcore;
+	//not filled.  splitClusterMvec=sum4.M();
+	splitClusterMbeau=beauMass;
+	splitClusterPt=vtot.Pt();
+	splitClusterFee=(phb.e>pha.e)?feecore[iclus]:feecore[pairclus];
+	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
+
+      }
+      //float previoussEventVertex;
+      //std::vector<beauClus>previousEventCluster;
+      */
+    // }
       
       
       if (ecore[iclus] > 15.){
@@ -614,6 +648,7 @@ void InitOutput(int runnum, const char* outputdir){
   splitClusterTree->Branch("fee",&splitClusterFee);
   splitClusterTree->Branch("alpha", &splitClusterAlpha);
   splitClusterTree->Branch("delr",&splitClusterDel);
+  splitClusterTree->Branch("nclus",&splitClusterNclus);
 
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
