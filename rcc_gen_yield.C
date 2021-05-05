@@ -82,7 +82,7 @@ float splitClusterAlpha, splitClusterDel;
 int splitClusterNclus;
 
 float rccBuffer_zvtx[2];
-std::vector<beauClus>rccBuffer_clus[2];
+vector<beauClus>rccBuffer_clus[2];
 
 int splitClusterFee;
 
