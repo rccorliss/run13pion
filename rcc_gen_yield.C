@@ -267,7 +267,7 @@ void rcc_gen_yield(int runnum,
     int buffer_index=(zvtx+300.)/15.;
     bool readBuffer=false;
     bool writeBuffer=false;
-    printf("buffer_index=%d\n",buffer_index);
+    //printf("buffer_index=%d\n",buffer_index);
     if (buffer_index>=0 && buffer_index<nMixingBuffers){
       doMixEvents=true;
       readBuffer=rccBuffer_fresh[buffer_index];
