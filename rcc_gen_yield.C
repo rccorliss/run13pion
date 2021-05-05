@@ -238,7 +238,7 @@ void rcc_gen_yield(int runnum,
 
   int is_north, even_or_odd, spin_pattern;
   double cluster_r;
-  rccBuffer_zvtx[0]=rccBuffer_zvtx[1]=-999;
+  //rccBuffer_zvtx[0]=rccBuffer_zvtx[1]=-999;
   int nOverflows=0;
   int nentries = ttree->GetEntries();
   cout << "Number of entries: " << nentries << endl;
@@ -266,6 +266,7 @@ void rcc_gen_yield(int runnum,
     bool doMixEvents=true;
     int buffer_index=(zvtx+150.)/15.;
     bool readBuffer=false;
+    bool writeBuffer=false;
     if (buffer_index>=0 && buffer_index<nMixingBuffers){
       doMixEvents=true;
       readBuffer=rccBuffer_fresh[buffer_index];
@@ -397,7 +398,7 @@ void rcc_gen_yield(int runnum,
        rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
       if (doMixEvents){//close enough to mix events together.
       	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
-	  beauClus phb=rccBuffer_clus[old_i].at(prevclus);
+	  beauClus phb=rccBuffer_clus[readBuffer][buffer_index].at(prevclus);
 	  bool prev_is_north = phb.isNorth;
 	  if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
 	  TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
