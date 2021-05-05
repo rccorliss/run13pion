@@ -267,14 +267,17 @@ void rcc_gen_yield(int runnum,
     int buffer_index=(zvtx+150.)/15.;
     bool readBuffer=false;
     bool writeBuffer=false;
-    //printf("buffer_index=%d\n",buffer_index);
+    printf("buffer_index=%d\n",buffer_index);
     if (buffer_index>=0 && buffer_index<nMixingBuffers){
       doMixEvents=true;
       readBuffer=rccBuffer_fresh[buffer_index];
       writeBuffer=!rccBuffer_fresh[buffer_index];
       rccBuffer_fresh[buffer_index]=!rccBuffer_fresh[buffer_index];//switch which buffer we've been writing to.  the last event written to the fresh buffer will now
       //clear the contents of the write buffer
+      printf("about to try to clear the buffer...\n");
       rccBuffer_clus[writeBuffer][buffer_index].clear();
+      printf("successfullycleared the buffer.\n");
+
     }
  
 
@@ -396,9 +399,14 @@ void rcc_gen_yield(int runnum,
       //      bool old_i=ievent%2;
       //      old_zvtx=rccBuffer_zvtx[old_i];
       //add this cluster to the new buffer:
+      printf("about to try to add a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+
        rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
+       printf("successfully added a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+
       if (doMixEvents){//close enough to mix events together.
-      	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
+	printf("about to try to mix events from the  the buffer[%d][%d]...\n",(int)readBuffer,buffer_index);
+     	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
 	  beauClus phb=rccBuffer_clus[readBuffer][buffer_index].at(prevclus);
 	  bool prev_is_north = phb.isNorth;
 	  if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
