@@ -81,8 +81,9 @@ float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, 
 float splitClusterAlpha, splitClusterDel;
 int splitClusterNclus;
 
-float rccBuffer_zvtx[2];
-vector<beauClus>rccBuffer_clus[2];
+const int nMixingBuffers=20;
+vector<beauClus>rccBuffer_clus[2][nMixingBuffers];
+bool rccBuffer_fresh[nMixingBuffers];
 
 int splitClusterFee;
 
@@ -262,11 +263,18 @@ void rcc_gen_yield(int runnum,
     int nTightClusters=0;
 
     //1) select our buffer for mixing consecutive events
-    bool old_i=ievent%2;
-    float old_zvtx=rccBuffer_zvtx[old_i];
-    rccBuffer_zvtx[!old_i]=zvtx;
-    //clear the new buffer so we can fill it as we go.
-    rccBuffer_clus[!old_i].clear();
+    bool doMixEvents=true;
+    int buffer_index=(zvtx+150.)/15.;
+    bool readBuffer=false;
+    if (buffer_index>=0 && buffer_index<nMixingBuffers){
+      doMixEvents=true;
+      readBuffer=rccBuffer_fresh[buffer_index];
+      writeBuffer=!rccBuffer_fresh[buffer_index];
+      rccBuffer_fresh[buffer_index]=!rccBuffer_fresh[buffer_index];//switch which buffer we've been writing to.  the last event written to the fresh buffer will now
+      //clear the contents of the write buffer
+      rccBuffer_clus[writeBuffer][buffer_index].clear();
+    }
+ 
 
     
     for (int iclus = 0; iclus < nclus; iclus++) {
@@ -386,9 +394,9 @@ void rcc_gen_yield(int runnum,
       //      bool old_i=ievent%2;
       //      old_zvtx=rccBuffer_zvtx[old_i];
       //add this cluster to the new buffer:
-      rccBuffer_clus[!old_i].push_back(pha);
-      if (abs(zvtx-old_zvtx)<20){//close enough to mix events together.
-      	for (int prevclus = 0; prevclus < rccBuffer_clus[old_i].size();prevclus++){
+       rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
+      if (doMixEvents){//close enough to mix events together.
+      	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
 	  beauClus phb=rccBuffer_clus[old_i].at(prevclus);
 	  bool prev_is_north = phb.isNorth;
 	  if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
