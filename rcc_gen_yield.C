@@ -366,7 +366,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterDel=delr;
 	splitClusterMggcore=Mggcore;
 	splitClusterMvec=sum4.M();
-	splitClustMbeau=beauMass;
+	splitClusterMbeau=beauMass;
 	splitClusterPt=sum4.Pt();
 	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
 	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
