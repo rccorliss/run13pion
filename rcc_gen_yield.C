@@ -324,17 +324,17 @@ void rcc_gen_yield(int runnum,
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
 	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
-      TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
-      pttemp=pairVec.Perp();
-      pairVec=pairVec*(pt[pairclus]/pttemp);
-      pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
+	TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
+	pttemp=pairVec.Perp();
+	pairVec=pairVec*(pt[pairclus]/pttemp);
+	pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
 
-      beauClus phb;//short for photon 'a'.
-      phb.e=ecore[pairclus];
-      phb.px=phb.e*pairVec(0)/pairVec.Mag();
-      phb.py=phb.e*pairVec(1)/pairVec.Mag();
-      phb.pz=phb.e*pairVec(2)/pairVec.Mag();
-      TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+	beauClus phb;//short for photon 'a'.
+	phb.e=ecore[pairclus];
+	phb.px=phb.e*pairVec(0)/pairVec.Mag();
+	phb.py=phb.e*pairVec(1)/pairVec.Mag();
+	phb.pz=phb.e*pairVec(2)/pairVec.Mag();
+	TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
 
       TLorentzVector vtot=beauVa+beauVb;
       float beauMass=sqrt((vtot)*(vtot));
@@ -868,7 +868,8 @@ bool PassesClusterCuts(int iclus) {
   float r = sqrt(x[iclus] * x[iclus] + y[iclus] * y[iclus]);
   if ((r < 11) || (r > 19))
     return false;
-  if (pt[iclus] < 1.)
+  //if (pt[iclus] < 1.)
+  if (pt[iclus] < 0.1)
     return false; // lower than low edge of lowest bin
   // Clusterness cuts
 
