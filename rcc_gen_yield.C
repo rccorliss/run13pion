@@ -23,6 +23,7 @@ using namespace std;
 struct beauClus{
   float e,px,py,pz;
   float x,y;
+  int fee;
   bool isNorth;
 };
 
@@ -330,6 +331,7 @@ void rcc_gen_yield(int runnum,
       pha.pz=pha.e*clusterVec(2)/clusterVec.Mag();
       pha.x=x[iclus];
       pha.y=y[iclus];
+      pha.fee=feecore[iclus];
       TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
       
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -409,7 +411,7 @@ void rcc_gen_yield(int runnum,
 	  splitClusterDel=delr;
 	  splitClusterMbeau=beauMass;
 	  splitClusterPt=vtot.Pt();
-	  splitClusterFee=(phb.e>pha.e)?feecore[iclus]:feecore[pairclus];
+	  splitClusterFee=(pha.e>phb.e)?pha.fee:phb.fee;
 	  if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
 	}
       }      
