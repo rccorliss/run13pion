@@ -20,6 +20,10 @@
 
 using namespace std;
 
+struct beauClus{
+  float e,px,py,pz;
+}
+
 const static bool FILL_CLUSTER_TREE=false;
 const static bool FILL_SPLIT_PION_TREE=true;
 
@@ -69,7 +73,7 @@ int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccZ, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
-float splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
+float splitClusterMbeau, splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
 float splitClusterAlpha, splitClusterDel;
 
 int splitClusterFee;
@@ -307,6 +311,14 @@ void rcc_gen_yield(int runnum,
       clusterVec=clusterVec*(pt[iclus]/pttemp);//divide by that fake-pT, multiply by the real one.
       cluster4.SetXYZM(clusterVec.X(),clusterVec.Y(),clusterVec.Z(),0);
 
+      //calculation ~imported from the old mpc code, to check my implementation
+      beauClus pha;//short for photon 'a'.
+      pha.e=ecore[iclus];
+      pha.px=pha.e*clusterVec(0)/clusterVec.Mag();
+      pha.py=pha.e*clusterVec(1)/clusterVec.Mag();
+      pha.pz=pha.e*clusterVec(2)/clusterVec.Mag();
+      TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
+      
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
 	//printf("trying pair %d + %d\n",iclus,pairclus);
 	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
@@ -316,7 +328,18 @@ void rcc_gen_yield(int runnum,
       pttemp=pairVec.Perp();
       pairVec=pairVec*(pt[pairclus]/pttemp);
       pair4.SetXYZM(pairVec.X(),pairVec.Y(),pairVec.Z(),0);
- 
+
+      beauClus phb;//short for photon 'a'.
+      phb.e=ecore[pairclus];
+      phb.px=phb.e*pairVec(0)/pairVec.Mag();
+      phb.py=phb.e*pairVec(1)/pairVec.Mag();
+      phb.pz=phb.e*pairVec(2)/pairVec.Mag();
+      TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+
+      TLorentzVector beauVtot=beauVa+beauVb;
+      float beauMass=sqrt((vtot)*(vtot));
+
+      
       TLorentzVector sum4=pair4+cluster4;
 	
 	float pairE=ecore[pairclus]/(1-e8e9[pairclus]);
@@ -343,6 +366,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterDel=delr;
 	splitClusterMggcore=Mggcore;
 	splitClusterMvec=sum4.M();
+	splitClustMbeau=beauMass;
 	splitClusterPt=sum4.Pt();
 	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
 	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
@@ -580,6 +604,7 @@ void InitOutput(int runnum, const char* outputdir){
 
   splitClusterTree=new TTree("piTree","pion clusters");
   splitClusterTree->Branch("M9",&splitClusterMgg);
+  splitClusterTree->Branch("Mb",&splitClusterMbeau);
   splitClusterTree->Branch("Mcore",&splitClusterMggcore);
   splitClusterTree->Branch("Mvec",&splitClusterMvec);
   splitClusterTree->Branch("pT",&splitClusterPt);
