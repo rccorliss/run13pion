@@ -360,7 +360,7 @@ void rcc_gen_yield(int runnum,
 	splitClusterFee=(pha.e>phb.e)?feecore[iclus]:feecore[pairclus];
 	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
 	if (beauMass<0.05 || beauMass>1.5) continue; //don't save ultra-low or high mass candidates.
-	hRegionMassSpectrum[region][0]->Fill(beaMass);//[region]
+	hRegionMassSpectrum[region][0]->Fill(beauMass);//[region]
 	//hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
