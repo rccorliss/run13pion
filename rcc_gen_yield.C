@@ -73,7 +73,7 @@ int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccZ, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
 
-float splitClusterMbeau, splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
+float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
 float splitClusterAlpha, splitClusterDel;
 
 int splitClusterFee;
@@ -346,7 +346,8 @@ void rcc_gen_yield(int runnum,
 	float Egg=pairE+clusterE;
 	float Eggcore=ecore[pairclus]+ecore[iclus];
 	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
-	if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
+	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
+	if (Eggcore<2 || Eggcore>16) continue; //skip if the energy is low or merged;
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
@@ -361,11 +362,12 @@ void rcc_gen_yield(int runnum,
 
 	float Mgg=sqrt(4*pairE*clusterE)*sinth2;
 	float Mggcore=sqrt(4*ecore[pairclus]*ecore[iclus])*sinth2;
-	splitClusterMgg=Mgg;
+	//not filled anymore.  splitClusterMgg=Mgg;
+	splitClusterEtot=Eggcore;
 	splitClusterAlpha=alpha;
 	splitClusterDel=delr;
 	splitClusterMggcore=Mggcore;
-	splitClusterMvec=sum4.M();
+	//not filled.  splitClusterMvec=sum4.M();
 	splitClusterMbeau=beauMass;
 	splitClusterPt=sum4.Pt();
 	splitClusterFee=(clusterE>pairE)?feecore[iclus]:feecore[pairclus];
@@ -603,10 +605,11 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("north",&rccNorth);
 
   splitClusterTree=new TTree("piTree","pion clusters");
-  splitClusterTree->Branch("M9",&splitClusterMgg);
+  //splitClusterTree->Branch("M9",&splitClusterMgg);
   splitClusterTree->Branch("Mb",&splitClusterMbeau);
-  splitClusterTree->Branch("Mcore",&splitClusterMggcore);
-  splitClusterTree->Branch("Mvec",&splitClusterMvec);
+  splitClusterTree->Branch("E",&splitClusterEtot);
+  //splitClusterTree->Branch("Mcore",&splitClusterMggcore);
+  //splitClusterTree->Branch("Mvec",&splitClusterMvec);
   splitClusterTree->Branch("pT",&splitClusterPt);
   splitClusterTree->Branch("fee",&splitClusterFee);
   splitClusterTree->Branch("alpha", &splitClusterAlpha);
