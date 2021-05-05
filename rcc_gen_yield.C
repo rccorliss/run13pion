@@ -347,7 +347,7 @@ void rcc_gen_yield(int runnum,
 	float Eggcore=ecore[pairclus]+ecore[iclus];
 	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
 	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
-	if (Eggcore<2 || Eggcore>16) continue; //skip if the energy is low or merged;
+	if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
