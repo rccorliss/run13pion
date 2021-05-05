@@ -22,6 +22,7 @@ using namespace std;
 
 struct beauClus{
   float e,px,py,pz;
+  float x,y;
   bool isNorth;
 };
 
@@ -70,6 +71,7 @@ const Float_t rccBounds[]={1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 12};
 TTree *rccBunchTree;
 TTree *rccClusterTree;
 TTree *splitClusterTree;
+TTree *fakeClusterTree;
 int rccBunch, rccIx, rccIy, rccFeecore,rccMult;
 float rccX, rccY, rccZ, rccVtx, rccEcore,rccE8, rccE9, rccDisp,rccChi;
 bool rccNorth;
@@ -78,8 +80,8 @@ float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, 
 float splitClusterAlpha, splitClusterDel;
 int splitClusterNclus;
 
-//float previousEventVertex;
-//std::vector<beauClus>previousEventCluster;
+float rccBuffer_zvtx[2];
+std::vector<beauClus>rccBuffer_clus[2];
 
 int splitClusterFee;
 
@@ -234,7 +236,7 @@ void rcc_gen_yield(int runnum,
 
   int is_north, even_or_odd, spin_pattern;
   double cluster_r;
-
+  rccBuffer_zvtx[0]=rccBuffer_zvtx[1]=-999;
   int nOverflows=0;
   int nentries = ttree->GetEntries();
   cout << "Number of entries: " << nentries << endl;
@@ -257,6 +259,15 @@ void rcc_gen_yield(int runnum,
     }
     int nNominalClusters=0;
     int nTightClusters=0;
+
+    //1) select our buffer for mixing consecutive events
+    bool old_i=ievent%2;
+    old_zvtx=rccBuffer_zvtx[old_i];
+    rccBuffer_zvtx[!old_i]=zvtx;
+    //clear the new buffer so we can fill it as we go.
+    rccBuffer_clus[!old_i].clear();
+
+    
     for (int iclus = 0; iclus < nclus; iclus++) {
 
       int rccPtBin=0;
@@ -308,8 +319,8 @@ void rcc_gen_yield(int runnum,
 
 
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
-      //seems like this isn't the canonical way, as much as it made sense to me:
-      //float clusterE=ecore[iclus]/(1-e8e9[iclus]);
+      //seems like the total cluster energy isn't the canonical way, as much as it made sense to me:
+      //wrong:  float clusterE=ecore[iclus]/(1-e8e9[iclus]);
       TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
       //calculation ~imported from the old mpc code, to check my implementation
       beauClus pha;//short for photon 'a'.
@@ -317,6 +328,8 @@ void rcc_gen_yield(int runnum,
       pha.px=pha.e*clusterVec(0)/clusterVec.Mag();
       pha.py=pha.e*clusterVec(1)/clusterVec.Mag();
       pha.pz=pha.e*clusterVec(2)/clusterVec.Mag();
+      pha.x=x[iclus];
+      pha.y=y[iclus];
       TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
       
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -364,35 +377,29 @@ void rcc_gen_yield(int runnum,
 	//hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
       }
 
-    //previousEventVertex=0;//for tonight.
-    // if (abs(zvtx-previousEventVertex)<20){//too tired to finish this.  some notes:
-	//would be easier to have a pair of these vector<beauClus> so that I can fill one as I go, and flipflop between them?
-	//want to look at how many clusters I'm dealing with.  Could I restrict to only looking at low-lumi runs, to see if the combinatorics are manageable there?  Or even just events that happen to be two clusters?
-	//don't forget to restore the normal cluster cuts at some point.
-	//don't forget to clear currentClus before we start filling it
-	
-	//close enough, let's build combinatoric clusters.
-	/*prevClus=&(previousEventCluster[ievent%2]);
-	currentClus=&(previousEventCluster[ievent%2]);
 
-	for (int prevclus = 0; prevclus < prevClus->size();prevclus++){
-	//printf("trying pair %d + %d\n",iclus,pairclus);
-	  beauClus phb=prevClus->At(prevclus);
+      //now let's do mixing with the previous event, if we can:
+      //1) select our buffer:
+      //done in the event loop, rather than clus by clus:
+      //      bool old_i=ievent%2;
+      //      old_zvtx=rccBuffer_zvtx[old_i];
+      //add this cluster to the new buffer:
+      rccBuffer_clus[!old_i].push_back(pha);
+      if (abs(zvtx-old_zvtx)<20){//close enough to mix events together.
+      	for (int prevclus = 0; prevclus < rccBuffer_clus[old_i].size();prevclus++){
+	  beauClus phb=rccBuffer_clus[old_i].At(prevclus);
 	  bool prev_is_north = phb.isNorth;
-	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
+	if phb.isNorth!=is_north) continue; //skip if they're in different arms;
 	TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
 	TLorentzVector vtot=beauVa+beauVb;
 	float beauMass=sqrt((vtot)*(vtot));
-
-	float Eggcore=phb.e+ecore[iclus];
-	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
-	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
+	float Eggcore=phb.e+pha.e;
 	if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
-	float xrel=x[iclus]-x[pairclus];
-	float yrel=y[iclus]-y[pairclus];
+	float xrel=pha.x-phb.x;
+	float yrel=pha.y-phb.y;
 	float delr=sqrt(xrel*xrel+yrel*yrel);
 	//if (delr<7) continue;
-	float alpha=fabs(phb.e-ecore[iclus])/phb.e+ecore[iclus]);
+	float alpha=fabs(phb.e-pha.e)/(phb.e+pha.e);
 	if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
 	//that can only be negative if pairE or clusterE is negative...
@@ -400,12 +407,10 @@ void rcc_gen_yield(int runnum,
 	splitClusterEtot=Eggcore;
 	splitClusterAlpha=alpha;
 	splitClusterDel=delr;
-	splitClusterMggcore=Mggcore;
-	//not filled.  splitClusterMvec=sum4.M();
 	splitClusterMbeau=beauMass;
 	splitClusterPt=vtot.Pt();
 	splitClusterFee=(phb.e>pha.e)?feecore[iclus]:feecore[pairclus];
-	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
+	if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
 
       }
       //float previoussEventVertex;
@@ -650,6 +655,14 @@ void InitOutput(int runnum, const char* outputdir){
   splitClusterTree->Branch("delr",&splitClusterDel);
   splitClusterTree->Branch("nclus",&splitClusterNclus);
 
+  fakeClusterTree=new TTree("fakeTree","combinatoric pion clusters");
+  fakeClusterTree->Branch("Mb",&splitClusterMbeau);
+  fakeClusterTree->Branch("E",&splitClusterEtot);
+  fakeClusterTree->Branch("pT",&splitClusterPt);
+  fakeClusterTree->Branch("fee",&splitClusterFee);
+  fakeClusterTree->Branch("alpha", &splitClusterAlpha);
+  fakeClusterTree->Branch("delr",&splitClusterDel);
+  fakeClusterTree->Branch("nclus",&splitClusterNclus);
 
   Int_t sparsebins[4] = {2, 2, 120, 10}; // N/S, Even/Odd,crossing num., NPTBINS
   // spin patterns are in order: ++,+-,--,-+
@@ -997,6 +1010,7 @@ void End() {
   rccRunTree->Write();
   rccClusterTree->Write();
   splitClusterTree->Write();
+  fakeClusterTree->Write();
   for (int i=0;i<4;i++){
     hRegionMassSpectrum[i][0]->Write();
     hRegionMassSpectrum[i][1]->Write();
