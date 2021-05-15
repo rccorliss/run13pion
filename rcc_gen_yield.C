@@ -345,6 +345,7 @@ void rcc_gen_yield(int runnum,
       pha.x=x[iclus];
       pha.y=y[iclus];
       pha.fee=feecore[iclus];
+      pha.isNorth=is_north;
       TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
       
       for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
@@ -367,7 +368,8 @@ void rcc_gen_yield(int runnum,
 	float Eggcore=ecore[pairclus]+ecore[iclus];
 	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
 	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
-	if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	//if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;  widened to make sure we can see the etas if they're there.
 	float xrel=x[iclus]-x[pairclus];
 	float yrel=y[iclus]-y[pairclus];
 	float delr=sqrt(xrel*xrel+yrel*yrel);
@@ -414,7 +416,8 @@ void rcc_gen_yield(int runnum,
 	  TLorentzVector vtot=beauVa+beauVb;
 	  float beauMass=sqrt((vtot)*(vtot));
 	  float Eggcore=phb.e+pha.e;
-	  if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	  //if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	  if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;
 	  float xrel=pha.x-phb.x;
 	  float yrel=pha.y-phb.y;
 	  float delr=sqrt(xrel*xrel+yrel*yrel);
