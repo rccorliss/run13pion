@@ -169,6 +169,7 @@ void InitOutput(int runnum, const char *outputdir);
 void InitDB(int n_runnum);
 void get_entry(int ientry);
 bool PassesClusterCuts(int iclus);
+bool PassesSplitClusterCuts(int iclus);
 int GetRegion(int bx);
 void End();
 
