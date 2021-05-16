@@ -335,107 +335,109 @@ void rcc_gen_yield(int runnum,
      //look for all possible pions in this arm, using the 0907.4832 paper cut definitions:
       //seems like the total cluster energy isn't the canonical way, as much as it made sense to me:
       //wrong:  float clusterE=ecore[iclus]/(1-e8e9[iclus]);
-      TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
-      //calculation ~imported from the old mpc code, to check my implementation
-      beauClus pha;//short for photon 'a'.
-      pha.e=ecore[iclus];
-      pha.px=pha.e*clusterVec(0)/clusterVec.Mag();
-      pha.py=pha.e*clusterVec(1)/clusterVec.Mag();
-      pha.pz=pha.e*clusterVec(2)/clusterVec.Mag();
-      pha.x=x[iclus];
-      pha.y=y[iclus];
-      pha.fee=feecore[iclus];
-      pha.isNorth=is_north;
-      TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
+      if (PassesSplitClusterCuts(iclus)){
+	TVector3 clusterVec(x[iclus],y[iclus],z[iclus]-zvtx);
+	//calculation ~imported from the old mpc code, to check my implementation
+	beauClus pha;//short for photon 'a'.
+	pha.e=ecore[iclus];
+	pha.px=pha.e*clusterVec(0)/clusterVec.Mag();
+	pha.py=pha.e*clusterVec(1)/clusterVec.Mag();
+	pha.pz=pha.e*clusterVec(2)/clusterVec.Mag();
+	pha.x=x[iclus];
+	pha.y=y[iclus];
+	pha.fee=feecore[iclus];
+	pha.isNorth=is_north;
+	TLorentzVector beauVa(pha.px,pha.py,pha.pz,pha.e);
       
-      for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
-	//printf("trying pair %d + %d\n",iclus,pairclus);
-	bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
-	if (pair_is_north!=is_north) continue; //skip if they're in different arms;
-	if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
-	TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
-	beauClus phb;//short for photon 'a'.
-	phb.e=ecore[pairclus];
-	phb.px=phb.e*pairVec(0)/pairVec.Mag();
-	phb.py=phb.e*pairVec(1)/pairVec.Mag();
-	phb.pz=phb.e*pairVec(2)/pairVec.Mag();
-	TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
-
-      TLorentzVector vtot=beauVa+beauVb;
-      float beauMass=sqrt((vtot)*(vtot));
-
-	
-	float Eggcore=ecore[pairclus]+ecore[iclus];
-	//	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
-	//if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
-	//if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
-	if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;  widened to make sure we can see the etas if they're there.
-	float xrel=x[iclus]-x[pairclus];
-	float yrel=y[iclus]-y[pairclus];
-	float delr=sqrt(xrel*xrel+yrel*yrel);
-	//if (delr<7) continue;
-	//float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
-	float alpha=fabs(phb.e-ecore[iclus])/(phb.e+ecore[iclus]);
-	if (alpha>0.6) continue; //skip if the energy is too asymmetric
-	if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
-	//that can only be negative if pairE or clusterE is negative...
-
-	splitClusterEtot=Eggcore;
-	splitClusterAlpha=alpha;
-	splitClusterDel=delr;
-	//not filled.  splitClusterMvec=sum4.M();
-	splitClusterMbeau=beauMass;
-	splitClusterPt=vtot.Pt();
-	splitClusterNclus=nclus;
-	splitClusterFee=(pha.e>phb.e)?feecore[iclus]:feecore[pairclus];
-	if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
-	if (beauMass<0.05 || beauMass>1.5) continue; //don't save ultra-low or high mass candidates.
-	hRegionMassSpectrum[region][0]->Fill(beauMass);//[region]
-	//hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
-      }
-
-
-      //now let's do mixing with the previous event, if we can:
-      //1) select our buffer:
-      //done in the event loop, rather than clus by clus:
-      //      bool old_i=ievent%2;
-      //      old_zvtx=rccBuffer_zvtx[old_i];
-      //add this cluster to the new buffer:
-      if (doMixEvents){//zvtx is in the mixable range
-	//printf("about to try to add a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
-
-	rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
-	//printf("successfully added a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
-
-	//printf("about to try to mix events from the  the buffer[%d][%d]...\n",(int)readBuffer,buffer_index);
-     	for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
-	  beauClus phb=rccBuffer_clus[readBuffer][buffer_index].at(prevclus);
-	  bool prev_is_north = phb.isNorth;
-	  if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
+	for (int pairclus = iclus+1; pairclus < nclus; pairclus++) {
+	  //printf("trying pair %d + %d\n",iclus,pairclus);
+	  bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
+	  if (pair_is_north!=is_north) continue; //skip if they're in different arms;
+	  if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
+	  TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
+	  beauClus phb;//short for photon 'a'.
+	  phb.e=ecore[pairclus];
+	  phb.px=phb.e*pairVec(0)/pairVec.Mag();
+	  phb.py=phb.e*pairVec(1)/pairVec.Mag();
+	  phb.pz=phb.e*pairVec(2)/pairVec.Mag();
 	  TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+
 	  TLorentzVector vtot=beauVa+beauVb;
 	  float beauMass=sqrt((vtot)*(vtot));
-	  float Eggcore=phb.e+pha.e;
+
+	
+	  float Eggcore=ecore[pairclus]+ecore[iclus];
+	  //	if (Egg<7 || Egg>16) continue; //skip if the energy is low or merged;
+	  //if (Eggcore<6 || Eggcore>16) continue; //skip if the energy is low or merged;
 	  //if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
-	  if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;
-	  float xrel=pha.x-phb.x;
-	  float yrel=pha.y-phb.y;
+	  if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;  widened to make sure we can see the etas if they're there.
+	  float xrel=x[iclus]-x[pairclus];
+	  float yrel=y[iclus]-y[pairclus];
 	  float delr=sqrt(xrel*xrel+yrel*yrel);
 	  //if (delr<7) continue;
-	  float alpha=fabs(phb.e-pha.e)/(phb.e+pha.e);
+	  //float alpha=fabs(pairE-clusterE)/(pairE+clusterE);
+	  float alpha=fabs(phb.e-ecore[iclus])/(phb.e+ecore[iclus]);
 	  if (alpha>0.6) continue; //skip if the energy is too asymmetric
 	  if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
 	  //that can only be negative if pairE or clusterE is negative...
-	  //sin of half the opening angle:
+
 	  splitClusterEtot=Eggcore;
 	  splitClusterAlpha=alpha;
 	  splitClusterDel=delr;
+	  //not filled.  splitClusterMvec=sum4.M();
 	  splitClusterMbeau=beauMass;
 	  splitClusterPt=vtot.Pt();
-	  splitClusterFee=(pha.e>phb.e)?pha.fee:phb.fee;
-	  if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
+	  splitClusterNclus=nclus;
+	  splitClusterFee=(pha.e>phb.e)?feecore[iclus]:feecore[pairclus];
+	  if (FILL_SPLIT_PION_TREE) splitClusterTree->Fill();
+	  if (beauMass<0.05 || beauMass>1.5) continue; //don't save ultra-low or high mass candidates.
+	  hRegionMassSpectrum[region][0]->Fill(beauMass);//[region]
+	  //hRegionMassSpectrum[region][1]->Fill(Mgg);//[region]
 	}
-      }      
+
+
+	//now let's do mixing with the previous event, if we can:
+	//1) select our buffer:
+	//done in the event loop, rather than clus by clus:
+	//      bool old_i=ievent%2;
+	//      old_zvtx=rccBuffer_zvtx[old_i];
+	//add this cluster to the new buffer:
+	if (doMixEvents){//zvtx is in the mixable range
+	  //printf("about to try to add a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+
+	  rccBuffer_clus[writeBuffer][buffer_index].push_back(pha);
+	  //printf("successfully added a beauClus to the buffer[%d][%d]...\n",(int)writeBuffer,buffer_index);
+
+	  //printf("about to try to mix events from the  the buffer[%d][%d]...\n",(int)readBuffer,buffer_index);
+	  for (int prevclus = 0; prevclus <  rccBuffer_clus[readBuffer][buffer_index].size();prevclus++){
+	    beauClus phb=rccBuffer_clus[readBuffer][buffer_index].at(prevclus);
+	    bool prev_is_north = phb.isNorth;
+	    if (phb.isNorth!=is_north) continue; //skip if they're in different arms;
+	    TLorentzVector beauVb(phb.px,phb.py,phb.pz,phb.e);
+	    TLorentzVector vtot=beauVa+beauVb;
+	    float beauMass=sqrt((vtot)*(vtot));
+	    float Eggcore=phb.e+pha.e;
+	    //if (Eggcore<0.35 || Eggcore>18) continue; //skip if the energy is low or merged;
+	    if (Eggcore<0.35 || Eggcore>100) continue; //skip if the energy is low or merged;
+	    float xrel=pha.x-phb.x;
+	    float yrel=pha.y-phb.y;
+	    float delr=sqrt(xrel*xrel+yrel*yrel);
+	    //if (delr<7) continue;
+	    float alpha=fabs(phb.e-pha.e)/(phb.e+pha.e);
+	    if (alpha>0.6) continue; //skip if the energy is too asymmetric
+	    if (alpha<0) printf("alpha<0 should not be possible, but I see it happens in rare cases.  Weird...\n");
+	    //that can only be negative if pairE or clusterE is negative...
+	    //sin of half the opening angle:
+	    splitClusterEtot=Eggcore;
+	    splitClusterAlpha=alpha;
+	    splitClusterDel=delr;
+	    splitClusterMbeau=beauMass;
+	    splitClusterPt=vtot.Pt();
+	    splitClusterFee=(pha.e>phb.e)?pha.fee:phb.fee;
+	    if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
+	  }
+	}
+      }
       
       if (ecore[iclus] > 15.){
 	//looking for merged clusters
@@ -954,6 +956,51 @@ bool PassesClusterCuts(int iclus) {
 
   return true;
 }
+
+bool PassesSplitClusterCuts(int iclus) {
+  //checks fiducial cuts on a cluster candidate.
+
+  
+  if (!mpcmap->isCrystal(feecore[iclus]))
+    return false;
+  if (isWarn[feecore[iclus]])
+    return false;
+  float r = sqrt(x[iclus] * x[iclus] + y[iclus] * y[iclus]);
+  if ((r < 11) || (r > 19))
+    return false;
+  //if (pt[iclus] < 1.)
+  if (pt[iclus] < 0.1)
+    return false; // lower than low edge of lowest bin
+  // Clusterness cuts
+
+  // Overflow cuts ('dispersion')
+  if (disp[iclus] > 4)
+    return false; 
+
+  if (chi2core[iclus]>2.5) //needs to look photon-like.
+    return false;
+
+  //eratio cut from Devon, which ensures light has leaked, at least a little, into adjacent towers.
+  //want e8/e1>0.14
+  //want e1/e8<1/0.14
+  //want e1/e8+e8/e8<1/0.14+1
+  //want e9/e8<1.14/0.14
+  //want e8/e9>0.14/1.14=0.122
+  if (e8e9[iclus]<0.12)
+    return false;
+  
+  // if (tdc_core[iclus] > tdcover[feecore[iclus]]) {
+  //   num_tdcovers++;
+  //   return false;
+  // }
+  // if (lg_post_core[iclus] > adcover[feecore[iclus]]) {
+  //   num_adcovers++;
+  //   return false;
+  // }
+
+  return true;
+}
+
 
 void InitWarn(int runnum) {
   for (int ich = 0; ich < 576; ich++) {
