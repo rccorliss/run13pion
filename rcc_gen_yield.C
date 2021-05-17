@@ -79,7 +79,7 @@ bool rccNorth;
 
 float splitClusterEtot,splitClusterMbeau, splitClusterMgg, splitClusterMggcore, splitClusterMvec, splitClusterPt;
 float splitClusterAlpha, splitClusterDel;
-int splitClusterNclus;
+int splitClusterNclus, splitClusterBunch;
 
 const int nMixingBuffers=40;
 vector<beauClus>rccBuffer_clus[2][nMixingBuffers];
@@ -435,6 +435,7 @@ void rcc_gen_yield(int runnum,
 	    splitClusterMbeau=beauMass;
 	    splitClusterPt=vtot.Pt();
 	    splitClusterFee=(pha.e>phb.e)?pha.fee:phb.fee;
+	    splitClusterBunch=corrbunch;
 	    if (FILL_SPLIT_PION_TREE) fakeClusterTree->Fill();
 	  }
 	}
@@ -665,7 +666,7 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("north",&rccNorth);
 
   splitClusterTree=new TTree("piTree","pion clusters");
-  //splitClusterTree->Branch("M9",&splitClusterMgg);
+  splitClusterTree->Branch("b",&splitClusterBunch);
   splitClusterTree->Branch("Mb",&splitClusterMbeau);
   splitClusterTree->Branch("E",&splitClusterEtot);
   //splitClusterTree->Branch("Mcore",&splitClusterMggcore);
