@@ -355,7 +355,7 @@ void rcc_gen_yield(int runnum,
 	  //printf("trying pair %d + %d\n",iclus,pairclus);
 	  bool pair_is_north = (feecore[pairclus] < 288) ? 0 : 1;
 	  if (pair_is_north!=is_north) continue; //skip if they're in different arms;
-	  if (!PassesClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
+	  if (!PassesSplitClusterCuts(pairclus)) continue; //skip if it's not a good cluster;
 	  TVector3 pairVec(x[pairclus],y[pairclus],z[pairclus]-zvtx);
 	  beauClus phb;//short for photon 'a'.
 	  phb.e=ecore[pairclus];
@@ -513,7 +513,7 @@ void rcc_gen_yield(int runnum,
       rccChi=chi2core[iclus];
       rccNorth=is_north;
 
-      if (ecore[iclus]>10. && FILL_CLUSTER_TREE){
+      if (nominalCut && FILL_CLUSTER_TREE){
 	rccClusterTree->Fill();
       }
       
