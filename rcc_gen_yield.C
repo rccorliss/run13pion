@@ -27,7 +27,7 @@ struct beauClus{
   bool isNorth;
 };
 
-const static bool FILL_CLUSTER_TREE=false;
+const static bool FILL_CLUSTER_TREE=true;
 const static bool FILL_SPLIT_PION_TREE=true;
 
 const static int MAXCLUSTERS = 100;
@@ -169,6 +169,7 @@ void InitOutput(int runnum, const char *outputdir);
 void InitDB(int n_runnum);
 void get_entry(int ientry);
 bool PassesClusterCuts(int iclus);
+bool PassesLooseClusterCuts(int iclus);
 bool PassesSplitClusterCuts(int iclus);
 int GetRegion(int bx);
 void End();
@@ -325,7 +326,7 @@ void rcc_gen_yield(int runnum,
 	MPCB[is_north]->Fill(pt[iclus]);
 
       //check cluster QA cuts:
-      if (!PassesClusterCuts(iclus))
+      if (!PassesLooseClusterCuts(iclus))
         continue;
       rspectrum_clustcuts->Fill(cluster_r);
      
@@ -440,6 +441,8 @@ void rcc_gen_yield(int runnum,
 	  }
 	}
       }
+
+      if (!PassesClusterCuts) continue; //now the tighter cuts.  Will slow us down by rechecking some things
       
       if (ecore[iclus] > 15.){
 	//looking for merged clusters
@@ -494,8 +497,8 @@ void rcc_gen_yield(int runnum,
 
       //assign bunch tree variables:
        rccBunch=corrbunch;
-      rccIx=ix;
-      rccIy=iy;
+       //rccIx=ix;
+       //rccIy=iy;
       rccFeecore=feecore[iclus];
       rccMult=mult[iclus];
       rccX=x[iclus];
@@ -503,9 +506,9 @@ void rcc_gen_yield(int runnum,
       rccZ=z[iclus];
       rccVtx=zvtx;
       rccEcore=ecore[iclus];
-      rccE9=ecore[iclus]/(1-e8e9[iclus]);
-      rccE8=rccE9*e8e9[iclus];
-      //rccE8e9=e8e9[iclus];
+      //wrong calc:rccE9=ecore[iclus]/(1-e8e9[iclus]);
+      //rccE8=rccE9*e8e9[iclus];
+      rccE8e9=e8e9[iclus];
       rccDisp=disp[iclus];
       rccChi=chi2core[iclus];
       rccNorth=is_north;
@@ -650,16 +653,16 @@ void InitOutput(int runnum, const char* outputdir){
   rccClusterTree->Branch("fill",&rccFill);
   rccClusterTree->Branch("run",&rccRun);
   rccClusterTree->Branch("bunch",&rccBunch);
-  rccClusterTree->Branch("ix",&rccIx);
-  rccClusterTree->Branch("iy",&rccIy);
+  // rccClusterTree->Branch("ix",&rccIx);
+  // rccClusterTree->Branch("iy",&rccIy);
   rccClusterTree->Branch("x",&rccX);
   rccClusterTree->Branch("y",&rccY);
   rccClusterTree->Branch("z",&rccZ);
   rccClusterTree->Branch("vtx",&rccVtx);
   rccClusterTree->Branch("ecore",&rccEcore);
   rccClusterTree->Branch("feecore",&rccFeecore);
-  rccClusterTree->Branch("e8",&rccE8);
-  rccClusterTree->Branch("e9",&rccE9);
+  rccClusterTree->Branch("e8e9",&rccE8e9);
+  //rccClusterTree->Branch("e9",&rccE9);
   rccClusterTree->Branch("mult",&rccMult);
   rccClusterTree->Branch("disp",&rccDisp);
   rccClusterTree->Branch("chi2core",&rccChi);
@@ -928,6 +931,10 @@ int GetRegion(int bx){
 }
 
 bool PassesClusterCuts(int iclus) {
+  return (pt[iclus]>=1.) && PassesLooseClusterCuts(iclus);
+}
+  
+bool PassesLooseClusterCuts(int iclus) {
   //checks fiducial cuts on a cluster candidate.
 
   
@@ -939,7 +946,7 @@ bool PassesClusterCuts(int iclus) {
   if ((r < 11) || (r > 19))
     return false;
   //if (pt[iclus] < 1.)
-  if (pt[iclus] < 0.1)
+    if (pt[iclus] < 0.1)
     return false; // lower than low edge of lowest bin
   // Clusterness cuts
 
