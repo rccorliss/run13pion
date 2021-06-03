@@ -86,7 +86,9 @@ void LoadTailoredSegments(){
     printf("total cuts=%d\n",nSets);
   return;
 }
-  
+
+
+
 void LoadFillTailoredSegments(){
   int nPatSets=1;
   TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
@@ -164,7 +166,7 @@ void LoadFillTailoredSegments(){
   //divSets[0].push_back("bunch>10 && bunch<21");
   // divNames[0].push_back("11<=bx<21");
   //divSets[0].push_back("bunch>20 && bunch<110 && !(bunch%2)");
-  //divNames[0].push_back("11<=bx<110 even");
+  //divNames[0].push_back("11<=bx<110 even");ecore[iclus]>10. && 
   //divSets[0].push_back("bunch>20 && bunch<110 && (bunch%2)");
   //divNames[0].push_back("11<=bx<110 odd");
   /*
@@ -198,6 +200,112 @@ void LoadFillTailoredSegments(){
     printf("total cuts=%d\n",nSets);
   return;
 }
+
+
+void LoadBunchSafeTailoredSegments(int selectPat=0, int selectFill=0){
+  int nPatSets=2;
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
+
+  int nFillSets=2;
+  TString fillSets[nFillSets];
+  TString fillNames[nFillSets];
+  fillSets[0]="(";
+  //fillSets[0]+="(fill>=17410 && fill<=17415) ||";
+  fillSets[0]+="fill==17417 ||";
+  fillSets[0]+="fill==17429 ||";
+  // fillSets[0]+="(fill>=17431 && fill<=17434) ||";
+  // fillSets[0]+="(fill>=17439 && fill<=17451) ||";
+  fillSets[0]+="fill==17455 ||";
+  fillSets[0]+="(fill>=17474 && fill<=17479) ||";
+  fillSets[0]+="(fill>=17486 && fill<=17488) ||";
+  fillSets[0]+="(fill>=17492 && fill<=17514) ||";
+  fillSets[0]+="fill==17518 ||";
+  fillSets[0]+="(fill>=17520 && fill<=17524) ||";
+  fillSets[0]+="(fill>=17530 && fill<=17533) ||";
+  fillSets[0]+="(fill>=17536 && fill<=17538) ||";
+  fillSets[0]+="(fill>=17544 && fill<=17545) ||";
+  fillSets[0]+="fill==17550 ||";
+  fillSets[0]+="(fill>=17558 && fill<=17561) ||";
+  fillSets[0]+="(fill>=17568 && fill<=17573) ||";
+  fillSets[0]+="(fill>=17579 && fill<=17601)";
+  fillSets[0]+=")";
+  fillNames[0]="No-Gap Fills";
+
+
+  fillSets[1]="(";
+  fillSets[1]+="(fill>=17217 && fill<=17232) ||";
+  fillSets[1]+="(fill>=17238 && fill<=17240) ||";
+  fillSets[1]+="(fill>=17247 && fill<=17256) ||";
+  fillSets[1]+="(fill>=17263 && fill<=17276) ||";
+  fillSets[1]+="(fill>=17284 && fill<=17297) ||";
+  fillSets[1]+="(fill>=17302 && fill<=17305) ||";
+  fillSets[1]+="(fill>=17308 && fill<=17317) ||";
+  fillSets[1]+="(fill>=17328 && fill<=17333) ||";
+  fillSets[1]+="(fill>=17338 && fill<=17382) ||";
+  fillSets[1]+="(fill>=17391 && fill<=17396) ||";
+  fillSets[1]+="(fill>=17403 && fill<=17407)";
+  fillSets[1]+=")";
+  fillNames[1]="29+69 Fills";
+  
+  vector<TString> divSets[nFillSets];
+  vector<TString> divNames[nFillSets];
+
+  /* as of may 2021 presentation:
+  int nDivs=3;
+  //old bounds:  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  int divBounds[]={0,40,80};//lower bound is included, upper bound is excluded.
+  int divUpperBounds[]={11,65,111};//lower bound is included, upper bound is excluded.
+  for (int i=0;i<nDivs;i++){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d && (bunch%%2)",divBounds[i],divUpperBounds[i]));
+    divNames[0].push_back(Form("%d<=bx<%d odd",divBounds[i],divUpperBounds[i]));
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",divBounds[i],divUpperBounds[i]));
+    divNames[0].push_back(Form("%d<=bx<%d even",divBounds[i],divUpperBounds[i]));
+  }
+  */
+  int nDivs=11;
+  //old bounds:  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  int divBounds[]={0,40,80};//lower bound is included, upper bound is excluded.
+  int divUpperBounds[]={11,65,111};//lower bound is included, upper bound is excluded.
+  for (int i=0;i<nDivs;i++){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d && (bunch%%2)",i*10,i*10+10));
+    divNames[0].push_back(Form("%d<=bx<%d odd",i*10,i*10+10));
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",i*10,i*10+10));
+    divNames[0].push_back(Form("%d<=bx<%d even",i*10,i*10+10));
+  }
+ 
+   nFillSets=2;
+   int cuti=0;
+   for (int i=0;i<nPatSets;i++){
+     if (selectPat!=-1){
+       i=selectPat;
+     }
+     for (int j=0;j<nFillSets;j++){
+       if (selectFill!=-1){
+	 j=selectFill;
+       }
+       for (int k=0;k<divSets[0].size();k++){
+	 //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
+	 if (cuti>=MAXCUTS){
+	   printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
+	 }
+	 cut[cuti]=Form("(%s)&&(%s)&&(%s)",patSets[i].Data(),fillSets[j].Data(),divSets[0][k].Data());
+	 cutName[cuti]=Form("%s %s %s",patNames[i].Data(),fillNames[j].Data(), divNames[0][k].Data());
+	 printf("Cut %d:  \"%s\": %s \n",cuti,cutName[cuti].Data(),cut[cuti].Data());
+	 cuti++;
+       }
+     if (selectFill!=-1) break; //don't loop if we picked a particular set.
+     }
+     if (selectPat!=-1) break; //don't loop if we picked a particular set.
+
+   }
+
+    nSets=cuti;
+    printf("total cuts=%d\n",nSets);
+  return;
+}
+
 
 
 //useful things to get once and get out of the way:
@@ -234,7 +342,8 @@ void   PlotFullAverageAsym(){
 
 
   //fill in the cut and cutname variables (defined globally, because this is messy) with the chosen way to divde the data into sets.
-  LoadFillTailoredSegments();
+  //LoadFillTailoredSegments();
+  LoadBunchSafeTailoredSegments(-1,-1);
   //LoadEvenlySpacedSegments(10);
 
   
@@ -243,6 +352,7 @@ void   PlotFullAverageAsym(){
   vector<double> likeYield[nSets];
   vector<double> unlikeYield[nSets];
   vector<double> asym[nSets],asymErr[nSets];
+  vector<double> asym_byptbin[nBins],asymErr_byptbin[nBins];
   double rel[nSets],relErr[nSets];
   
   TString lumiMon="zdc";
@@ -291,6 +401,7 @@ void   PlotFullAverageAsym(){
 
   //calc the asyms:
   vector<double>asymcomp,asymerrcomp;
+  
   for (int i=0;i<nSets;i++){
     for (int j=0;j<nBins;j++){
       double tasym, tasymerr;
@@ -304,6 +415,8 @@ void   PlotFullAverageAsym(){
 		     
       asym[i].push_back(tasym);
       asymErr[i].push_back(tasymerr);
+      asym_byptbin[j].push_back(tasym);
+      asymErr_byptbin[j].push_back(tasymerr);
       printf("%d,%d: asym=%1.2E + %1.2E\n",i,j,tasym,tasymerr);
       asymcomp.push_back(abs(tasym));
       asymerrcomp.push_back(tasymerr);
@@ -311,22 +424,25 @@ void   PlotFullAverageAsym(){
   }
 
   TCanvas *c;
+  TPad *cMinor;
   TGraphErrors *g;
   TLegend *leg;
+  TH1F *h;
   if (0){//plot a check of the correlation between asymmetries and errors
     c=new TCanvas("cComp","cComp",800,400);
     TGraph *g0=new TGraph(asymcomp.size(),&(asymcomp[0]),&(asymerrcomp[0]));
     g0->SetTitle("Asymmetries vs errors;abs(asym);err");
     g0->Draw("A*");
   }
-
  
   
   
   
-  c=new TCanvas("cAsym","cAsym",1600,400);
-  c->Divide(2,1);
-  c->cd(1);
+  c=new TCanvas("cAsym","cAsym",1600,800);
+  c->Divide(1,2);
+  cMinor=(TPad*)c->cd(1);
+  cMinor->Divide(2,1);
+  cMinor->cd(1);
   for (int i=0;i<nSets;i++){
     g=new TGraphErrors(nBins,&(ptmid[0]),&((asym[i])[0]),&(pterr[0]),&((asymErr[i])[0]));
     g->SetLineColor(i+1);
@@ -342,13 +458,13 @@ void   PlotFullAverageAsym(){
       g->Draw("C*");
     }
   }
-  c->cd(1)->SetGridy();
-  leg=c->cd(1)->BuildLegend();
+  cMinor->cd(1)->SetGridy();
+  leg=cMinor->cd(1)->BuildLegend();
   ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
 
   
  //calc the bbc asyms:
-  vector<double> setindex,bbcasym,bbcasymerr;
+  vector<double> setindex,setindexerr,bbcasym,bbcasymerr;
   for (int i=0;i<nSets;i++){
     uPiLumi->Draw("bbc",Form("(bspin==yspin && zdc>0)*(%s)",cut[i].Data()),"goff");
     double bbcLike=SumArray(uPiLumi->GetVal(0),uPiLumi->GetSelectedRows());
@@ -367,53 +483,99 @@ void   PlotFullAverageAsym(){
 		   1,0,
 		   rel[i],relErr[i]);
     setindex.push_back(i*1.0);
+    setindexerr.push_back(0.1);
     bbcasym.push_back(tasym);
     bbcasymerr.push_back(tasymerr);
     printf("set %1.1f has bbc:%E,%E ==> asym=%E\n",setindex[i],bbcLike,bbcUnlike,tasym);
 
     }
-  
-  c->cd(2);
-  for (int i=0;i<nSets;i++){
-    g=new TGraphErrors(1,&(setindex[i]),&(bbcasym[i]),&(bbcasymerr[i]),&(bbcasymerr[i]));
-    g->SetMarkerColor(i+1);
-    if (i==0){
-    g->SetTitle("BBC asym by spin group;group;asym");
-      g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
-      g->GetHistogram()->SetMaximum(0.002);
-      g->GetHistogram()->SetMinimum(-0.002);
-      g->Draw("AC*");
-      //g->SetTitle(cutName[i].Data());
-    } else {
-      g->SetTitle(cutName[i].Data());
-      g->Draw("C*");
-    }
-  }
-  c->cd(2)->SetGridy();
-  leg=c->cd(2)->BuildLegend();
-  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
 
-   if (1){//plot a check of the relative luminosities per selection
-     c=new TCanvas("cRelLumi","cRelLumi",800,400);
-     for (int i=0;i<nSets;i++){
-    g=new TGraphErrors(1,&(setindex[i]),&(rel[i]),&(relErr[i]),&(relErr[i]));
-    g->SetMarkerColor(i+1);
-    if (i==0){
-    g->SetTitle("Relative Lumi spin group;group;asym");
-      g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
-      g->GetHistogram()->SetMaximum(1.5);
-      g->GetHistogram()->SetMinimum(0.5);
-      g->Draw("AC*");
-      //g->SetTitle(cutName[i].Data());
-    } else {
-      g->SetTitle(cutName[i].Data());
-      g->Draw("C*");
+  if (1){ //plot the BBC asymmetry by spin group:
+    TH1F *hBbcAsym=new TH1F("hBbcAsym","BBC/ZDC Asym",40,-0.003,0.003);
+    cMinor->cd(2);
+    for (int i=0;i<nSets;i++){
+      hBbcAsym->Fill(bbcasym[i]);
+      g=new TGraphErrors(1,&(bbcasym[i]),&(setindex[i]),&(bbcasymerr[i]),&(bbcasymerr[i]));
+      g->SetMarkerColor(i+1);
+      if (i==0){
+	g->SetTitle("BBC asym by spin group;group;asym");
+	g->GetXaxis()->SetLimits(-0.003,0.003);
+	g->GetHistogram()->SetMaximum(nSets*1.0-0.5);
+	g->GetHistogram()->SetMinimum(-0.5);
+
+      //g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
+      //g->GetHistogram()->SetMaximum(0.002);
+      //g->GetHistogram()->SetMinimum(-0.002);
+	g->Draw("AC*");
+	//g->SetTitle(cutName[i].Data());
+      } else {
+	g->SetTitle(cutName[i].Data());
+	g->Draw("C*");
+      }
+    }
+    cMinor->cd(2)->SetGridy();
+    leg=cMinor->cd(2)->BuildLegend();
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+    hBbcAsym->Draw("same");
+  }
+
+  if (1){//plot the distributions in each pt bin:
+    cMinor=(TPad*)c->cd(2);
+    cMinor->Divide(5,2);
+    for (int i=0;i<nBins;i++){
+      cMinor->cd(i+1);
+ 
+      g=new TGraphErrors(nSets,&(setindex[0]),&((asym_byptbin[i])[0]),&(setindexerr[0]),&((asymErr_byptbin[i])[0]));
+      g->SetTitle(Form("Asym in bin %d",i));
+      /*
+      g->Draw("A*");
+      for (int j=0;j<setindex.size();j++){
+	printf("setindex=%1.1f, err=%1.1f, asym[%d][%d]=%1.1E, err=%1.1E\n",
+	       setindex[j],setindexerr[j],i,j,asym_byptbin[i][j],asymErr_byptbin[i][j]);
+	g=new TGraphErrors(1,&(setindex[j]),&((asym_byptbin[i])[j]),&(setindexerr[j]),&((asymErr_byptbin[i])[j]));
+	    g->SetMarkerColor(j+1);
+	g->Draw("*");
+      }
+      printf("test\n");
+      */
+      float minh=g->GetMinimum();
+      float maxh=g->GetMaximum();
+      float span=maxh-minh;
+      float margin=0.25;
+      //h=new TH1F(Form("h%d",i),Form("Asym in bin %d;asym",i),50,-0.05,0.05);//20,minh-span*0.25,minh+span*0.25);
+      h=new TH1F(Form("h%d",i),Form("Asym in bin %d;asym",i),60,-0.1,0.1);//20,minh-span*0.25,minh+span*0.25);
+      for (int j=0;j<setindex.size();j++){
+	h->Fill(asym_byptbin[i][j]);
+	if (fabs(asym_byptbin[i][j])>0.1){
+	  printf("%d %d out of bounds: %s (bin %d)\n",i,j,cutName[j].Data(),i);
+	}
+      }
+      h->Draw();
     }
   }
-  c->cd(1)->SetGridy();
-  leg=c->cd(1)->BuildLegend();
-  ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
-}
+  
+
+  if (0){//plot a check of the relative luminosities per selection
+    c=new TCanvas("cRelLumi","cRelLumi",800,400);
+    for (int i=0;i<nSets;i++){
+      g=new TGraphErrors(1,&(setindex[i]),&(rel[i]),&(relErr[i]),&(relErr[i]));
+      g->SetMarkerColor(i+1);
+      if (i==0){
+	g->SetTitle("Relative Lumi spin group;group;asym");
+	g->GetXaxis()->SetLimits(-0.5,nSets*1.0-0.5);
+	g->GetHistogram()->SetMaximum(1.5);
+	g->GetHistogram()->SetMinimum(0.5);
+	g->Draw("AC*");
+	//g->SetTitle(cutName[i].Data());
+      } else {
+	g->SetTitle(cutName[i].Data());
+	g->Draw("C*");
+      }
+    }
+    c->cd(1)->SetGridy();
+    leg=c->cd(1)->BuildLegend();
+    ((TLegendEntry*)leg->GetListOfPrimitives()->At(0))->SetLabel(cutName[0].Data());
+  }
 
   return;
 }
