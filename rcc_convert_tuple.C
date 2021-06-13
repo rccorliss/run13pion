@@ -130,7 +130,7 @@ void rcc_convert_tuple(){
 	int bin=hYield[0]->FindBin(ptcenter[k],shifted_bunch);
 	u_yield[k]=hYield[0]->GetBinContent(bin);
 	u_yields[k]=hYield[2]->GetBinContent(bin);
-	u_yieldn[k]=u_yield[k]-uyields[k];
+	u_yieldn[k]=u_yield[k]-u_yields[k];
 	u_tightyield[k]=hYield[1]->GetBinContent(bin);
       }
       uPiLumi->Fill();
