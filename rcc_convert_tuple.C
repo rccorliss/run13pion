@@ -13,7 +13,7 @@ void rcc_convert_tuple(){
   TFile *uLumiXLfile=TFile::Open("uLumiXL.ttree.root","READ");
   TFile *uBunchFile=TFile::Open("uBunch.ttree.root","READ");
   TString yieldDir="yields2021";
-  TString outputFileBase="uPiLumi2021";//"uPiLumi";
+  TString outputFileBase="uPiLumi2021.06";//"uPiLumi";
 
   
   // uLumi=(TTree*)uLumiFile->Get("uLumi");
@@ -51,10 +51,14 @@ void rcc_convert_tuple(){
   int u_bspin; uPiLumi->Branch("bspin",&u_bspin);
   int u_yspin; uPiLumi->Branch("yspin",&u_yspin);
   float u_yield[nptbins];
+  float u_yieldn[nptbins];
+  float u_yields[nptbins];
   float u_tightyield[nptbins];
   for (int i=0;i<nptbins;i++){
     uPiLumi->Branch(Form("yield%d",i),&(u_yield[i]));
     uPiLumi->Branch(Form("tightyield%d",i),&(u_tightyield[i]));
+    uPiLumi->Branch(Form("yieldn%d",i),&(u_yieldn[i]));
+    uPiLumi->Branch(Form("yields%d",i),&(u_yields[i]));
   }
 
   double u_zdc;uPiLumi->Branch("zdc",&u_zdc);
@@ -125,6 +129,8 @@ void rcc_convert_tuple(){
 	int shifted_bunch=(120+u_bunch+MASTER_BUNCH_OFFSET)%120;
 	int bin=hYield[0]->FindBin(ptcenter[k],shifted_bunch);
 	u_yield[k]=hYield[0]->GetBinContent(bin);
+	u_yields[k]=hYield[2]->GetBinContent(bin);
+	u_yieldn[k]=u_yield[k]-uyields[k];
 	u_tightyield[k]=hYield[1]->GetBinContent(bin);
       }
       uPiLumi->Fill();

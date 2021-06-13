@@ -271,8 +271,8 @@ void LoadBunchSafeTailoredSegments(int selectPat=0, int selectFill=0){
   for (int i=0;i<nDivs;i++){
     divSets[0].push_back(Form("%d<=bunch && bunch<%d && (bunch%%2)",i*10,i*10+10));
     divNames[0].push_back(Form("%d<=bx<%d odd",i*10,i*10+10));
-    divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",i*10,i*10+10));
-    divNames[0].push_back(Form("%d<=bx<%d even",i*10,i*10+10));
+    //divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",i*10,i*10+10));
+    //divNames[0].push_back(Form("%d<=bx<%d even",i*10,i*10+10));
   }
  
    nFillSets=2;
@@ -317,7 +317,7 @@ vector<double> ptmid,pterr;//bin centers and distances from center to edge
 
 
 void rcc_asym_from_uPiLumi(){
-  TFile *uPiLumiFile=TFile::Open("uPiLumi2021.ttree.root","READ");
+  TFile *uPiLumiFile=TFile::Open("uPiLumi2021.06.ttree.root","READ");
   uPiLumi=(TTree*)uPiLumiFile->Get("uPiLumi");
   uPiLumiBinning=(TTree*)uPiLumiFile->Get("uPiLumiBinning");
 
