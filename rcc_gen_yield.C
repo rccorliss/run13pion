@@ -563,7 +563,6 @@ void rcc_gen_yield(int runnum,
 	  if (is_short){
 	    hYieldByBunchAndPtSouthShort->Fill(pt[iclus],corrbunch);
 	  }
-	}else{
 	}
 
 	rccTotGoodClust++;
