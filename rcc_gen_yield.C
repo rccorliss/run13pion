@@ -1089,7 +1089,6 @@ void End() {
   histfile->cd();
 
   hYieldByBunchAndPt->Write();
-  ->Write();
   hYieldByBunchAndPtNorthShort->Write();
   hYieldByBunchAndPtSouthShort->Write();
   hYieldByBunchAndPtSouth->Write();
