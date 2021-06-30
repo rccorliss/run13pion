@@ -499,7 +499,7 @@ void rcc_gen_yield(int runnum,
 
       //compute our center radius index:
       float iradius=sqrt((ix-8.5)*(ix-8.5)+(iy-8.5)*(iy-8.5));
-      bool is_short=(fabs(iradius-7.)<=2.;
+      bool is_short=(fabs(iradius-7.)<=2.);
       
       //assign bunch tree variables:
        rccBunch=corrbunch;
