@@ -308,9 +308,132 @@ void LoadBunchSafeTailoredSegments(int selectPat=0, int selectFill=0){
 
 
 
+void LoadJune14Segments(int selectPat=0, int selectFill=0){
+  int nPatSets=2;
+  TString patSets[]={"pat == 21 || pat == 24 || pat == 25 || pat == 28",
+		     "pat == 22 || pat == 23 || pat == 26 || pat == 27"};
+  TString patNames[]={"SSOO","OOSS"};
+
+  int nFillSets=2;
+  TString fillSets[nFillSets];
+  TString fillNames[nFillSets];
+  fillSets[0]="(";
+  //fillSets[0]+="(fill>=17410 && fill<=17415) ||";
+  fillSets[0]+="fill==17417 ||";
+  fillSets[0]+="fill==17429 ||";
+  // fillSets[0]+="(fill>=17431 && fill<=17434) ||";
+  // fillSets[0]+="(fill>=17439 && fill<=17451) ||";
+  fillSets[0]+="fill==17455 ||";
+  fillSets[0]+="(fill>=17474 && fill<=17479) ||";
+  fillSets[0]+="(fill>=17486 && fill<=17488) ||";
+  fillSets[0]+="(fill>=17492 && fill<=17514) ||";
+  fillSets[0]+="fill==17518 ||";
+  fillSets[0]+="(fill>=17520 && fill<=17524) ||";
+  fillSets[0]+="(fill>=17530 && fill<=17533) ||";
+  fillSets[0]+="(fill>=17536 && fill<=17538) ||";
+  fillSets[0]+="(fill>=17544 && fill<=17545) ||";
+  fillSets[0]+="fill==17550 ||";
+  fillSets[0]+="(fill>=17558 && fill<=17561) ||";
+  fillSets[0]+="(fill>=17568 && fill<=17573) ||";
+  fillSets[0]+="(fill>=17579 && fill<=17601)";
+  fillSets[0]+=")";
+  fillNames[0]="No-Gap Fills";
+
+
+  fillSets[1]="(";
+  fillSets[1]+="(fill>=17217 && fill<=17232) ||";
+  fillSets[1]+="(fill>=17238 && fill<=17240) ||";
+  fillSets[1]+="(fill>=17247 && fill<=17256) ||";
+  fillSets[1]+="(fill>=17263 && fill<=17276) ||";
+  fillSets[1]+="(fill>=17284 && fill<=17297) ||";
+  fillSets[1]+="(fill>=17302 && fill<=17305) ||";
+  fillSets[1]+="(fill>=17308 && fill<=17317) ||";
+  fillSets[1]+="(fill>=17328 && fill<=17333) ||";
+  fillSets[1]+="(fill>=17338 && fill<=17382) ||";
+  fillSets[1]+="(fill>=17391 && fill<=17396) ||";
+  fillSets[1]+="(fill>=17403 && fill<=17407)";
+  fillSets[1]+=")";
+  fillNames[1]="29+69 Fills";
+  
+  vector<TString> divSets[nFillSets];
+  vector<TString> divNames[nFillSets];
+
+  /*
+  int nDivs=5;
+  //old bounds:  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  int divEvens[]={0,0,35,68,75,110};
+  int divOdds[]={0,28,35,68,75,110};
+
+  for (int i=0;i<nDivs;i++){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d && (bunch%%2)",divOdds[i],divOdds[i+1]));
+    divNames[0].push_back(Form("%d<=bx<%d odd",divOdds[i],divOdds[i+1]));
+    if (i>0){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",divEvens[i],divEvens[i+1]));
+    divNames[0].push_back(Form("%d<=bx<%d even",divEvens[i],divEvens[i+1]));
+    }
+  }
+  */
+
+      int nDivs=5;
+  //old bounds:  int divBounds[]={0,11,29,40,69,80,111,120};//lower bound is included, upper bound is excluded.
+  int divEvens[]={35,75};
+  int divEvensHigh[]={68,110};
+  int divOdds[]={0,35,75};
+  int divOddsHigh[]={28,68,110};
+
+
+  for (int i=0;i<2;i++){
+
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d&& !(bunch%%2)",divEvens[i],divEvensHigh[i]));
+    divNames[0].push_back(Form("%d<=bx<%d even",divEvens[i],divEvensHigh[i]));
+  }
+  for (int i=0;i<3;i++){
+    divSets[0].push_back(Form("%d<=bunch && bunch<%d && (bunch%%2)",divOdds[i],divOddsHigh[i]));
+    divNames[0].push_back(Form("%d<=bx<%d odd",divOdds[i],divOddsHigh[i]));
+  }
+  TString fullset=Form("(%s)",divSets[0][0].Data());
+  for (int i=1;i<divSets[0].size();i++){
+    fullset=fullset+Form("||(%s)",divSets[0][i].Data());
+  }
+  divSets[0].push_back(fullset);
+  divNames[0].push_back("all good bunches");
+ 
+   nFillSets=2;
+   int cuti=0;
+   for (int i=0;i<nPatSets;i++){
+     if (selectPat!=-1){
+       i=selectPat;
+     }
+     for (int j=0;j<nFillSets;j++){
+       if (selectFill!=-1){
+	 j=selectFill;
+       }
+       for (int k=0;k<divSets[0].size();k++){
+	 //don't dead reckon.  It goes wrong if I fuss with the limits (ie skip the first one): cuti=i*nDivSets+j;
+	 if (cuti>=MAXCUTS){
+	   printf("tried to make too many divisions!  What do you need more than %d for?\n",MAXCUTS);
+	 }
+	 cut[cuti]=Form("(%s)&&(%s)&&(%s)",patSets[i].Data(),fillSets[j].Data(),divSets[0][k].Data());
+	 cutName[cuti]=Form("%s %s %s",patNames[i].Data(),fillNames[j].Data(), divNames[0][k].Data());
+	 printf("Cut %d:  \"%s\": %s \n",cuti,cutName[cuti].Data(),cut[cuti].Data());
+	 cuti++;
+       }
+     if (selectFill!=-1) break; //don't loop if we picked a particular set.
+     }
+     if (selectPat!=-1) break; //don't loop if we picked a particular set.
+
+   }
+
+    nSets=cuti;
+    printf("total cuts=%d\n",nSets);
+  return;
+}
+
+
+
 //useful things to get once and get out of the way:
 TTree *uPiLumi, *uPiLumiBinning; //data and binning data.
-TString yieldName="tightyield";//yield or tightyield.
+TString yieldName="yields";//yield, yields, yieldn, tightyield.
 
 int nBins; //number of ptbins
 vector<double> ptmid,pterr;//bin centers and distances from center to edge
@@ -343,9 +466,9 @@ void   PlotFullAverageAsym(){
 
   //fill in the cut and cutname variables (defined globally, because this is messy) with the chosen way to divde the data into sets.
   //LoadFillTailoredSegments();
-  LoadBunchSafeTailoredSegments(-1,-1);
+  //LoadBunchSafeTailoredSegments(-1,-1);
   //LoadEvenlySpacedSegments(10);
-
+  LoadJune14Segments(-1,-1);
   
   //int nDivSets=10;
   //int nSets=8;//1*nDivSets;

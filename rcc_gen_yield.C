@@ -121,6 +121,8 @@ TFile *treefile;
 
 TH2F *hYieldByBunchAndPt;
 TH2F *hYieldByBunchAndPtNorth;
+TH2F *hYieldByBunchAndPtNorthShort;
+TH2F *hYieldByBunchAndPtSouthShort;
 TH2F *hYieldByBunchAndPtSouth;
 TH2F *hTightYieldByBunchAndPt;
 TH2F *hTightYieldByBunchAndPtNorth;
@@ -495,6 +497,10 @@ void rcc_gen_yield(int runnum,
       int ix = mpcmap->getGridX(feecore[iclus]);
       int iy = mpcmap->getGridY(feecore[iclus]);
 
+      //compute our center radius index:
+      float iradius=sqrt((ix-8.5)*(ix-8.5)+(iy-8.5)*(iy-8.5));
+      bool is_short=(fabs(iradius-7.)<=2.;
+      
       //assign bunch tree variables:
        rccBunch=corrbunch;
        //rccIx=ix;
@@ -549,8 +555,15 @@ void rcc_gen_yield(int runnum,
 	hYieldByBunchAndPt->Fill(pt[iclus],corrbunch);
 	if (is_north){
 	  hYieldByBunchAndPtNorth->Fill(pt[iclus],corrbunch);
+	  if (is_short){
+	    hYieldByBunchAndPtNorthShort->Fill(pt[iclus],corrbunch);
+	  }
 	}else{
 	  hYieldByBunchAndPtSouth->Fill(pt[iclus],corrbunch);
+	  if (is_short){
+	    hYieldByBunchAndPtSouthShort->Fill(pt[iclus],corrbunch);
+	  }
+	}else{
 	}
 
 	rccTotGoodClust++;
@@ -697,6 +710,8 @@ void InitOutput(int runnum, const char* outputdir){
 
   hYieldByBunchAndPt=new TH2F("hYieldByBunchAndPt","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtNorth=new TH2F("hYieldByBunchAndPtNorth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hYieldByBunchAndPtNorthShort=new TH2F("hYieldByBunchAndPtNorthShort","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hYieldByBunchAndPtSouthShort=new TH2F("hYieldByBunchAndPtNorthShort","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtSouth=new TH2F("hYieldByBunchAndPtSouth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
   hTightYieldByBunchAndPt=new TH2F("hTightYieldByBunchAndPt","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
@@ -1075,7 +1090,9 @@ void End() {
   histfile->cd();
 
   hYieldByBunchAndPt->Write();
-  hYieldByBunchAndPtNorth->Write();
+  ->Write();
+  hYieldByBunchAndPtNorthShort->Write();
+  hYieldByBunchAndPtSouthShort->Write();
   hYieldByBunchAndPtSouth->Write();
   hTightYieldByBunchAndPt->Write();
   hTightYieldByBunchAndPtNorth->Write();
