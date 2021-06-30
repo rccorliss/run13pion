@@ -710,7 +710,7 @@ void InitOutput(int runnum, const char* outputdir){
   hYieldByBunchAndPt=new TH2F("hYieldByBunchAndPt","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtNorth=new TH2F("hYieldByBunchAndPtNorth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtNorthShort=new TH2F("hYieldByBunchAndPtNorthShort","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
-  hYieldByBunchAndPtSouthShort=new TH2F("hYieldByBunchAndPtNorthShort","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
+  hYieldByBunchAndPtSouthShort=new TH2F("hYieldByBunchAndPtSouthShort","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
   hYieldByBunchAndPtSouth=new TH2F("hYieldByBunchAndPtSouth","yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
 
   hTightYieldByBunchAndPt=new TH2F("hTightYieldByBunchAndPt","Tight yield by bunch and pt",10,pt_limits,120,-0.5,119.5);
